@@ -22,7 +22,7 @@ export function SignaturePad({
     if (!element || !context) return;
     context.lineWidth = 2.4;
     context.lineCap = "round";
-    context.strokeStyle = "#173f31";
+    context.strokeStyle = "#0f3447";
   }, []);
 
   function point(event: React.PointerEvent<HTMLCanvasElement>) {

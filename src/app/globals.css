@@ -7,17 +7,20 @@
 
 :root {
   color-scheme: light;
-  --accent: #246b50;
-  --accent-hover: #1b563f;
+  /* Brand blue: the FAC "azul cielo" (CIELAB 74,28 / -12,74 / -20,14 in ET-FAC-002-03, table 6) is --sky;
+     --accent is a darker shade of the same hue so text and buttons keep AA contrast. */
+  --sky: #81bfdb;
+  --accent: #1c6f8d;
+  --accent-hover: #165a74;
   --accent-foreground: #fff;
-  --accent-soft: #eaf2eb;
-  --accent-soft-foreground: #246b50;
+  --accent-soft: #e2f0f6;
+  --accent-soft-foreground: #1c6f8d;
   --background: #f5f6f3;
   --foreground: #22322e;
   --surface: #fff;
   --muted: #64716b;
   --border: #e3e8e1;
-  --focus: #246b50;
+  --focus: #1c6f8d;
   --radius: 0.75rem;
   --otear-shadow: 0 4px 20px -10px #263b2d22, 0 1px 3px #263b2d06;
 }
@@ -74,16 +77,16 @@ p {
   margin: 0;
 }
 ::selection {
-  background: #cce4d2;
-  color: #183e2b;
+  background: #cfe6f0;
+  color: #103a50;
 }
 :focus-visible {
-  outline: 3px solid #468e6c;
+  outline: 3px solid #3f8fb0;
   outline-offset: 3px;
 }
 input,
 textarea {
-  caret-color: #246b50;
+  caret-color: #1c6f8d;
 }
 * {
   scrollbar-width: thin;
@@ -150,15 +153,15 @@ textarea {
 .brand-symbol {
   width: 35px;
   height: 35px;
-  border: 2px solid #246b50;
+  border: 2px solid #1c6f8d;
   border-radius: 50%;
-  color: #246b50;
+  color: #1c6f8d;
   display: grid;
   place-items: center;
   transform: rotate(-7deg);
 }
 .brand-dot {
-  color: #3f8764;
+  color: #2f86a8;
 }
 .workspace-label {
   display: flex;
@@ -244,13 +247,13 @@ textarea {
     color 160ms;
 }
 .nav-item:hover {
-  color: #246b50;
+  color: #1c6f8d;
   background: #f6f8f3;
 }
 .nav-item--active {
-  color: #216245;
-  background: #edf4ec;
-  border-color: #e2ebde;
+  color: #1a6280;
+  background: #e4f1f7;
+  border-color: #d3e8f1;
   font-weight: 750;
 }
 .nav-count {
@@ -466,7 +469,7 @@ textarea {
 }
 .icon-button:hover {
   background: #edf2e9;
-  color: #246b50;
+  color: #1c6f8d;
 }
 .notification-button {
   position: relative;
@@ -506,7 +509,7 @@ textarea {
   letter-spacing: -0.04em;
   font-weight: 750;
   line-height: 1.2;
-  color: #263a2e;
+  color: #1e3a4a;
 }
 .page-heading p {
   font-size: 14px;
@@ -522,7 +525,7 @@ textarea {
 }
 .rail-panel {
   background-image:
-    linear-gradient(180deg, #f8faf6e6 0%, #f1f5eef2 100%),
+    linear-gradient(180deg, #f7fafce6 0%, #f1f6f8f2 100%),
     url("/textures/contours-light.svg");
   background-size: auto, cover;
   scrollbar-width: thin;
@@ -608,7 +611,7 @@ textarea {
 .segmented-control button[aria-pressed="true"],
 .segmented-control button[data-active="true"] {
   background: white;
-  color: #2c5339;
+  color: #1f5470;
   box-shadow: 0 1px 4px #1d422214;
   font-weight: 700;
 }
@@ -684,8 +687,8 @@ textarea {
   background: #f0f3ed;
 }
 .status-badge--success {
-  color: #2d7050;
-  background: #eaf5ec;
+  color: #2a7396;
+  background: #e6f2f7;
 }
 .status-badge--warning {
   color: #896721;
@@ -735,7 +738,7 @@ textarea {
   left: calc(50% + 100px);
   transform: translateX(-50%);
   z-index: 90;
-  background: #244c39;
+  background: #1a4a63;
   color: #fff;
   padding: 14px 14px 14px 20px;
   border-radius: 13px;
@@ -777,7 +780,7 @@ textarea {
   align-items: center;
   gap: 10px;
   font-size: 12px;
-  color: #246b50;
+  color: #1c6f8d;
   font-weight: 650;
 }
 .search-results {
@@ -827,7 +830,7 @@ textarea {
   top: -100px;
   left: 16px;
   z-index: 100;
-  background: #246b50;
+  background: #1c6f8d;
   color: #fff;
   padding: 12px;
   border-radius: 8px;
@@ -977,8 +980,8 @@ textarea {
   width: 25px;
   height: 25px;
   background: #fff;
-  color: #246b50;
-  border: 2px solid #246b50;
+  color: #1c6f8d;
+  border: 2px solid #1c6f8d;
   border-radius: 50%;
   font-family: inherit;
   font-size: 12px;
@@ -990,7 +993,7 @@ textarea {
   place-items: center;
   width: 22px;
   height: 22px;
-  background: #173f31;
+  background: #0f3447;
   color: #fff;
   border: 2px solid #fff;
   border-radius: 50%;
@@ -1289,7 +1292,7 @@ body::after {
   mask-repeat: no-repeat;
 }
 body::before {
-  opacity: 0.22;
+  opacity: 0.11;
   -webkit-mask-image: url("/textures/chart-contours.svg");
   mask-image: url("/textures/chart-contours.svg");
   -webkit-mask-size: cover;
@@ -1298,7 +1301,7 @@ body::before {
   mask-position: center;
 }
 body::after {
-  opacity: 0.16;
+  opacity: 0.12;
   -webkit-mask-image: url("/textures/chart-graticule.svg");
   mask-image: url("/textures/chart-graticule.svg");
   -webkit-mask-repeat: repeat;

@@ -76,7 +76,7 @@ export function documentHtml(evidence: Evidence): string {
     .join("");
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${escapeHtml(evidence.title)}</title><style>
     body{font:14px/1.6 system-ui,sans-serif;color:#22322e;margin:40px;max-width:720px}
-    h1{font-size:20px;margin:0 0 4px}.brand{color:#246b50;font-weight:700;letter-spacing:.06em;font-size:12px}
+    h1{font-size:20px;margin:0 0 4px}.brand{color:#1c6f8d;font-weight:700;letter-spacing:.06em;font-size:12px}
     pre{white-space:pre-wrap;font:inherit;border:1px solid #e3e8e1;border-radius:12px;padding:16px;background:#f9faf8}
     table{width:100%;border-collapse:collapse;margin-top:8px}td{border-top:1px solid #e3e8e1;padding:10px 8px;vertical-align:middle}
     img{max-height:56px}.typed{font:italic 22px Georgia,serif}small,.note{color:#64716b;font-size:12px}

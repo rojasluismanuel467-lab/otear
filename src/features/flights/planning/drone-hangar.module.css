@@ -6,14 +6,14 @@
   min-height: 480px;
   padding: 26px 26px 28px;
   border-radius: 28px;
-  color: #eef7f1;
+  color: #edf6fa;
   overflow: hidden;
   isolation: isolate;
   background: radial-gradient(
     ellipse at 50% 34%,
-    #2f7058 0%,
-    #1b4636 52%,
-    #112c21 100%
+    #2a6e8a 0%,
+    #123f55 52%,
+    #0b2837 100%
   );
   box-shadow:
     0 2px 4px color-mix(in srgb, var(--overlay) 10%, transparent),
@@ -56,7 +56,7 @@
   margin-top: 5px;
   font-size: 13px;
   line-height: 1.55;
-  color: #b9d3c3;
+  color: #bad4e0;
 }
 
 .optionGroup {
@@ -66,7 +66,7 @@
 }
 .optionGroup > span {
   font-size: 12px;
-  color: #8fb3a0;
+  color: #8fb4c4;
 }
 .options {
   display: flex;
@@ -78,7 +78,7 @@
   border-radius: 999px;
   font-size: 13px;
   font-weight: 650;
-  color: #dff3e6;
+  color: #dcf0f8;
   background: rgb(255 255 255 / 0.1);
   transition:
     background-color 200ms,
@@ -89,8 +89,8 @@
   background: rgb(255 255 255 / 0.18);
 }
 .options button[aria-pressed="true"] {
-  color: #123226;
-  background: #f1f7f2;
+  color: #0c2f40;
+  background: #f0f7fa;
 }
 .options button:active {
   transform: scale(0.96);
@@ -99,7 +99,7 @@
   display: block;
   margin-top: 8px;
   font-size: 12px;
-  color: #8fb3a0;
+  color: #8fb4c4;
 }
 .hangar footer p {
   animation: caption-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;

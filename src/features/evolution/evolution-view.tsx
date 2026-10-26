@@ -532,7 +532,7 @@ function EvolutionChart({
           site.sector === "construction"
             ? "Niveles construidos"
             : "Avance medio",
-        color: "#216c50",
+        color: "#1c6f8d",
         points: shown.map((p) => ({
           date: p.date,
           value: site.sector === "construction" ? (p.levels ?? 0) : p.mean,

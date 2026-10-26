@@ -139,7 +139,7 @@ function pinTexture(label: string, color: string, selected: boolean) {
     if (selected) {
       context.beginPath();
       context.arc(64, 64, 60, 0, Math.PI * 2);
-      context.strokeStyle = "#173f31";
+      context.strokeStyle = "#0f3447";
       context.lineWidth = 6;
       context.stroke();
     }
@@ -167,12 +167,12 @@ function partTexture(label: string, active: boolean) {
   if (context) {
     context.beginPath();
     context.arc(48, 48, 40, 0, Math.PI * 2);
-    context.fillStyle = active ? "#173f31" : "rgba(255,255,255,0.94)";
+    context.fillStyle = active ? "#0f3447" : "rgba(255,255,255,0.94)";
     context.fill();
     context.lineWidth = 6;
-    context.strokeStyle = active ? "#ffffff" : "#173f31";
+    context.strokeStyle = active ? "#ffffff" : "#0f3447";
     context.stroke();
-    context.fillStyle = active ? "#ffffff" : "#173f31";
+    context.fillStyle = active ? "#ffffff" : "#0f3447";
     context.font = "700 38px system-ui, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "middle";
@@ -408,7 +408,7 @@ export function ConditionScene({
     const key = new DirectionalLight(0xffffff, 1.7);
     key.position.set(3, 5, 4);
     scene.add(key);
-    const rim = new DirectionalLight(0x9fe3c0, 0.9);
+    const rim = new DirectionalLight(0xa5d8ee, 0.9);
     rim.position.set(-4, 2, -3);
     scene.add(rim);
     const camera = new PerspectiveCamera(30, 1, 0.1, 80);

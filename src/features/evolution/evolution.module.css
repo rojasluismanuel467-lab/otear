@@ -71,8 +71,8 @@
   margin-top: 10px;
   padding: 10px 16px 8px 10px;
   border-radius: 20px;
-  background: #12382c;
-  color: #e5f0e9;
+  background: #0c2f40;
+  color: #e3eff5;
 }
 .play {
   display: grid;
@@ -82,7 +82,7 @@
   height: 44px;
   border-radius: 50%;
   background: #fff;
-  color: #12382c;
+  color: #0c2f40;
   transition: scale 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .play:hover {
@@ -115,7 +115,7 @@
   display: none;
 }
 .stops li[data-past="true"]::before {
-  background: #8fe0b4;
+  background: #81bfdb;
 }
 .stops button {
   position: relative;
@@ -133,8 +133,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #12382c;
-  border: 3px solid #8fe0b4;
+  background: #0c2f40;
+  border: 3px solid #81bfdb;
   transition:
     scale 220ms cubic-bezier(0.16, 1, 0.3, 1),
     background-color 200ms;
@@ -167,7 +167,7 @@
 }
 .stopDate {
   font-size: 12px;
-  color: #cfe3d8;
+  color: #cfe3ee;
   white-space: nowrap;
 }
 .stops button[aria-pressed="true"] .stopDate {
@@ -334,7 +334,7 @@
   color: var(--danger);
 }
 .reading li[data-tone="info"] {
-  background: rgb(23 63 49 / 0.05);
+  background: rgb(15 52 71 / 0.05);
   color: inherit;
 }
 .sheet {

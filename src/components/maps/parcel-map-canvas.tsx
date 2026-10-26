@@ -95,7 +95,7 @@ export default function ParcelMapCanvas({
     const layer = L.layerGroup().addTo(instance);
     history?.forEach((route) =>
       L.polyline(route, {
-        color: "#216c50",
+        color: "#1c6f8d",
         weight: 2,
         opacity: 0.35,
         dashArray: "4 6",
@@ -137,12 +137,12 @@ export default function ParcelMapCanvas({
       const base =
         outlineKind === "line" || outline.length < 3
           ? L.polyline(outline, {
-              color: "#173f31",
+              color: "#0f3447",
               weight: 3,
               interactive: false,
             })
           : L.polygon(outline, {
-              color: "#173f31",
+              color: "#0f3447",
               weight: 3,
               fillOpacity: zones.length ? 0 : 0.08,
               interactive: false,

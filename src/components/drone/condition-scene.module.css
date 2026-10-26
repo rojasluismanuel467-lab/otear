@@ -6,9 +6,9 @@
   overflow: hidden;
   background: radial-gradient(
     ellipse at 50% 38%,
-    #2f6b55 0,
-    #1c4638 55%,
-    #0f2a21 100%
+    #226784 0,
+    #123f55 55%,
+    #0a2533 100%
   );
   cursor: grab;
   touch-action: none;
@@ -38,7 +38,7 @@
   text-align: center;
   font-size: 14px;
   line-height: 1.6;
-  color: #d4e6da;
+  color: #d6e8f1;
   pointer-events: none;
 }
 .tools {
@@ -74,7 +74,7 @@
   max-width: 260px;
   padding: 6px 10px;
   border-radius: 10px;
-  background: #0f2a21;
+  background: #0a2533;
   box-shadow: 0 6px 18px rgb(0 0 0 / 0.3);
   color: #fff;
   font-size: 13px;
@@ -96,7 +96,7 @@
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
-  color: #0f2a21;
+  color: #0a2533;
   font-size: 14px;
   font-weight: 650;
   line-height: 1.35;
@@ -118,7 +118,7 @@
   border-radius: 999px;
   background: rgb(255 255 255 / 0.94);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.22);
-  color: #0f2a21;
+  color: #0a2533;
   font-size: 12px;
   font-weight: 650;
   white-space: nowrap;

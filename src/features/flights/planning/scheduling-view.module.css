@@ -21,9 +21,9 @@
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background:
-    linear-gradient(180deg, #f8faf6 0%, #f1f5ee 100%), var(--background);
+    linear-gradient(180deg, #f8faf6 0%, #f1f6f8 100%), var(--background);
   background-image:
-    linear-gradient(180deg, #f8faf6e6 0%, #f1f5eef2 100%),
+    linear-gradient(180deg, #f8faf6e6 0%, #f1f6f8f2 100%),
     url("/textures/contours-light.svg");
   background-size: auto, cover;
   scrollbar-width: thin;

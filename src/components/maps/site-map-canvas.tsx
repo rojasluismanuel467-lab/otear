@@ -60,12 +60,12 @@ export default function MapCanvas({
       const shape =
         site.sector === "roads"
           ? L.polyline(zone.outline, {
-              color: "#578b72",
+              color: "#6a9fb8",
               weight: 14,
               opacity: 0.3,
             })
           : L.polygon(zone.outline, {
-              color: "#428465",
+              color: "#4a8fae",
               weight: 1.5,
               fillOpacity: 0.13,
               dashArray: "5 5",
@@ -78,7 +78,7 @@ export default function MapCanvas({
     });
     if (flight?.route.length) {
       L.polyline(flight.route, {
-        color: "#216c50",
+        color: "#1c6f8d",
         weight: 3,
         dashArray: flight.status === "completed" ? undefined : "7 7",
         className: "flight-route-line",

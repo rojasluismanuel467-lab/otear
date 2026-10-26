@@ -21,7 +21,7 @@
   border-radius: 28px;
   box-shadow: var(--otear-shadow);
   background-image:
-    linear-gradient(180deg, #f8faf6e6 0%, #f1f5eef2 100%),
+    linear-gradient(180deg, #f8faf6e6 0%, #f1f6f8f2 100%),
     url("/textures/contours-light.svg");
   background-size: auto, cover;
   scrollbar-width: thin;

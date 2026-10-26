@@ -104,7 +104,7 @@
 .stageSegment,
 .stageChip,
 .stageViews {
-  background: rgb(10 31 24 / 0.78);
+  background: rgb(10 37 51 / 0.78);
   box-shadow: 0 6px 18px rgb(0 0 0 / 0.22);
 }
 .stageSegment {
@@ -121,14 +121,14 @@
   border-radius: 11px;
   font-size: 13px;
   font-weight: 600;
-  color: #cfe3d8;
+  color: #cfe3ee;
   transition:
     background-color 200ms,
     color 200ms;
 }
 .stageSegment button[aria-pressed="true"] {
   background: #fff;
-  color: #0f2a21;
+  color: #0a2533;
 }
 .stageSegment button:hover:not([aria-pressed="true"]),
 .stageViews button:hover {
@@ -143,7 +143,7 @@
 }
 .stageChip[aria-pressed="true"] {
   background: #fff;
-  color: #0f2a21;
+  color: #0a2533;
 }
 .stageViews {
   position: absolute;

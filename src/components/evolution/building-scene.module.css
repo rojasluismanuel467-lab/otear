@@ -7,8 +7,8 @@
   background: radial-gradient(
     ellipse at 50% 30%,
     #ffffff 0,
-    #f1f5ee 60%,
-    #e6ede2 100%
+    #f1f6f8 60%,
+    #e3edf2 100%
   );
   cursor: grab;
   touch-action: none;
