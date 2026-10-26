@@ -1,0 +1,6 @@
+interface:
+  display_name: "Otear: producto y experiencia"
+  short_description: "Decisiones de UI, UX y negocio para Otear"
+  default_prompt: "Usa $otear-product-design para definir o revisar esta funcionalidad de Otear según su tarea, ergonomía, lenguaje visual y valor de negocio."
+policy:
+  allow_implicit_invocation: true

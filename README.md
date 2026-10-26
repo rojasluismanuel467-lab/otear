@@ -54,6 +54,7 @@ Primero se construye y valida el frontend. Después se desarrollará el backend 
 - [Investigación de bases visuales](reports/Base%20visual%20para%20Otear.md) y [guía UX para las entregas](docs/UX_GUIDELINES.md).
 - [Movimiento y acabado: investigación](reports/Movimiento%20y%20acabado%20para%20Otear.md), [guía práctica](docs/MOTION_GUIDELINES.md) y [convenciones de frontend](docs/FRONTEND_CONVENTIONS.md).
 - [Instrucciones de entrada para agentes](AGENTS.md): alcance, fuentes y verificación acotada.
+- [Skill de producto y experiencia](.agents/skills/otear-product-design/SKILL.md): decisiones compartidas de UI, UX, ergonomía y negocio; se puede invocar como `$otear-product-design` cuando esté descubierta por el cliente, o seguir su ruta desde `AGENTS.md`.
 - [Matriz de Dorfman provisional](docs/context/matriz-dorfman-provisional.md): contexto sujeto a cambios; no amplía el alcance de esta etapa. Política de GPS pendiente y G6 sin confirmar.
 - [Módulos descritos por el usuario](docs/context/modulos-propuestos.md): alcance provisional; creación de pantallas pendiente de indicación expresa.
 - [Alcance multisector y feedback operativo](docs/context/alcance-multisector-y-feedback.md): sectores confirmados y necesidades nuevas por validar.

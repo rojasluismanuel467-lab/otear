@@ -8,6 +8,8 @@ Base: Next.js App Router, TypeScript estricto, Tailwind y HeroUI. El backend ser
 
 ## Antes de modificar
 
+Para diseñar, implementar o revisar una experiencia de Otear, aplicar la skill del proyecto `.agents/skills/otear-product-design/SKILL.md`. Es la entrada común para decisiones de UI, UX, ergonomía, iconos, imágenes y valor de negocio. Leer sus referencias solo cuando correspondan; no releerla ni ejecutar revisiones completas por cada edición mecánica.
+
 Leer `README.md` y solo las secciones relevantes de:
 
 - `docs/UX_GUIDELINES.md`: tareas, contexto, accesibilidad y honestidad de demo.
