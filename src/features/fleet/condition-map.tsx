@@ -12,10 +12,17 @@ import {
   Trash2,
   Wrench,
 } from "lucide-react";
-import { PartCard } from "./part-card";
+import { PartSheet } from "./part-sheet";
+import { StageDrawer } from "@/components/ui/stage-drawer";
+import { partHistory } from "./parts-history";
 import { UsagePanel } from "./usage-panel";
 import { batteryCycles } from "./fleet";
-import { heatColor, relativeUse, usageFor } from "./parts-usage";
+import {
+  heatColor,
+  relativeUse,
+  usageFor,
+  type UsageInput,
+} from "./parts-usage";
 import type {
   ConditionSource,
   ScenePart,
@@ -29,7 +36,13 @@ import { useDemo } from "@/features/demo/demo-context";
 import type { Aircraft, PartCondition, PartMark } from "@/features/demo/types";
 import { droneOptionFor } from "@/features/drones/drone-catalog";
 import { formatDate } from "@/lib/format";
-import { conditionInfo, sizeFactor, sizeLabels, summarize } from "./condition";
+import {
+  conditionInfo,
+  sizeFactor,
+  sizeLabels,
+  summarize,
+  worstCondition,
+} from "./condition";
 import {
   catalogForModelKey,
   groupLabels,
@@ -110,7 +123,7 @@ export function ConditionMap({
   }>();
   const [view, setView] = useState<{ name: ViewName; n: number }>();
   const [showParts, setShowParts] = useState(false);
-  const [lens, setLens] = useState<"state" | "usage">("state");
+  const [lens, setLens] = useState<"inspection" | "wear">("wear");
   const [selection, setSelection] = useState<{
     partId?: string;
     index?: number;
@@ -149,37 +162,31 @@ export function ConditionMap({
     () => partMarks.filter((mark) => mark.aircraftId === aircraft.id),
     [partMarks, aircraft.id],
   );
-  const usage = useMemo(
-    () =>
-      usageFor(catalog.parts, {
-        hours,
-        flights: flights
-          .filter(
-            (flight) =>
-              flight.aircraftId === aircraft.id &&
-              flight.status === "completed",
-          )
-          .map((flight) => ({ date: flight.date })),
-        records: maintenance.filter(
-          (record) => record.aircraftId === aircraft.id,
-        ),
-        plan: aircraft.plan,
-        batteries: batteries
-          .filter((pack) => pack.aircraftId === aircraft.id && !pack.retired)
-          .map((pack) => ({
-            cycles: batteryCycles(pack, flights),
-            maxCycles: pack.maxCycles,
-          })),
-      }),
-    [
-      catalog,
+  const usageInput = useMemo<UsageInput>(
+    () => ({
       hours,
-      flights,
-      maintenance,
-      batteries,
-      aircraft.id,
-      aircraft.plan,
-    ],
+      flights: flights
+        .filter(
+          (flight) =>
+            flight.aircraftId === aircraft.id && flight.status === "completed",
+        )
+        .map((flight) => ({ date: flight.date })),
+      records: maintenance.filter(
+        (record) => record.aircraftId === aircraft.id,
+      ),
+      plan: aircraft.plan,
+      batteries: batteries
+        .filter((pack) => pack.aircraftId === aircraft.id && !pack.retired)
+        .map((pack) => ({
+          cycles: batteryCycles(pack, flights),
+          maxCycles: pack.maxCycles,
+        })),
+    }),
+    [hours, flights, maintenance, batteries, aircraft.id, aircraft.plan],
+  );
+  const usage = useMemo(
+    () => usageFor(catalog.parts, usageInput),
+    [catalog, usageInput],
   );
   const relative = useMemo(
     () =>
@@ -205,13 +212,21 @@ export function ConditionMap({
       ? `${selection.partId}#${selection.index}`
       : undefined;
   const highlights = useMemo(() => {
-    if (lens === "usage") {
+    if (lens === "wear") {
       return catalog.parts.flatMap((part) =>
-        (part.anchors ?? []).map((anchor) => ({
-          point: anchor.point,
-          radius: 0.24,
-          color: heatColor(relative[part.id] ?? 0),
-        })),
+        (part.anchors ?? []).map((anchor) => {
+          const chosen =
+            selection?.partId === part.id &&
+            selection.point[0] === anchor.point[0] &&
+            selection.point[1] === anchor.point[1] &&
+            selection.point[2] === anchor.point[2];
+          return {
+            point: anchor.point,
+            radius: (anchor.radius ?? 0.24) * (chosen ? 1.25 : 1),
+            // The chosen part turns white so it stands out from the heat colours.
+            color: chosen ? "#f4f8f5" : heatColor(relative[part.id] ?? 0),
+          };
+        }),
       );
     }
     if (!selection) return [];
@@ -253,8 +268,87 @@ export function ConditionMap({
         ]
       : [],
   );
+  const history = useMemo(() => {
+    const use = selectedPart ? usage[selectedPart.id] : undefined;
+    if (!selectedPart || !use) return null;
+    return partHistory({
+      part: selectedPart,
+      usage: use,
+      usageInput,
+      flights: flights
+        .filter(
+          (flight) =>
+            flight.aircraftId === aircraft.id && flight.status === "completed",
+        )
+        .map((flight) => ({
+          id: flight.id,
+          date: flight.date,
+          title: flight.title,
+          duration: flight.duration,
+          pilot: flight.pilot,
+        })),
+      marks: marks.filter((mark) => mark.part === selectedPart.id),
+      today: DEMO_DATE,
+    });
+  }, [selectedPart, usage, usageInput, flights, marks, aircraft.id]);
+  const selectedCondition = selectedPart
+    ? worstCondition(
+        marks.filter(
+          (mark) => mark.part === selectedPart.id && !mark.resolvedOn,
+        ),
+      )
+    : undefined;
+  const callouts = useMemo(() => {
+    if (selection || editor) return [];
+    if (lens === "wear") {
+      const picked: {
+        id: string;
+        point: [number, number, number];
+        text: string;
+        color: string;
+      }[] = [];
+      const ranked = catalog.parts
+        .filter((part) => part.anchors?.length && usage[part.id]?.life > 0)
+        .sort((a, b) => usage[b.id].fraction - usage[a.id].fraction);
+      for (const part of ranked) {
+        const point = part.anchors![0].point;
+        // Tags of nearby parts would pile up on the model.
+        const crowded = picked.some(
+          (item) =>
+            Math.hypot(
+              item.point[0] - point[0],
+              item.point[1] - point[1],
+              item.point[2] - point[2],
+            ) < 0.8,
+        );
+        if (crowded) continue;
+        picked.push({
+          id: part.id,
+          point,
+          text: `${part.es} · ${Math.round(usage[part.id].fraction * 100)} %`,
+          color: heatColor(relative[part.id] ?? 0),
+        });
+        if (picked.length === 3) break;
+      }
+      return picked;
+    }
+    return marks
+      .filter(
+        (mark) =>
+          mark.point &&
+          mark.modelKey === modelKey &&
+          !mark.resolvedOn &&
+          mark.condition !== "ok",
+      )
+      .map((mark) => ({
+        id: mark.id,
+        point: mark.point!,
+        text: `${markPartName(mark)} · ${conditionInfo[mark.condition].label.toLowerCase()}`,
+        color: conditionInfo[mark.condition].color,
+      }));
+  }, [selection, editor, lens, catalog, usage, relative, marks, modelKey]);
   const draft =
-    lens === "state" && editor?.point && !editor.id
+    lens === "inspection" && editor?.point && !editor.id
       ? {
           point: editor.point,
           radius: sizeFactor[editor.size],
@@ -316,6 +410,21 @@ export function ConditionMap({
         point: mark.point!,
         n: (current?.n ?? 0) + 1,
       }));
+  }
+
+  function replacePart() {
+    if (!selectedPart) return;
+    addMaintenance({
+      aircraftId: aircraft.id,
+      date: DEMO_DATE,
+      kind: "component",
+      partId: selectedPart.id,
+      title: `${selectedPart.es}: cambio`,
+      description: "Registrado desde el mapa de piezas.",
+      hoursAt: hours,
+      performedBy: "",
+      cost: 0,
+    });
   }
 
   function save() {
@@ -414,442 +523,448 @@ export function ConditionMap({
 
   return (
     <div className={styles.map}>
-      <div className={styles.toolbar}>
-        <div
-          className={styles.segment}
-          role="group"
-          aria-label="Modelo que se muestra"
-        >
-          <button
-            type="button"
-            aria-pressed={mode === "model"}
-            onClick={() => {
-              setMode("model");
-              setEditor(null);
-            }}
-          >
-            Modelo de la aeronave
-          </button>
-          <button
-            type="button"
-            aria-pressed={mode === "scan"}
-            disabled={!scan}
-            onClick={() => {
-              setMode("scan");
-              setEditor(null);
-            }}
-          >
-            Mi escaneo{scan ? ` · ${scan.name}` : ""}
-          </button>
-        </div>
-        <label className={styles.upload}>
-          <ScanLine size={16} aria-hidden="true" />
-          Cargar escaneo (.glb)
-          <input
-            type="file"
-            accept=".glb,model/gltf-binary"
-            onChange={(event) => {
-              handleScan(event.target.files?.[0]);
-              event.target.value = "";
-            }}
-          />
-        </label>
-      </div>
       {scanError && (
         <p className={styles.error} role="alert">
           {scanError}
         </p>
       )}
 
-      <div className={styles.grid}>
-        <div ref={viewerRef} className={styles.viewer}>
-          <div className={styles.stage}>
-            <ConditionScene
-              key={sceneKey}
-              source={source}
-              marks={lens === "state" ? sceneMarks : []}
-              draft={draft}
-              highlights={highlights}
-              label={nameLabel}
-              selectedId={selectedId}
-              placing
-              parts={sceneParts}
-              showParts={showParts}
-              activePartId={activePart}
-              focus={focus}
-              view={view}
-              onPick={handlePick}
-              onPickPart={(id) => {
-                const [partId, index] = id.split("#");
-                const part = partById(catalog, partId);
-                if (part) showPart(part, Number(index));
-              }}
-              onSelect={(id) => {
-                const mark = marks.find((item) => item.id === id);
-                if (mark) select(mark);
-              }}
-              onStatus={setStatus}
-            />
-            <div className={styles.stageTop}>
-              <div
-                className={styles.stageSegment}
-                role="group"
-                aria-label="Qué mostrar"
-              >
-                <button
-                  type="button"
-                  aria-pressed={lens === "state"}
-                  onClick={() => setLens("state")}
+      <StageDrawer
+        drawerLabel="Detalle de la pieza"
+        stage={
+          <div ref={viewerRef} className={styles.viewer}>
+            <div className={styles.stage}>
+              <ConditionScene
+                key={sceneKey}
+                source={source}
+                marks={lens === "inspection" ? sceneMarks : []}
+                draft={draft}
+                highlights={highlights}
+                label={nameLabel}
+                callouts={callouts}
+                selectedId={selectedId}
+                placing
+                parts={sceneParts}
+                showParts={showParts}
+                activePartId={activePart}
+                focus={focus}
+                view={view}
+                onPick={handlePick}
+                onPickPart={(id) => {
+                  const [partId, index] = id.split("#");
+                  const part = partById(catalog, partId);
+                  if (part) showPart(part, Number(index));
+                }}
+                onSelect={(id) => {
+                  const mark = marks.find((item) => item.id === id);
+                  if (mark) select(mark);
+                }}
+                onStatus={setStatus}
+              />
+              <div className={styles.stageTop}>
+                <div
+                  className={styles.stageSegment}
+                  role="group"
+                  aria-label="Qué mostrar"
                 >
-                  Estado
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={lens === "usage"}
-                  onClick={() => {
-                    setLens("usage");
-                    setEditor(null);
-                  }}
-                >
-                  Uso
-                </button>
-              </div>
-              {sceneParts.length > 0 && (
-                <button
-                  type="button"
-                  className={styles.stageChip}
-                  aria-pressed={showParts}
-                  onClick={() => setShowParts((value) => !value)}
-                >
-                  {showParts ? (
-                    <EyeOff size={15} aria-hidden="true" />
-                  ) : (
-                    <Eye size={15} aria-hidden="true" />
-                  )}
-                  <span>{showParts ? "Ocultar partes" : "Mostrar partes"}</span>
-                </button>
-              )}
-            </div>
-            <div
-              className={styles.stageViews}
-              role="group"
-              aria-label="Vistas del modelo"
-            >
-              {viewButtons.map((item) => (
-                <button
-                  key={item.name}
-                  type="button"
-                  onClick={() =>
-                    setView((current) => ({
-                      name: item.name,
-                      n: (current?.n ?? 0) + 1,
-                    }))
-                  }
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className={styles.statusLine}>
-            {lens === "state" && (
-              <ul className={styles.legend} aria-label="Colores de estado">
-                {conditions.map((condition) => (
-                  <li key={condition}>
-                    <span
-                      aria-hidden="true"
-                      style={{ background: conditionInfo[condition].color }}
-                    />
-                    {conditionInfo[condition].label}
-                    <strong>{summary[condition]}</strong>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className={styles.hint}>
-              {status === "unavailable"
-                ? "Sin vista 3D: agregue las partes desde la lista."
-                : lens === "usage"
-                  ? "Azul: la parte menos usada. Naranja: la más usada."
-                  : "Toque una parte para ver su nombre; arrastre para girar."}
-            </p>
-          </div>
-        </div>
-
-        <div className={styles.panel}>
-          {selection && !editor && (
-            <PartCard
-              part={selectedPart}
-              where={selectedWhere}
-              usage={selectedPart ? usage[selectedPart.id] : undefined}
-              color={
-                lens === "usage" && selectedPart
-                  ? heatColor(relative[selectedPart.id] ?? 0)
-                  : "#2f6df6"
-              }
-              onMark={() => {
-                const point = selection.point;
-                if (lens === "usage") setLens("state");
-                setSelection(null);
-                if (selectedPart) markPart(selectedPart, point);
-                else
-                  setEditor({
-                    point,
-                    size: "m",
-                    part: "other",
-                    condition: "watch",
-                    note: "",
-                  });
-              }}
-              onClear={() => setSelection(null)}
-            />
-          )}
-
-          {lens === "usage" ? (
-            <UsagePanel
-              parts={catalog.parts}
-              usage={usage}
-              placed={
-                new Set(
-                  catalog.parts
-                    .filter((part) => part.anchors?.length)
-                    .map((part) => part.id),
-                )
-              }
-              selectedId={selection?.partId}
-              onSelect={(part) => {
-                if (part.anchors?.length) showPart(part, 0);
-                else setSelection(null);
-              }}
-            />
-          ) : editor ? (
-            <form
-              className={styles.editor}
-              onSubmit={(event) => {
-                event.preventDefault();
-                save();
-              }}
-            >
-              <h4>{editor.id ? "Editar parte" : "Nueva marca"}</h4>
-              <p className={styles.small}>
-                {editor.point
-                  ? "El punto está sobre el modelo; toque otro lugar para moverlo."
-                  : "Esta marca no tiene punto en el modelo."}
-              </p>
-              <label className={styles.field}>
-                <span className="field-label">Parte</span>
-                <select
-                  className="field-select"
-                  value={editor.part}
-                  onChange={(event) =>
-                    setEditor({ ...editor, part: event.target.value })
-                  }
-                >
-                  {(
-                    Object.keys(groupLabels) as (keyof typeof groupLabels)[]
-                  ).map((group) => {
-                    const list = catalog.parts.filter(
-                      (part) => part.group === group,
-                    );
-                    return list.length ? (
-                      <optgroup key={group} label={groupLabels[group]}>
-                        {list.map((part) => (
-                          <option key={part.id} value={part.id}>
-                            {partLabel(part)}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ) : null;
-                  })}
-                  <option value="other">Otra parte</option>
-                  {!partById(catalog, editor.part) &&
-                    editor.part !== "other" && (
-                      <option value={editor.part}>{editor.part}</option>
+                  <button
+                    type="button"
+                    aria-pressed={lens === "wear"}
+                    onClick={() => {
+                      setLens("wear");
+                      setEditor(null);
+                    }}
+                  >
+                    Desgaste
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={lens === "inspection"}
+                    onClick={() => setLens("inspection")}
+                  >
+                    Inspección
+                  </button>
+                </div>
+                {sceneParts.length > 0 && (
+                  <button
+                    type="button"
+                    className={styles.stageChip}
+                    aria-pressed={showParts}
+                    onClick={() => setShowParts((value) => !value)}
+                  >
+                    {showParts ? (
+                      <EyeOff size={15} aria-hidden="true" />
+                    ) : (
+                      <Eye size={15} aria-hidden="true" />
                     )}
-                </select>
-              </label>
-              <fieldset className={styles.states}>
-                <legend className="field-label">Estado</legend>
-                {conditions.map((condition) => (
-                  <label key={condition} data-condition={condition}>
-                    <input
-                      type="radio"
-                      name="condition"
-                      checked={editor.condition === condition}
-                      onChange={() => setEditor({ ...editor, condition })}
-                    />
                     <span>
-                      <i
+                      {showParts ? "Ocultar partes" : "Mostrar partes"}
+                    </span>
+                  </button>
+                )}
+              </div>
+              <div
+                className={styles.stageViews}
+                role="group"
+                aria-label="Vistas del modelo"
+              >
+                {viewButtons.map((item) => (
+                  <button
+                    key={item.name}
+                    type="button"
+                    onClick={() =>
+                      setView((current) => ({
+                        name: item.name,
+                        n: (current?.n ?? 0) + 1,
+                      }))
+                    }
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={styles.statusLine}>
+              {lens === "inspection" && (
+                <ul className={styles.legend} aria-label="Colores de estado">
+                  {conditions.map((condition) => (
+                    <li key={condition}>
+                      <span
                         aria-hidden="true"
                         style={{ background: conditionInfo[condition].color }}
                       />
                       {conditionInfo[condition].label}
-                    </span>
-                  </label>
-                ))}
-                <small>{conditionInfo[editor.condition].hint}</small>
-              </fieldset>
-              {editor.point && (
+                      <strong>{summary[condition]}</strong>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className={styles.hint}>
+                {status === "unavailable"
+                  ? "Sin vista 3D: agregue las partes desde la lista."
+                  : lens === "wear"
+                    ? "Azul: la pieza menos usada. Naranja: la más usada. Toque una pieza para ver su ficha."
+                    : "Toque una parte para ver su nombre; arrastre para girar."}
+              </p>
+            </div>
+            <div className={styles.toolbar}>
+              <div
+                className={styles.segment}
+                role="group"
+                aria-label="Modelo que se muestra"
+              >
+                <button
+                  type="button"
+                  aria-pressed={mode === "model"}
+                  onClick={() => {
+                    setMode("model");
+                    setEditor(null);
+                  }}
+                >
+                  Modelo de la aeronave
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "scan"}
+                  disabled={!scan}
+                  onClick={() => {
+                    setMode("scan");
+                    setEditor(null);
+                  }}
+                >
+                  Mi escaneo{scan ? ` · ${scan.name}` : ""}
+                </button>
+              </div>
+              <label className={styles.upload}>
+                <ScanLine size={16} aria-hidden="true" />
+                Cargar escaneo (.glb)
+                <input
+                  type="file"
+                  accept=".glb,model/gltf-binary"
+                  onChange={(event) => {
+                    handleScan(event.target.files?.[0]);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+        }
+        drawer={
+          <>
+            {editor ? (
+              <form
+                className={styles.editor}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  save();
+                }}
+              >
+                <h4>{editor.id ? "Editar parte" : "Nueva marca"}</h4>
+                <p className={styles.small}>
+                  {editor.point
+                    ? "El punto está sobre el modelo; toque otro lugar para moverlo."
+                    : "Esta marca no tiene punto en el modelo."}
+                </p>
                 <label className={styles.field}>
-                  <span className="field-label">Tamaño de la zona</span>
+                  <span className="field-label">Parte</span>
                   <select
                     className="field-select"
-                    value={editor.size}
+                    value={editor.part}
                     onChange={(event) =>
+                      setEditor({ ...editor, part: event.target.value })
+                    }
+                  >
+                    {(
+                      Object.keys(groupLabels) as (keyof typeof groupLabels)[]
+                    ).map((group) => {
+                      const list = catalog.parts.filter(
+                        (part) => part.group === group,
+                      );
+                      return list.length ? (
+                        <optgroup key={group} label={groupLabels[group]}>
+                          {list.map((part) => (
+                            <option key={part.id} value={part.id}>
+                              {partLabel(part)}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ) : null;
+                    })}
+                    <option value="other">Otra parte</option>
+                    {!partById(catalog, editor.part) &&
+                      editor.part !== "other" && (
+                        <option value={editor.part}>{editor.part}</option>
+                      )}
+                  </select>
+                </label>
+                <fieldset className={styles.states}>
+                  <legend className="field-label">Estado</legend>
+                  {conditions.map((condition) => (
+                    <label key={condition} data-condition={condition}>
+                      <input
+                        type="radio"
+                        name="condition"
+                        checked={editor.condition === condition}
+                        onChange={() => setEditor({ ...editor, condition })}
+                      />
+                      <span>
+                        <i
+                          aria-hidden="true"
+                          style={{ background: conditionInfo[condition].color }}
+                        />
+                        {conditionInfo[condition].label}
+                      </span>
+                    </label>
+                  ))}
+                  <small>{conditionInfo[editor.condition].hint}</small>
+                </fieldset>
+                {editor.point && (
+                  <label className={styles.field}>
+                    <span className="field-label">Tamaño de la zona</span>
+                    <select
+                      className="field-select"
+                      value={editor.size}
+                      onChange={(event) =>
+                        setEditor({
+                          ...editor,
+                          size: event.target.value as PartMark["size"],
+                        })
+                      }
+                    >
+                      {(["s", "m", "l"] as const).map((size) => (
+                        <option key={size} value={size}>
+                          {sizeLabels[size]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <label className={styles.field}>
+                  <span className="field-label">Qué se vio</span>
+                  <textarea
+                    className="field-input"
+                    rows={3}
+                    value={editor.note}
+                    placeholder="Por ejemplo: muesca en el borde de la hélice"
+                    onChange={(event) =>
+                      setEditor({ ...editor, note: event.target.value })
+                    }
+                  />
+                </label>
+                <div className={styles.photo}>
+                  <label className={styles.upload}>
+                    <Camera size={16} aria-hidden="true" />
+                    {editor.photo ? "Cambiar foto" : "Agregar foto"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(event) => {
+                        void handlePhoto(event.target.files?.[0]);
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {editor.photo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={editor.photo.dataUrl}
+                      alt={`Foto de ${partById(catalog, editor.part)?.es ?? editor.part}`}
+                      width={72}
+                      height={72}
+                    />
+                  )}
+                </div>
+                {editor.photo && (
+                  <small className={styles.small}>
+                    Huella SHA-256: {editor.photo.hash.slice(0, 16)}…
+                  </small>
+                )}
+                {photoError && (
+                  <p className={styles.error} role="alert">
+                    {photoError}
+                  </p>
+                )}
+                <div className={styles.actions}>
+                  <Button type="submit" variant="primary">
+                    Guardar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onPress={() => setEditor(null)}
+                  >
+                    Cancelar
+                  </Button>
+                  {editor.id && (
+                    <Button type="button" variant="ghost" onPress={remove}>
+                      <Trash2 size={15} aria-hidden="true" />
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
+                {editor.id &&
+                  editor.condition !== "ok" &&
+                  !marks.find((mark) => mark.id === editor.id)?.resolvedOn && (
+                    <Button type="button" variant="secondary" onPress={resolve}>
+                      <Wrench size={15} aria-hidden="true" />
+                      Ya se cambió o reparó
+                    </Button>
+                  )}
+              </form>
+            ) : selection ? (
+              <PartSheet
+                part={selectedPart}
+                where={selectedWhere}
+                usage={selectedPart ? usage[selectedPart.id] : undefined}
+                relative={selectedPart ? (relative[selectedPart.id] ?? 0) : 0}
+                condition={selectedCondition}
+                events={history?.events ?? []}
+                series={history?.series ?? []}
+                today={DEMO_DATE}
+                lastService={history?.last}
+                onMark={() => {
+                  const point = selection!.point;
+                  setLens("inspection");
+                  setSelection(null);
+                  if (selectedPart) markPart(selectedPart, point);
+                  else
+                    setEditor({
+                      point,
+                      size: "m",
+                      part: "other",
+                      condition: "watch",
+                      note: "",
+                    });
+                }}
+                onReplace={replacePart}
+                onClear={() => setSelection(null)}
+              />
+            ) : lens === "wear" ? (
+              <UsagePanel
+                parts={catalog.parts}
+                usage={usage}
+                placed={
+                  new Set(
+                    catalog.parts
+                      .filter((part) => part.anchors?.length)
+                      .map((part) => part.id),
+                  )
+                }
+                onSelect={(part) => {
+                  if (part.anchors?.length) showPart(part, 0);
+                }}
+              />
+            ) : (
+              <>
+                <div className={styles.listHeader}>
+                  <h4>Partes registradas</h4>
+                  <Button
+                    variant="secondary"
+                    onPress={() =>
                       setEditor({
-                        ...editor,
-                        size: event.target.value as PartMark["size"],
+                        size: "m",
+                        part: catalog.parts[0]?.id ?? "other",
+                        condition: "watch",
+                        note: "",
                       })
                     }
                   >
-                    {(["s", "m", "l"] as const).map((size) => (
-                      <option key={size} value={size}>
-                        {sizeLabels[size]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              <label className={styles.field}>
-                <span className="field-label">Qué se vio</span>
-                <textarea
-                  className="field-input"
-                  rows={3}
-                  value={editor.note}
-                  placeholder="Por ejemplo: muesca en el borde de la hélice"
-                  onChange={(event) =>
-                    setEditor({ ...editor, note: event.target.value })
-                  }
-                />
-              </label>
-              <div className={styles.photo}>
-                <label className={styles.upload}>
-                  <Camera size={16} aria-hidden="true" />
-                  {editor.photo ? "Cambiar foto" : "Agregar foto"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={(event) => {
-                      void handlePhoto(event.target.files?.[0]);
-                      event.target.value = "";
-                    }}
-                  />
-                </label>
-                {editor.photo && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={editor.photo.dataUrl}
-                    alt={`Foto de ${partById(catalog, editor.part)?.es ?? editor.part}`}
-                    width={72}
-                    height={72}
-                  />
-                )}
-              </div>
-              {editor.photo && (
-                <small className={styles.small}>
-                  Huella SHA-256: {editor.photo.hash.slice(0, 16)}…
-                </small>
-              )}
-              {photoError && (
-                <p className={styles.error} role="alert">
-                  {photoError}
-                </p>
-              )}
-              <div className={styles.actions}>
-                <Button type="submit" variant="primary">
-                  Guardar
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onPress={() => setEditor(null)}
-                >
-                  Cancelar
-                </Button>
-                {editor.id && (
-                  <Button type="button" variant="ghost" onPress={remove}>
-                    <Trash2 size={15} aria-hidden="true" />
-                    Eliminar
+                    <Plus size={15} aria-hidden="true" />
+                    Agregar desde la lista
                   </Button>
-                )}
-              </div>
-              {editor.id &&
-                editor.condition !== "ok" &&
-                !marks.find((mark) => mark.id === editor.id)?.resolvedOn && (
-                  <Button type="button" variant="secondary" onPress={resolve}>
-                    <Wrench size={15} aria-hidden="true" />
-                    Ya se cambió o reparó
-                  </Button>
-                )}
-            </form>
-          ) : (
-            <>
-              <div className={styles.listHeader}>
-                <h4>Partes registradas</h4>
-                <Button
-                  variant="secondary"
-                  onPress={() =>
-                    setEditor({
-                      size: "m",
-                      part: catalog.parts[0]?.id ?? "other",
-                      condition: "watch",
-                      note: "",
-                    })
-                  }
-                >
-                  <Plus size={15} aria-hidden="true" />
-                  Agregar desde la lista
-                </Button>
-              </div>
-              {marks.length ? (
-                <ol className={styles.list}>
-                  {marks.map((mark, index) => {
-                    const shown = mark.resolvedOn ? "ok" : mark.condition;
-                    const elsewhere = mark.point && mark.modelKey !== modelKey;
-                    return (
-                      <li key={mark.id}>
-                        <button
-                          type="button"
-                          aria-pressed={mark.id === selectedId}
-                          onClick={() => select(mark)}
-                        >
-                          <span
-                            className={styles.number}
-                            style={{ background: conditionInfo[shown].color }}
+                </div>
+                {marks.length ? (
+                  <ol className={styles.list}>
+                    {marks.map((mark, index) => {
+                      const shown = mark.resolvedOn ? "ok" : mark.condition;
+                      const elsewhere =
+                        mark.point && mark.modelKey !== modelKey;
+                      return (
+                        <li key={mark.id}>
+                          <button
+                            type="button"
+                            aria-pressed={mark.id === selectedId}
+                            onClick={() => select(mark)}
                           >
-                            {mark.point ? index + 1 : "–"}
-                          </span>
-                          <span className={styles.itemBody}>
-                            <strong>
-                              {markPartName(mark)} ·{" "}
-                              {mark.resolvedOn
-                                ? "resuelta"
-                                : conditionInfo[
-                                    mark.condition
-                                  ].label.toLowerCase()}
-                            </strong>
-                            <span>{mark.note || "Sin nota"}</span>
-                            <small>
-                              {formatDate(mark.date)} · {mark.by}
-                              {mark.photo ? " · con foto" : ""}
-                              {elsewhere ? " · puesta en otro modelo" : ""}
-                            </small>
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
-              ) : (
-                <p className={styles.small}>
-                  Aún no hay partes marcadas. Toque el modelo para empezar.
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+                            <span
+                              className={styles.number}
+                              style={{ background: conditionInfo[shown].color }}
+                            >
+                              {mark.point ? index + 1 : "–"}
+                            </span>
+                            <span className={styles.itemBody}>
+                              <strong>
+                                {markPartName(mark)} ·{" "}
+                                {mark.resolvedOn
+                                  ? "resuelta"
+                                  : conditionInfo[
+                                      mark.condition
+                                    ].label.toLowerCase()}
+                              </strong>
+                              <span>{mark.note || "Sin nota"}</span>
+                              <small>
+                                {formatDate(mark.date)} · {mark.by}
+                                {mark.photo ? " · con foto" : ""}
+                                {elsewhere ? " · puesta en otro modelo" : ""}
+                              </small>
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                ) : (
+                  <p className={styles.small}>
+                    Aún no hay partes marcadas. Toque el modelo para empezar.
+                  </p>
+                )}
+              </>
+            )}
+          </>
+        }
+      />
 
       <details className={styles.parts}>
         <summary>

@@ -274,6 +274,7 @@ export function ConditionScene({
   draft,
   highlights,
   label,
+  callouts,
   parts,
   showParts,
   activePartId,
@@ -292,6 +293,13 @@ export function ConditionScene({
   draft?: Omit<SceneMark, "id" | "label"> | null;
   /** Coloured areas without a pin: the selected part, or a heat map. */
   highlights?: Omit<SceneMark, "id" | "label">[];
+  /** Short tags that stay next to the parts that need attention. */
+  callouts?: {
+    id: string;
+    point: [number, number, number];
+    text: string;
+    color: string;
+  }[];
   /** Name shown next to a point, for the selected part. */
   label?: { point: [number, number, number]; text: string } | null;
   /** Parts of the manual with a known place on this model. */
@@ -314,6 +322,8 @@ export function ConditionScene({
   const container = useRef<HTMLDivElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
   const nameTag = useRef<HTMLDivElement>(null);
+  const calloutEls = useRef(new Map<string, HTMLDivElement>());
+  const calloutsRef = useRef(callouts);
   const sourceRef = useRef(source);
   const live = useRef({ onPick, onSelect, onPickPart, onStatus, parts });
   const api = useRef<{
@@ -337,6 +347,7 @@ export function ConditionScene({
 
   useEffect(() => {
     live.current = { onPick, onSelect, onPickPart, onStatus, parts };
+    calloutsRef.current = callouts;
   });
 
   useEffect(() => {
@@ -453,7 +464,7 @@ export function ConditionScene({
       );
       const vertical = Math.PI / 12;
       const half = Math.min(vertical, Math.atan(Math.tan(vertical) * aspect));
-      return ((fitRadius / Math.sin(half)) * 0.64) / zoom;
+      return ((fitRadius / Math.sin(half)) * 0.54) / zoom;
     };
 
     const resize = () => {
@@ -712,6 +723,17 @@ export function ConditionScene({
             extent * 0.07,
           );
       });
+      calloutsRef.current?.forEach((callout) => {
+        const el = calloutEls.current.get(callout.id);
+        if (!el) return;
+        toward.set(...callout.point).project(camera);
+        const w = node.clientWidth;
+        const h = node.clientHeight;
+        const x = (toward.x * 0.5 + 0.5) * w;
+        const y = (-toward.y * 0.5 + 0.5) * h;
+        el.style.transform = `translate(${Math.min(Math.max(x + 12, 6), w - el.offsetWidth - 6)}px, ${Math.min(Math.max(y - 34, 6), h - 40)}px)`;
+        el.dataset.show = toward.z < 1 ? "true" : "false";
+      });
       const tag = nameTag.current;
       if (tag && labelTarget) {
         toward.set(...labelTarget.point).project(camera);
@@ -857,6 +879,21 @@ export function ConditionScene({
       aria-label="Modelo 3D de la aeronave. Arrástrelo para girarlo; toque una parte para marcarla. Flechas giran, más y menos acercan, Inicio restablece. La lista de partes tiene la misma información."
       onKeyDown={handleKey}
     >
+      {callouts?.map((callout) => (
+        <div
+          key={callout.id}
+          ref={(el) => {
+            if (el) calloutEls.current.set(callout.id, el);
+            else calloutEls.current.delete(callout.id);
+          }}
+          className={styles.callout}
+          data-show="false"
+          aria-hidden="true"
+        >
+          <i style={{ background: callout.color }} />
+          {callout.text}
+        </div>
+      ))}
       <div
         ref={nameTag}
         className={styles.nameTag}

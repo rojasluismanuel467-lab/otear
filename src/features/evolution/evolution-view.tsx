@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Button } from "@heroui/react";
-import { CircleCheck, Info, Pause, Play, TriangleAlert } from "lucide-react";
+import { CircleCheck, Info, TriangleAlert } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
+import { StageDrawer } from "@/components/ui/stage-drawer";
 import { ParcelMap } from "@/components/maps/parcel-map";
 import { zonePalette } from "@/components/maps/zone-palette";
 import { useDemo } from "@/features/demo/demo-context";
@@ -20,8 +20,11 @@ import {
   vigorColor,
   type CapturePoint,
 } from "./evolution";
+import { issuesFor, type Issue } from "./issues";
+import { IssueSheet } from "./issue-sheet";
 import { LineChart, type ChartSeries } from "./line-chart";
 import { narrate, type Line } from "./narrative";
+import { TimelineBar } from "./timeline-bar";
 import styles from "./evolution.module.css";
 
 const BuildingScene = dynamic(
@@ -50,15 +53,15 @@ const number = (value: number, digits = 1) =>
 function valueText(site: Site, point: CapturePoint) {
   if (site.sector === "construction") {
     const levels = point.levels ?? 0;
-    return `${number(levels)} ${levels === 1 ? "nivel" : "niveles"}`;
+    return `${number(levels)} ${levels === 1 ? "nivel" : "niveles"} construidos`;
   }
   if (site.sector === "roads") return `${number(point.mean, 0)} % de avance`;
-  if (site.sector === "agriculture") return `Vigor ${fixed(point.mean)}`;
+  if (site.sector === "agriculture") return `Vigor medio ${fixed(point.mean)}`;
   const total = Object.values(point.values).reduce(
     (sum, value) => sum + value,
     0,
   );
-  return `${total} ${total === 1 ? "novedad" : "novedades"}`;
+  return `${total} ${total === 1 ? "novedad" : "novedades"} en total`;
 }
 
 const toneIcon = {
@@ -78,7 +81,7 @@ export function EvolutionView() {
     <div className={styles.view}>
       <PageHeading
         title="Evolución"
-        description={`Cómo ha cambiado ${site.name} vuelo a vuelo: qué se construyó, qué avanzó y qué se quedó quieto.`}
+        description={`Cómo ha cambiado ${site.name} vuelo a vuelo, y dónde está pasando algo.`}
       />
       {captures.length < 2 ? (
         <EmptyState
@@ -99,10 +102,12 @@ function EvolutionContent({
   site: Site;
   captures: CapturePoint[];
 }) {
+  const { findings } = useDemo();
   const last = captures.length - 1;
   const [picked, setPicked] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [refPicked, setRefPicked] = useState(0);
+  const [issueId, setIssueId] = useState<string>();
   const index = picked ?? last;
   const refIndex = Math.min(refPicked, Math.max(index - 1, 0));
   const isPlaying = playing && index < last;
@@ -122,163 +127,212 @@ function EvolutionContent({
     return () => clearInterval(timer);
   }, [isPlaying, last]);
 
+  const issues = useMemo(
+    () =>
+      issuesFor({
+        site,
+        captures,
+        index,
+        referenceIndex: refIndex,
+        findings,
+        zoneNames,
+      }),
+    [site, captures, index, refIndex, findings, zoneNames],
+  );
+  const counts = useMemo(
+    () =>
+      captures.map(
+        (_, i) =>
+          issuesFor({
+            site,
+            captures,
+            index: i,
+            referenceIndex: Math.min(refPicked, Math.max(i - 1, 0)),
+            findings,
+            zoneNames,
+          }).length,
+      ),
+    [site, captures, findings, zoneNames, refPicked],
+  );
   const lines = useMemo(
     () =>
       narrate({ site, captures, index, referenceIndex: refIndex, zoneNames }),
     [site, captures, index, refIndex, zoneNames],
   );
+  const selected = issues.find((item) => item.id === issueId);
 
+  function go(next: number) {
+    setPlaying(false);
+    setPicked(next);
+  }
   function togglePlay() {
     if (isPlaying) return setPlaying(false);
     if (index >= last) setPicked(0);
     setPlaying(true);
   }
 
+  const target = site.schedule?.targetLevels ?? 8;
+  const sheetSeries = selected
+    ? seriesOf(site, captures.slice(0, index + 1), selected)
+    : null;
+
   return (
-    <section className={`surface ${styles.stage}`}>
-      <aside
-        className={`rail-panel ${styles.rail}`}
-        aria-label="Vuelos en el tiempo"
-      >
-        <header className={styles.railHeader}>
-          <h2>Línea de tiempo</h2>
+    <section className={`surface ${styles.surface}`}>
+      <header className={styles.head}>
+        <div>
+          <h2>{site.name}</h2>
           <p>
-            {captures.length} vuelos ·{" "}
-            {formatDate(captures[0].date, { day: "numeric", month: "short" })} a{" "}
-            {formatDate(captures[last].date, {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
+            {formatDate(current.date)} · {valueText(site, current)}
           </p>
-        </header>
-        <ol className={styles.dates} aria-label="Vuelos medidos">
-          {captures.map((point, i) => (
-            <li
-              key={point.flightId}
-              style={{ "--i": i } as React.CSSProperties}
-            >
-              <button
-                type="button"
-                className={styles.dateRow}
-                aria-pressed={i === index}
-                data-reference={
-                  i === refIndex && i !== index ? "true" : undefined
-                }
-                onClick={() => {
-                  setPlaying(false);
-                  setPicked(i);
-                }}
-              >
-                <span className={styles.dot} aria-hidden="true" />
-                <span className={styles.dateBody}>
-                  <strong>
-                    {formatDate(point.date, {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </strong>
-                  <span>{valueText(site, point)}</span>
-                  {i === refIndex && i !== index && (
-                    <small>Fecha de comparación</small>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      </aside>
+        </div>
+        <span
+          className={styles.count}
+          data-tone={issues.length ? "warning" : "good"}
+        >
+          {issues.length
+            ? `${issues.length} ${issues.length === 1 ? "problema" : "problemas"} en este vuelo`
+            : "Sin problemas en este vuelo"}
+        </span>
+      </header>
 
-      <div className={styles.detail}>
-        <div className={styles.controls}>
-          <Button
-            variant="secondary"
-            onPress={togglePlay}
-            aria-label={
-              isPlaying ? "Pausar la reproducción" : "Reproducir la evolución"
-            }
-          >
-            {isPlaying ? (
-              <Pause size={16} aria-hidden="true" />
+      <div className={styles.body}>
+        <StageDrawer
+          drawerLabel="Detalle de la evolución"
+          stage={
+            <>
+              <div className={styles.stage}>
+                {site.sector === "construction" ? (
+                  <BuildingScene
+                    levels={current.levels ?? 0}
+                    planned={target}
+                    reference={index > 0 ? (reference.levels ?? 0) : null}
+                    markers={issues.map((issue) =>
+                      buildingMarker(site, issue, current, target),
+                    )}
+                    selectedMarkerId={issueId}
+                    onMarkerSelect={setIssueId}
+                  />
+                ) : (
+                  <MapStage
+                    site={site}
+                    current={current}
+                    captures={captures}
+                    issues={issues}
+                    selectedId={issueId}
+                    onSelect={setIssueId}
+                  />
+                )}
+              </div>
+              <TimelineBar
+                dates={captures.map((point) => point.date)}
+                counts={counts}
+                index={index}
+                referenceIndex={refIndex}
+                playing={isPlaying}
+                onSelect={go}
+                onTogglePlay={togglePlay}
+              />
+              <Legend site={site} />
+            </>
+          }
+          drawer={
+            selected && sheetSeries ? (
+              <IssueSheet
+                issue={selected}
+                series={sheetSeries.points}
+                seriesLabel={sheetSeries.label}
+                format={sheetSeries.format}
+                yDomain={sheetSeries.yDomain}
+                onBack={() => setIssueId(undefined)}
+              />
             ) : (
-              <Play size={16} aria-hidden="true" />
-            )}
-            {isPlaying ? "Pausar" : "Reproducir"}
-          </Button>
-          <label className={styles.slider}>
-            <span>Fecha: {formatDate(current.date)}</span>
-            <input
-              type="range"
-              min={0}
-              max={last}
-              step={1}
-              value={index}
-              onChange={(event) => {
-                setPlaying(false);
-                setPicked(Number(event.target.value));
-              }}
-              aria-valuetext={`Vuelo ${index + 1} de ${captures.length}, ${formatDate(current.date)}`}
-            />
-          </label>
-          <label className={styles.compare}>
-            <span>Comparar con</span>
-            <select
-              className="field-select"
-              value={refIndex}
-              disabled={index === 0}
-              onChange={(event) => setRefPicked(Number(event.target.value))}
-            >
-              {captures.slice(0, Math.max(index, 1)).map((point, i) => (
-                <option key={point.flightId} value={i}>
-                  {formatDate(point.date, {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className={styles.visual} key={site.sector}>
-          {site.sector === "construction" && (
-            <ConstructionVisual
-              site={site}
-              current={current}
-              reference={index > 0 ? reference : undefined}
-              zoneNames={zoneNames}
-            />
-          )}
-          {site.sector === "roads" && (
-            <RoadsVisual site={site} current={current} />
-          )}
-          {(site.sector === "agriculture" || site.sector === "security") && (
-            <ZoneMapVisual site={site} current={current} captures={captures} />
-          )}
-        </div>
-
-        <section className={styles.block} aria-labelledby="reading-title">
-          <h3 id="reading-title">Qué dicen los datos</h3>
-          <ul className={styles.reading}>
-            {lines.map((line, i) => (
-              <ReadingLine key={i} line={line} />
-            ))}
-          </ul>
-        </section>
+              <div className={styles.overview}>
+                <header>
+                  <h3>Qué pasa en este vuelo</h3>
+                  <p>
+                    Toque un marcador del escenario o un problema de la lista.
+                  </p>
+                </header>
+                <label className={styles.compare}>
+                  <span>Comparar con</span>
+                  <select
+                    className="field-select"
+                    value={refIndex}
+                    disabled={index === 0}
+                    onChange={(event) =>
+                      setRefPicked(Number(event.target.value))
+                    }
+                  >
+                    {captures.slice(0, Math.max(index, 1)).map((point, i) => (
+                      <option key={point.flightId} value={i}>
+                        {formatDate(point.date, {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {issues.length ? (
+                  <ul
+                    className={styles.issueList}
+                    aria-label="Problemas detectados"
+                  >
+                    {issues.map((issue) => (
+                      <li key={issue.id}>
+                        <button
+                          type="button"
+                          onClick={() => setIssueId(issue.id)}
+                        >
+                          <span
+                            className={styles.issueDot}
+                            data-tone={issue.tone}
+                            aria-hidden="true"
+                          >
+                            !
+                          </span>
+                          <span className={styles.issueText}>
+                            <strong>{issue.title}</strong>
+                            <small>{issue.summary}</small>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.allGood}>
+                    <CircleCheck size={18} aria-hidden="true" />
+                    No se detectaron problemas en este vuelo.
+                  </p>
+                )}
+                <details className={styles.reading}>
+                  <summary>Lectura completa de los datos</summary>
+                  <ul>
+                    {lines.map((line, i) => (
+                      <ReadingLine key={i} line={line} />
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            )
+          }
+        />
 
         <section className={styles.block} aria-labelledby="curve-title">
           <h3 id="curve-title">{chartTitle(site)}</h3>
           <EvolutionChart site={site} captures={captures} index={index} />
         </section>
 
-        <p className={styles.note}>
-          Los valores por zona son de ejemplo y las figuras son esquemáticas, no
-          reconstrucciones a partir de imágenes. Con datos reales, cada vuelo
-          aportaría su ortomosaico, modelo de superficie o índice NDVI ya
-          procesado, alineado con puntos de control.
-        </p>
+        <details className={styles.note}>
+          <summary>Sobre estos datos</summary>
+          <p>
+            Los valores por zona son de ejemplo y las figuras son esquemáticas,
+            no reconstrucciones a partir de imágenes. Con datos reales, cada
+            vuelo aportaría su ortomosaico, modelo de superficie o índice NDVI
+            ya procesado, alineado con puntos de control.
+          </p>
+        </details>
       </div>
     </section>
   );
@@ -292,6 +346,155 @@ function ReadingLine({ line }: { line: Line }) {
       <span>{line.text}</span>
     </li>
   );
+}
+
+/** Values of the zone an issue belongs to (or of the whole site) up to the capture shown. */
+function seriesOf(site: Site, upTo: CapturePoint[], issue: Issue) {
+  if (issue.zoneId) {
+    const id = issue.zoneId;
+    const points = upTo.flatMap((point) =>
+      point.values[id] === undefined
+        ? []
+        : [{ date: point.date, value: point.values[id] }],
+    );
+    if (site.sector === "agriculture")
+      return {
+        points,
+        label: "Vigor de la zona",
+        format: fixed,
+        yDomain: [0.3, 0.9] as [number, number],
+      };
+    if (site.sector === "security")
+      return {
+        points,
+        label: "Novedades de la zona",
+        format: (value: number) => number(value, 0),
+        yDomain: [0, Math.max(2, ...points.map((p) => p.value))] as [
+          number,
+          number,
+        ],
+      };
+    return {
+      points,
+      label: "Avance de la zona",
+      format: (value: number) => `${number(value, 0)} %`,
+      yDomain: [0, 100] as [number, number],
+    };
+  }
+  const levels = site.sector === "construction";
+  return {
+    points: upTo.map((point) => ({
+      date: point.date,
+      value: levels ? (point.levels ?? 0) : point.mean,
+    })),
+    label: levels ? "Niveles construidos" : "Avance medio",
+    format: (value: number) =>
+      levels ? number(value, 1) : `${number(value, 0)} %`,
+    yDomain: [0, levels ? (site.schedule?.targetLevels ?? 8) : 100] as [
+      number,
+      number,
+    ],
+  };
+}
+
+/** Where an issue sits on the schematic building: by front along its width, by progress in height. */
+function buildingMarker(
+  site: Site,
+  issue: Issue,
+  current: CapturePoint,
+  target: number,
+) {
+  const zoneIndex = issue.zoneId
+    ? site.zones.findIndex((zone) => zone.id === issue.zoneId)
+    : -1;
+  const count = Math.max(site.zones.length, 1);
+  const x =
+    zoneIndex < 0 || count === 1 ? 0 : (zoneIndex / (count - 1)) * 2 - 1;
+  const level =
+    issue.kind === "delay" || zoneIndex < 0
+      ? (current.levels ?? 0) + 0.4
+      : Math.max(0.5, ((current.values[issue.zoneId!] ?? 0) / 100) * target);
+  return { id: issue.id, x, level, tone: issue.tone, label: issue.title };
+}
+
+function MapStage({
+  site,
+  current,
+  captures,
+  issues,
+  selectedId,
+  onSelect,
+}: {
+  site: Site;
+  current: CapturePoint;
+  captures: CapturePoint[];
+  issues: Issue[];
+  selectedId?: string;
+  onSelect: (id: string) => void;
+}) {
+  const max = Math.max(1, ...captures.flatMap((p) => Object.values(p.values)));
+  const colors = Object.fromEntries(
+    site.zones.map((zone) => {
+      const value = current.values[zone.id] ?? 0;
+      return [
+        zone.id,
+        site.sector === "roads"
+          ? phaseOf(value).color
+          : site.sector === "agriculture"
+            ? vigorColor(value)
+            : countColor(value, max),
+      ];
+    }),
+  );
+  return (
+    <ParcelMap
+      siteName={site.name}
+      center={site.center}
+      outline={[]}
+      outlineKind={site.sector === "roads" ? "line" : "polygon"}
+      zones={site.zones}
+      zoneColors={colors}
+      mode="view"
+      fitPoints={site.zones.flatMap((zone) => zone.outline)}
+      fitKey={0}
+      markers={issues.flatMap((issue) =>
+        issue.position
+          ? [
+              {
+                id: issue.id,
+                position: issue.position,
+                tone: issue.tone,
+                label: issue.title,
+                selected: issue.id === selectedId,
+              },
+            ]
+          : [],
+      )}
+      onSelectMarker={onSelect}
+    />
+  );
+}
+
+function Legend({ site }: { site: Site }) {
+  if (site.sector === "roads") {
+    return (
+      <ul className={styles.legend} aria-label="Fases de la vía">
+        {phases.map((phase) => (
+          <li key={phase.label}>
+            <span aria-hidden="true" style={{ background: phase.color }} />
+            {phase.label}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  const text =
+    site.sector === "agriculture"
+      ? "Color del lote: vigor, de rojizo (bajo) a verde (alto)."
+      : site.sector === "security"
+        ? "Color de la zona: más oscuro, más novedades."
+        : "Verde: obra nueva desde la fecha de comparación. Arrastre para girar.";
+  return <p className={styles.legendText}>{text}</p>;
 }
 
 function chartTitle(site: Site) {
@@ -389,194 +592,5 @@ function EvolutionChart({
       }
       format={(v) => (site.sector === "agriculture" ? fixed(v) : number(v, 0))}
     />
-  );
-}
-
-function ConstructionVisual({
-  site,
-  current,
-  reference,
-  zoneNames,
-}: {
-  site: Site;
-  current: CapturePoint;
-  reference?: CapturePoint;
-  zoneNames: Record<string, string>;
-}) {
-  const target = site.schedule?.targetLevels ?? 8;
-  const built = current.levels ?? 0;
-  const before = reference?.levels ?? 0;
-  return (
-    <div className={styles.constructionGrid}>
-      <div className={styles.scene}>
-        <BuildingScene
-          levels={built}
-          planned={target}
-          reference={reference ? before : null}
-        />
-        <span className={styles.sceneTag}>
-          Modelo esquemático · arrastre para girar
-        </span>
-      </div>
-      <div className={styles.sidePanels}>
-        <section aria-labelledby="levels-title">
-          <h3 id="levels-title">Niveles</h3>
-          <ol className={styles.levels}>
-            {Array.from({ length: target }, (_, i) => target - i).map(
-              (level) => {
-                const done = built >= level;
-                const partial = !done && built > level - 1;
-                const isNew = reference && done && before < level;
-                return (
-                  <li
-                    key={level}
-                    data-state={done ? "done" : partial ? "partial" : "pending"}
-                  >
-                    <span>Nivel {level}</span>
-                    <small>
-                      {done
-                        ? "Terminado"
-                        : partial
-                          ? `En obra · ${number((built - (level - 1)) * 100, 0)} %`
-                          : "Pendiente"}
-                      {isNew ? " · nuevo" : ""}
-                    </small>
-                  </li>
-                );
-              },
-            )}
-          </ol>
-        </section>
-        <section aria-labelledby="fronts-title">
-          <h3 id="fronts-title">Frentes de obra</h3>
-          <ul className={styles.bars}>
-            {site.zones.map((zone) => {
-              const value = current.values[zone.id] ?? 0;
-              return (
-                <li key={zone.id}>
-                  <span>{zoneNames[zone.id]}</span>
-                  <meter
-                    min={0}
-                    max={100}
-                    value={value}
-                    aria-label={`${zone.name}: ${number(value, 0)} %`}
-                  />
-                  <strong>{number(value, 0)} %</strong>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function RoadsVisual({ site, current }: { site: Site; current: CapturePoint }) {
-  const colors = Object.fromEntries(
-    site.zones.map((zone) => [
-      zone.id,
-      phaseOf(current.values[zone.id] ?? 0).color,
-    ]),
-  );
-  return (
-    <div className={styles.roads}>
-      <ol className={styles.strip} aria-label="Tramos de la vía en orden">
-        {site.zones.map((zone) => {
-          const value = current.values[zone.id] ?? 0;
-          const phase = phaseOf(value);
-          return (
-            <li key={zone.id} style={{ background: phase.color }}>
-              <strong>{zone.name}</strong>
-              <span>{number(value, 0)} %</span>
-              <small>{phase.label}</small>
-            </li>
-          );
-        })}
-      </ol>
-      <ul className={styles.legend} aria-label="Fases de la vía">
-        {phases.map((phase) => (
-          <li key={phase.label}>
-            <span aria-hidden="true" style={{ background: phase.color }} />
-            {phase.label}
-          </li>
-        ))}
-      </ul>
-      <MapBox site={site} colors={colors} />
-    </div>
-  );
-}
-
-function ZoneMapVisual({
-  site,
-  current,
-  captures,
-}: {
-  site: Site;
-  current: CapturePoint;
-  captures: CapturePoint[];
-}) {
-  const max = Math.max(1, ...captures.flatMap((p) => Object.values(p.values)));
-  const colors = Object.fromEntries(
-    site.zones.map((zone) => {
-      const value = current.values[zone.id] ?? 0;
-      return [
-        zone.id,
-        site.sector === "agriculture"
-          ? vigorColor(value)
-          : countColor(value, max),
-      ];
-    }),
-  );
-  return (
-    <div className={styles.zoneVisual}>
-      <MapBox site={site} colors={colors} />
-      <ul
-        className={styles.zoneList}
-        aria-label={
-          site.sector === "agriculture"
-            ? "Vigor por lote"
-            : "Novedades por zona"
-        }
-      >
-        {site.zones.map((zone) => {
-          const value = current.values[zone.id] ?? 0;
-          return (
-            <li key={zone.id}>
-              <span
-                aria-hidden="true"
-                style={{ background: colors[zone.id] }}
-              />
-              <strong>{zone.name}</strong>
-              <em>{site.sector === "agriculture" ? fixed(value) : value}</em>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function MapBox({
-  site,
-  colors,
-}: {
-  site: Site;
-  colors: Record<string, string>;
-}) {
-  return (
-    <div className={styles.mapBox}>
-      <ParcelMap
-        siteName={site.name}
-        center={site.center}
-        outline={[]}
-        outlineKind={site.sector === "roads" ? "line" : "polygon"}
-        zones={site.zones}
-        zoneColors={colors}
-        mode="view"
-        fitPoints={site.zones.flatMap((zone) => zone.outline)}
-        fitKey={0}
-      />
-    </div>
   );
 }

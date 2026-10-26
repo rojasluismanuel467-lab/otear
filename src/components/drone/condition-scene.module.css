@@ -107,3 +107,31 @@
 .nameTag[data-show="true"] {
   opacity: 1;
 }
+.callout {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.22);
+  color: #0f2a21;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms;
+  z-index: 2;
+}
+.callout[data-show="true"] {
+  opacity: 1;
+}
+.callout i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}

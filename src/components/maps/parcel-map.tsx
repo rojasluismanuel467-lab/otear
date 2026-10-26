@@ -20,6 +20,15 @@ export interface ParcelMapProps {
   onSelectZone?: (id: string) => void;
   /** Overrides the colour of a zone (for example by vigor or progress). */
   zoneColors?: Record<string, string>;
+  /** Issues pinned on the map; each one is a button that reports its id when pressed. */
+  markers?: {
+    id: string;
+    position: Position;
+    tone: "danger" | "warning" | "info";
+    label: string;
+    selected?: boolean;
+  }[];
+  onSelectMarker?: (id: string) => void;
   /** Past flight routes, drawn faintly as evidence for the outline. */
   history?: Position[][];
   /** view: read only · edit-outline: click to add, drag to move, right-click to remove · cut: two clicks. */

@@ -28,6 +28,16 @@ const DEPTH = 7;
 const CONCRETE = 0xdde3dc;
 const NEW_WORK = 0x2f9a6e;
 
+export interface BuildingMarker {
+  id: string;
+  /** Position along the width of the building, from -1 (left) to 1 (right). */
+  x: number;
+  /** Height in floors. */
+  level: number;
+  tone: "danger" | "warning" | "info";
+  label: string;
+}
+
 export interface BuildingSceneProps {
   /** Floors built, with decimals for the one under construction. */
   levels: number;
@@ -35,6 +45,10 @@ export interface BuildingSceneProps {
   planned: number;
   /** Floors at the date being compared with, if any. */
   reference?: number | null;
+  /** Issues pinned on the building; each is a button over the model. */
+  markers?: BuildingMarker[];
+  selectedMarkerId?: string;
+  onMarkerSelect?: (id: string) => void;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -50,10 +64,19 @@ export function BuildingScene({
   levels,
   planned,
   reference,
+  markers,
+  selectedMarkerId,
+  onMarkerSelect,
 }: BuildingSceneProps) {
   const container = useRef<HTMLDivElement>(null);
   const target = useRef({ levels, reference: reference ?? null });
   const [unavailable, setUnavailable] = useState(false);
+  const markerEls = useRef(new Map<string, HTMLButtonElement>());
+  const markersRef = useRef(markers);
+
+  useEffect(() => {
+    markersRef.current = markers;
+  }, [markers]);
 
   useEffect(() => {
     target.current = { levels, reference: reference ?? null };
@@ -180,6 +203,7 @@ export function BuildingScene({
     );
     building.add(referenceLine);
 
+    const pinPoint = new Vector3();
     const view = { yaw: -0.7, pitch: 0.42 };
     const velocity = { yaw: 0, pitch: 0 };
     let shown = target.current.levels;
@@ -237,6 +261,16 @@ export function BuildingScene({
         Math.cos(view.yaw) * Math.cos(view.pitch) * distance,
       );
       camera.lookAt(0, height * 0.9, 0);
+      markersRef.current?.forEach((marker) => {
+        const el = markerEls.current.get(marker.id);
+        if (!el) return;
+        pinPoint.set(marker.x * WIDTH * 0.38, marker.level, DEPTH / 2 + 0.3);
+        pinPoint.project(camera);
+        const x = (pinPoint.x * 0.5 + 0.5) * element.clientWidth;
+        const y = (-pinPoint.y * 0.5 + 0.5) * element.clientHeight;
+        el.style.transform = `translate(${x - 18}px, ${y - 44}px)`;
+        el.style.visibility = pinPoint.z < 1 ? "visible" : "hidden";
+      });
       renderer.render(scene, camera);
       if (visible) frame = requestAnimationFrame(render);
     };
@@ -308,9 +342,27 @@ export function BuildingScene({
     <div
       ref={container}
       className={styles.scene}
-      role="img"
+      role="group"
       aria-label={`Modelo esquemático del edificio: ${levels.toLocaleString("es-CO", { maximumFractionDigits: 1 })} de ${planned} niveles construidos. Arrástrelo para girarlo.`}
     >
+      {markers?.map((marker) => (
+        <button
+          key={marker.id}
+          ref={(el) => {
+            if (el) markerEls.current.set(marker.id, el);
+            else markerEls.current.delete(marker.id);
+          }}
+          type="button"
+          className={styles.pin}
+          data-tone={marker.tone}
+          aria-label={marker.label}
+          aria-pressed={marker.id === selectedMarkerId}
+          onClick={() => onMarkerSelect?.(marker.id)}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          !
+        </button>
+      ))}
       {unavailable && (
         <p className={styles.fallback}>
           Tu navegador no puede mostrar el modelo 3D. El avance por niveles se

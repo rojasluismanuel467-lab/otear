@@ -13,6 +13,7 @@ export interface ChartSeries {
 }
 
 const HEIGHT = 240;
+const COMPACT_HEIGHT = 150;
 const PAD = { top: 14, right: 16, bottom: 30, left: 46 };
 const DAY_MS = 86_400_000;
 const time = (date: string) => new Date(`${date}T12:00:00`).getTime();
@@ -30,6 +31,7 @@ export function LineChart({
   format,
   highlightId,
   tickCount = 4,
+  compact = false,
 }: {
   label: string;
   series: ChartSeries[];
@@ -40,6 +42,8 @@ export function LineChart({
   highlightId?: string;
   /** Number of gaps between horizontal grid lines. */
   tickCount?: number;
+  /** Shorter chart without legend, for small panels. */
+  compact?: boolean;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(640);
@@ -54,6 +58,7 @@ export function LineChart({
     return () => observer.disconnect();
   }, []);
 
+  const height = compact ? COMPACT_HEIGHT : HEIGHT;
   const [x0, x1] = [
     time(xDomain[0]),
     Math.max(time(xDomain[1]), time(xDomain[0]) + DAY_MS),
@@ -61,7 +66,7 @@ export function LineChart({
   const [y0, y1] = yDomain;
   const inner = {
     w: width - PAD.left - PAD.right,
-    h: HEIGHT - PAD.top - PAD.bottom,
+    h: height - PAD.top - PAD.bottom,
   };
   const x = (date: string) =>
     PAD.left + ((time(date) - x0) / (x1 - x0)) * inner.w;
@@ -80,7 +85,7 @@ export function LineChart({
       <div ref={box} className={styles.box}>
         <svg
           width={width}
-          height={HEIGHT}
+          height={height}
           role="img"
           aria-label={`${label}. Los mismos datos están en la tabla que sigue.`}
         >
@@ -103,12 +108,12 @@ export function LineChart({
               </text>
             </g>
           ))}
-          <text x={PAD.left} y={HEIGHT - 8} className={styles.tick}>
+          <text x={PAD.left} y={height - 8} className={styles.tick}>
             {formatDate(xDomain[0], { day: "numeric", month: "short" })}
           </text>
           <text
             x={width - PAD.right}
-            y={HEIGHT - 8}
+            y={height - 8}
             textAnchor="end"
             className={styles.tick}
           >
@@ -164,18 +169,20 @@ export function LineChart({
           })}
         </svg>
       </div>
-      <ul className={styles.legend}>
-        {series.map((item) => (
-          <li key={item.id}>
-            <span
-              aria-hidden="true"
-              className={item.dashed ? styles.swatchDashed : styles.swatch}
-              style={{ "--swatch": item.color } as React.CSSProperties}
-            />
-            {item.name}
-          </li>
-        ))}
-      </ul>
+      {!compact && (
+        <ul className={styles.legend}>
+          {series.map((item) => (
+            <li key={item.id}>
+              <span
+                aria-hidden="true"
+                className={item.dashed ? styles.swatchDashed : styles.swatch}
+                style={{ "--swatch": item.color } as React.CSSProperties}
+              />
+              {item.name}
+            </li>
+          ))}
+        </ul>
+      )}
       <table className={styles.srOnly}>
         <caption>{label}</caption>
         <thead>

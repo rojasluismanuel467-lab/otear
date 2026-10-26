@@ -81,11 +81,11 @@
 }
 .stage {
   position: relative;
-  min-height: 520px;
+  min-height: 600px;
   display: grid;
 }
 .stage > :first-child {
-  min-height: 520px;
+  min-height: 600px;
 }
 .stageTop {
   position: absolute;
@@ -599,4 +599,25 @@
   .ranking button {
     transition: none;
   }
+}
+
+.drawerHead h3 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.drawerHead p {
+  margin-top: 4px;
+}
+.how {
+  font-size: 13px;
+  color: var(--muted);
+}
+.how summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.how p {
+  margin-top: 8px;
 }

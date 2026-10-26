@@ -147,6 +147,8 @@ export interface PartAnchor {
   point: [number, number, number];
   /** Where it is on the aircraft when there are several, for example "delantera izquierda". */
   where?: string;
+  /** Size of the painted area, as a fraction of the model's half-width. */
+  radius?: number;
 }
 
 export interface PartDef {

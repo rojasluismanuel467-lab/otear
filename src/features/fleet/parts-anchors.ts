@@ -7,7 +7,11 @@ import type { PartAnchor } from "./parts-catalog";
  * shape have an anchor; the rest are listed without a place.
  */
 type P = [number, number, number];
-const a = (point: P, where?: string): PartAnchor => ({ point, where });
+const a = (point: P, where?: string, radius?: number): PartAnchor => ({
+  point,
+  where,
+  radius,
+});
 
 const side = (x: number) => (x < 0 ? "izquierda" : "derecha");
 const place = (x: number, z: number) =>
@@ -17,6 +21,8 @@ const at = (list: [number, number, number][]) =>
 
 export const anchorTable: Record<string, Record<string, PartAnchor[]>> = {
   "mavic-3-enterprise": {
+    battery: [a([0, 0.05, 0.25], "cuerpo, parte trasera", 0.13)],
+    "horizontal-vision": [a([0, 0.04, -0.82], "frente", 0.12)],
     motors: at([
       [-0.95, -0.17, -0.72],
       [0.95, -0.17, -0.72],
@@ -42,6 +48,7 @@ export const anchorTable: Record<string, Record<string, PartAnchor[]>> = {
     "gimbal-camera": [a([0, -0.13, -0.78], "frente, bajo la nariz")],
   },
   "matrice-350-rtk": {
+    battery: [a([0, 0.42, 0], "caja superior", 0.13)],
     motors: [
       a([1.13, 0.28, -0.94], "motor 1 · delantero derecho"),
       a([-1.12, 0.28, -0.95], "motor 2 · delantero izquierdo"),
@@ -67,6 +74,8 @@ export const anchorTable: Record<string, Record<string, PartAnchor[]>> = {
     dgc: [a([0, -0.1, -0.55], "bajo el frente")],
   },
   "matrice-4": {
+    battery: [a([0, 0, 0.2], "cuerpo, parte trasera", 0.13)],
+    "omnidirectional-vision": [a([0, 0.02, -0.85], "frente", 0.12)],
     motors: at([
       [-0.94, -0.15, -0.73],
       [0.94, -0.15, -0.73],
@@ -94,6 +103,8 @@ export const anchorTable: Record<string, Record<string, PartAnchor[]>> = {
     "gimbal-camera": [a([0, -0.13, -0.78], "frente, bajo la nariz")],
   },
   "matrice-30": {
+    battery: [a([0, 0.12, 0.1], "cuerpo, parte trasera", 0.13)],
+    "forward-vision": [a([0, 0.1, -0.55], "frente", 0.12)],
     motors: at([
       [-0.93, -0.1, -0.73],
       [0.93, -0.1, -0.73],

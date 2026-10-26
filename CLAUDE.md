@@ -77,6 +77,7 @@ Next.js 16.4.3 (App Router), React 19, TypeScript strict, Tailwind 4, HeroUI 3 (
 - Every data view needs loading/empty/error/content states; every action needs a visible result and recovery path.
 - When several agents work in parallel, they own distinct files; shared changes (tokens, `demo-context`, `types.ts`, `globals.css`) go through the integrator. Verify the changed flow on desktop and mobile, keyboard, and reduced motion, then run `npm run check`.
 - WCAG 2.2 AA is the target; never claim certification.
+- Screen organisation: one primary object per page (big, first), master → detail in `components/ui/stage-drawer.tsx`, at most four peer tabs via `components/ui/section-tabs.tsx` (critical alerts stay visible outside tabs), long or secondary text in `<details>`. Reasoning and sources: `docs/context/organizacion-de-pantallas.md`.
 
 **Pre-flight checklist.** `features/flights/planning/preparation-items.ts` defines 15 items in 5 groups. `Flight.checklist` stores completed item labels, so the seeded labels in `demo-data.ts` must keep matching those strings.
 

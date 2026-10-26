@@ -39,6 +39,31 @@ const PROPELLER_IDS = new Set([
 ]);
 const BATTERY_IDS = new Set(["battery"]);
 
+/** Plan task whose interval a part is compared with: propellers have their own. */
+export function taskOf(
+  part: Pick<PartDef, "id">,
+  plan: PlanTask[],
+): PlanTask | undefined {
+  return plan.find(
+    (task) =>
+      task.id === (PROPELLER_IDS.has(part.id) ? "propellers" : "periodic"),
+  );
+}
+
+/** Records that restarted the part's count, newest first. */
+export function serviceRecordsOf(
+  part: Pick<PartDef, "id">,
+  input: Pick<UsageInput, "records" | "plan">,
+) {
+  const task = taskOf(part, input.plan);
+  return input.records
+    .filter(
+      (record) =>
+        record.partId === part.id || (task && record.taskId === task.id),
+    )
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
 /** What wears each part: running time, take-offs and landings, or charge cycles. */
 export function driverOf(part: Pick<PartDef, "id" | "group">): UsageDriver {
   if (BATTERY_IDS.has(part.id)) return "cycles";
@@ -58,7 +83,6 @@ export function usageFor(
   input: UsageInput,
 ): Record<string, PartUsage> {
   const periodic = input.plan.find((task) => task.id === "periodic");
-  const propellers = input.plan.find((task) => task.id === "propellers");
   const result: Record<string, PartUsage> = {};
   const cycles = input.batteries.length
     ? input.batteries.reduce((sum, pack) => sum + pack.cycles, 0) /
@@ -71,13 +95,8 @@ export function usageFor(
 
   for (const part of parts) {
     const driver = driverOf(part);
-    const task = PROPELLER_IDS.has(part.id) ? propellers : periodic;
-    const last = input.records
-      .filter(
-        (record) =>
-          record.partId === part.id || (task && record.taskId === task.id),
-      )
-      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    const task = taskOf(part, input.plan);
+    const last = serviceRecordsOf(part, input)[0];
 
     let value: number;
     let life: number;

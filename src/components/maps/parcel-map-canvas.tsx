@@ -20,6 +20,8 @@ export default function ParcelMapCanvas({
   selectedZoneId,
   onSelectZone,
   zoneColors,
+  markers,
+  onSelectMarker,
   history,
   mode,
   onOutlineChange,
@@ -171,6 +173,25 @@ export default function ParcelMapCanvas({
           });
       });
     }
+    markers?.forEach((marker) => {
+      L.marker(marker.position, {
+        title: marker.label,
+        alt: marker.label,
+        keyboard: true,
+        zIndexOffset: marker.selected ? 1000 : 500,
+        icon: L.divIcon({
+          className: "issue-pin-icon",
+          html: `<span class="issue-pin issue-pin--${marker.tone}" data-selected="${marker.selected ? "true" : "false"}">!</span>`,
+          iconSize: [36, 44],
+          iconAnchor: [18, 44],
+        }),
+      })
+        .addTo(layer)
+        .on("click", (event) => {
+          L.DomEvent.stopPropagation(event);
+          onSelectMarker?.(marker.id);
+        });
+    });
     if (cutStart) {
       L.circleMarker(cutStart, {
         radius: 6,
@@ -190,6 +211,8 @@ export default function ParcelMapCanvas({
     outlineKind,
     selectedZoneId,
     zoneColors,
+    markers,
+    onSelectMarker,
     history,
     mode,
     cutStart,
