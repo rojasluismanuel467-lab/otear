@@ -76,9 +76,98 @@
 .viewer {
   scroll-margin-top: 96px;
   display: grid;
-  gap: 8px;
-  grid-template-rows: auto auto minmax(460px, 1fr) auto;
+  gap: 10px;
+  align-content: start;
 }
+.stage {
+  position: relative;
+  min-height: 520px;
+  display: grid;
+}
+.stage > :first-child {
+  min-height: 520px;
+}
+.stageTop {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.stageTop > * {
+  pointer-events: auto;
+}
+.stageSegment,
+.stageChip,
+.stageViews {
+  background: rgb(10 31 24 / 0.78);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.22);
+}
+.stageSegment {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 14px;
+  gap: 2px;
+}
+.stageSegment button,
+.stageViews button,
+.stageChip {
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cfe3d8;
+  transition:
+    background-color 200ms,
+    color 200ms;
+}
+.stageSegment button[aria-pressed="true"] {
+  background: #fff;
+  color: #0f2a21;
+}
+.stageSegment button:hover:not([aria-pressed="true"]),
+.stageViews button:hover {
+  background: rgb(255 255 255 / 0.14);
+  color: #fff;
+}
+.stageChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 14px;
+}
+.stageChip[aria-pressed="true"] {
+  background: #fff;
+  color: #0f2a21;
+}
+.stageViews {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  right: 68px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.stageViews button {
+  white-space: nowrap;
+}
+.statusLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .loading {
   display: grid;
   place-items: center;
@@ -107,26 +196,25 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
 }
 .legend li {
-  display: grid;
-  gap: 2px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: var(--surface-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
+  color: var(--muted);
 }
 .legend span {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
 }
-.legend small {
-  font-size: 12px;
-  color: var(--muted);
+.legend strong {
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
 }
 .listHeader {
   display: flex;
@@ -297,46 +385,6 @@
   }
 }
 
-.viewBar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  align-items: center;
-  justify-content: space-between;
-}
-.views {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 14px;
-  background: var(--surface-secondary);
-}
-.views button,
-.partsToggle {
-  padding: 6px 11px;
-  border-radius: 11px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  transition:
-    background-color 200ms,
-    color 200ms;
-}
-.views button:hover {
-  background: #fff;
-  color: var(--foreground);
-}
-.partsToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface-secondary);
-}
-.partsToggle[aria-pressed="true"] {
-  background: var(--accent-soft);
-  color: var(--accent-soft-foreground);
-}
 .parts {
   font-size: 13px;
   color: var(--muted);
@@ -416,13 +464,11 @@
   text-underline-offset: 3px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .views button,
-  .partsToggle {
+  .stageSegment button,
+  .stageViews button,
+  .stageChip {
     transition: none;
   }
-}
-.lensBar {
-  display: flex;
 }
 .partCard {
   display: grid;

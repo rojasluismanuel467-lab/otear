@@ -290,9 +290,8 @@ function AircraftDetail({
           Estado de las partes en 3D
         </h3>
         <p className={styles.muted}>
-          Marque sobre el modelo las partes buenas, las que hay que vigilar y
-          las que hay que cambiar. Las marcas pendientes aparecen arriba como
-          alertas y quedan en el historial.
+          Las marcas pendientes aparecen arriba como alertas y quedan en el
+          historial de la aeronave.
         </p>
         <ConditionMap aircraft={item} hours={hours} />
       </section>

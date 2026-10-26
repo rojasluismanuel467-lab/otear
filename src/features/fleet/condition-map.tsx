@@ -463,34 +463,75 @@ export function ConditionMap({
 
       <div className={styles.grid}>
         <div ref={viewerRef} className={styles.viewer}>
-          <div className={styles.lensBar}>
-            <div
-              className={styles.segment}
-              role="group"
-              aria-label="Qué mostrar"
-            >
-              <button
-                type="button"
-                aria-pressed={lens === "state"}
-                onClick={() => setLens("state")}
+          <div className={styles.stage}>
+            <ConditionScene
+              key={sceneKey}
+              source={source}
+              marks={lens === "state" ? sceneMarks : []}
+              draft={draft}
+              highlights={highlights}
+              label={nameLabel}
+              selectedId={selectedId}
+              placing
+              parts={sceneParts}
+              showParts={showParts}
+              activePartId={activePart}
+              focus={focus}
+              view={view}
+              onPick={handlePick}
+              onPickPart={(id) => {
+                const [partId, index] = id.split("#");
+                const part = partById(catalog, partId);
+                if (part) showPart(part, Number(index));
+              }}
+              onSelect={(id) => {
+                const mark = marks.find((item) => item.id === id);
+                if (mark) select(mark);
+              }}
+              onStatus={setStatus}
+            />
+            <div className={styles.stageTop}>
+              <div
+                className={styles.stageSegment}
+                role="group"
+                aria-label="Qué mostrar"
               >
-                Estado
-              </button>
-              <button
-                type="button"
-                aria-pressed={lens === "usage"}
-                onClick={() => {
-                  setLens("usage");
-                  setEditor(null);
-                }}
-              >
-                Mapa de calor de uso
-              </button>
+                <button
+                  type="button"
+                  aria-pressed={lens === "state"}
+                  onClick={() => setLens("state")}
+                >
+                  Estado
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={lens === "usage"}
+                  onClick={() => {
+                    setLens("usage");
+                    setEditor(null);
+                  }}
+                >
+                  Uso
+                </button>
+              </div>
+              {sceneParts.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.stageChip}
+                  aria-pressed={showParts}
+                  onClick={() => setShowParts((value) => !value)}
+                >
+                  {showParts ? (
+                    <EyeOff size={15} aria-hidden="true" />
+                  ) : (
+                    <Eye size={15} aria-hidden="true" />
+                  )}
+                  <span>{showParts ? "Ocultar partes" : "Mostrar partes"}</span>
+                </button>
+              )}
             </div>
-          </div>
-          <div className={styles.viewBar}>
             <div
-              className={styles.views}
+              className={styles.stageViews}
               role="group"
               aria-label="Vistas del modelo"
             >
@@ -509,55 +550,30 @@ export function ConditionMap({
                 </button>
               ))}
             </div>
-            {sceneParts.length > 0 && (
-              <button
-                type="button"
-                className={styles.partsToggle}
-                aria-pressed={showParts}
-                onClick={() => setShowParts((value) => !value)}
-              >
-                {showParts ? (
-                  <EyeOff size={15} aria-hidden="true" />
-                ) : (
-                  <Eye size={15} aria-hidden="true" />
-                )}
-                {showParts ? "Ocultar partes" : "Mostrar partes"}
-              </button>
-            )}
           </div>
-          <ConditionScene
-            key={sceneKey}
-            source={source}
-            marks={lens === "state" ? sceneMarks : []}
-            draft={draft}
-            highlights={highlights}
-            label={nameLabel}
-            selectedId={selectedId}
-            placing
-            parts={sceneParts}
-            showParts={showParts}
-            activePartId={activePart}
-            focus={focus}
-            view={view}
-            onPick={handlePick}
-            onPickPart={(id) => {
-              const [partId, index] = id.split("#");
-              const part = partById(catalog, partId);
-              if (part) showPart(part, Number(index));
-            }}
-            onSelect={(id) => {
-              const mark = marks.find((item) => item.id === id);
-              if (mark) select(mark);
-            }}
-            onStatus={setStatus}
-          />
-          <p className={styles.hint}>
-            {status === "unavailable"
-              ? "Sin vista 3D: agregue las partes desde la lista."
-              : lens === "usage"
-                ? "Los colores muestran cuánto se ha usado cada parte. Toque una para ver su nombre."
-                : "Toque una parte del modelo para ver su nombre. Arrastre para girar."}
-          </p>
+          <div className={styles.statusLine}>
+            {lens === "state" && (
+              <ul className={styles.legend} aria-label="Colores de estado">
+                {conditions.map((condition) => (
+                  <li key={condition}>
+                    <span
+                      aria-hidden="true"
+                      style={{ background: conditionInfo[condition].color }}
+                    />
+                    {conditionInfo[condition].label}
+                    <strong>{summary[condition]}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className={styles.hint}>
+              {status === "unavailable"
+                ? "Sin vista 3D: agregue las partes desde la lista."
+                : lens === "usage"
+                  ? "Azul: la parte menos usada. Naranja: la más usada."
+                  : "Toque una parte para ver su nombre; arrastre para girar."}
+            </p>
+          </div>
         </div>
 
         <div className={styles.panel}>
@@ -587,24 +603,6 @@ export function ConditionMap({
               }}
               onClear={() => setSelection(null)}
             />
-          )}
-
-          {lens === "state" && (
-            <ul className={styles.legend} aria-label="Colores de estado">
-              {conditions.map((condition) => (
-                <li key={condition}>
-                  <span
-                    aria-hidden="true"
-                    style={{ background: conditionInfo[condition].color }}
-                  />
-                  <strong>{conditionInfo[condition].label}</strong>
-                  <small>
-                    {summary[condition]}{" "}
-                    {summary[condition] === 1 ? "parte" : "partes"}
-                  </small>
-                </li>
-              ))}
-            </ul>
           )}
 
           {lens === "usage" ? (
