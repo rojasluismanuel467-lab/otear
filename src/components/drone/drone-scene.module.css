@@ -1,0 +1,50 @@
+.scene {
+  position: relative;
+  height: 210px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: radial-gradient(
+    ellipse at 50% 38%,
+    #ffffff 0,
+    #f1f5ee 62%,
+    #e6ede2 100%
+  );
+  box-shadow: inset 0 0 0 1px var(--border);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.scene[data-dragging="true"] {
+  cursor: grabbing;
+}
+.scene:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.scene.dark {
+  height: 100%;
+  min-height: 260px;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 24px;
+}
+.dark .fallback {
+  color: #c9dccf;
+}

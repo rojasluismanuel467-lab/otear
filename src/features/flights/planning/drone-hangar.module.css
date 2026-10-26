@@ -1,0 +1,124 @@
+.hangar {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(280px, 1fr) auto auto auto;
+  gap: 8px;
+  min-height: 480px;
+  padding: 26px 26px 28px;
+  border-radius: 28px;
+  color: #eef7f1;
+  overflow: hidden;
+  isolation: isolate;
+  background: radial-gradient(
+    ellipse at 50% 34%,
+    #2f7058 0%,
+    #1b4636 52%,
+    #112c21 100%
+  );
+  box-shadow:
+    0 2px 4px color-mix(in srgb, var(--overlay) 10%, transparent),
+    0 28px 48px -26px #0c2a1d99;
+}
+.hangar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url("/textures/contours-dark.svg") center / cover;
+  opacity: 0.9;
+}
+.hangar header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hangar h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hangar header span {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.12);
+}
+.stage {
+  min-height: 0;
+}
+.hangar footer strong {
+  display: block;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.hangar footer p {
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #b9d3c3;
+}
+
+.optionGroup {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+.optionGroup > span {
+  font-size: 12px;
+  color: #8fb3a0;
+}
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.options button {
+  padding: 8px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #dff3e6;
+  background: rgb(255 255 255 / 0.1);
+  transition:
+    background-color 200ms,
+    color 200ms,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.options button:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+.options button[aria-pressed="true"] {
+  color: #123226;
+  background: #f1f7f2;
+}
+.options button:active {
+  transform: scale(0.96);
+}
+.hangar footer small {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8fb3a0;
+}
+.hangar footer p {
+  animation: caption-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes caption-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (max-width: 1100px) {
+  .hangar {
+    min-height: 460px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .options button,
+  .hangar footer p {
+    transition: none;
+    animation: none;
+  }
+}

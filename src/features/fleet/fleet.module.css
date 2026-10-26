@@ -1,0 +1,499 @@
+.view {
+  display: grid;
+  gap: 24px;
+}
+.stage {
+  display: grid;
+  grid-template-columns: 372px minmax(0, 1fr);
+  border-radius: 28px;
+  overflow: hidden;
+  animation: stage-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 16px 20px 20px;
+  border-right: 1px solid var(--border);
+  min-height: 560px;
+}
+.railHeader h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.railHeader p {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.aircraftList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.aircraftList li {
+  animation: row-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+.aircraftRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 12px 12px 12px 8px;
+  border-radius: 18px;
+  text-align: left;
+  transition:
+    background-color 200ms,
+    box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.aircraftRow:hover {
+  background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
+  transform: translateX(2px);
+}
+.aircraftRow[aria-pressed="true"] {
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--overlay) 8%, transparent),
+    0 10px 24px -12px color-mix(in srgb, var(--overlay) 28%, transparent);
+  transform: none;
+}
+.tile {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+}
+.tile[data-tone="warning"],
+.tile[data-tone="info"] {
+  background: var(--warning-soft);
+  color: #6a4a0d;
+}
+.tile[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.rowBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.rowBody strong {
+  font-size: 15px;
+}
+.rowBody span {
+  font-size: 13px;
+}
+.rowBody small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.pilots {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.pilots h3 {
+  font-size: 14px;
+  font-weight: 700;
+}
+.pilots ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pilots li {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+}
+.pilots li span {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.detail {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  animation: detail-in 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.detailHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 30px 34px 24px;
+}
+.detailHeader h2 {
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+.detailHeader p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  padding: 26px 34px;
+  border-top: 1px solid var(--border);
+}
+.block h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.muted {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.alerts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.alerts li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.alerts i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.alerts li[data-tone="danger"] i {
+  background: var(--danger);
+}
+.alerts li[data-tone="warning"] i {
+  background: #c28b2c;
+}
+.alerts li[data-tone="info"] i {
+  background: #3f7f9c;
+}
+.statusSelect {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.statusSelect select {
+  max-width: 220px;
+}
+.tasks,
+.batteries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.tasks li,
+.batteries li {
+  display: grid;
+  gap: 8px;
+}
+.taskHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.taskHead strong {
+  font-size: 15px;
+}
+.taskHead small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.chip {
+  font-size: 12px;
+  font-weight: 650;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chip[data-state="ok"] {
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+}
+.chip[data-state="soon"] {
+  background: var(--warning-soft);
+  color: #6a4a0d;
+}
+.chip[data-state="overdue"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.meter {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  overflow: hidden;
+}
+.meter::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transform: scaleX(var(--ratio));
+  transform-origin: left;
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tasks li[data-state="soon"] .meter::after,
+.batteries li[data-state="watch"] .meter::after {
+  background: #c28b2c;
+}
+.tasks li[data-state="overdue"] .meter::after,
+.batteries li[data-state="retire"] .meter::after {
+  background: var(--danger);
+}
+.tasks small,
+.batteryFoot small {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.batteryFoot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+}
+.inlineForm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.inlineForm input {
+  width: 110px;
+}
+.addBattery {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.intervals summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--accent);
+  padding: 4px 0;
+}
+.planEditor {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+}
+.planRow {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px;
+  gap: 8px 12px;
+  align-items: end;
+}
+.planRow strong {
+  grid-column: 1 / -1;
+  font-size: 14px;
+}
+.planRow label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.planRow small {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface-secondary);
+  overflow: hidden;
+}
+.facts > div {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+.facts > div:nth-child(-n + 2) {
+  border-top: 0;
+}
+.facts > div:nth-child(odd) {
+  border-right: 1px solid var(--border);
+}
+.facts dt {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.facts dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.facts small {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.facts small[data-bad="true"] {
+  color: var(--danger);
+  font-weight: 650;
+}
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.history li {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.history time {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.history strong {
+  display: block;
+  font-size: 14px;
+}
+.history small {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.history li[data-kind="incident"] strong {
+  color: var(--danger);
+}
+.error {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 14px;
+}
+@keyframes stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+}
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+}
+@media (max-width: 1200px) {
+  .stage {
+    grid-template-columns: 330px minmax(0, 1fr);
+  }
+  .detailHeader,
+  .block {
+    padding-inline: 24px;
+  }
+}
+@media (max-width: 900px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rail {
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .facts {
+    grid-template-columns: 1fr;
+  }
+  .facts > div {
+    border-right: 0 !important;
+  }
+  .facts > div:nth-child(2) {
+    border-top: 1px solid var(--border);
+  }
+  .addBattery {
+    grid-template-columns: 1fr 1fr;
+  }
+  .history li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage,
+  .detail,
+  .aircraftList li {
+    animation: none;
+  }
+  .meter::after,
+  .aircraftRow {
+    transition: none;
+  }
+}

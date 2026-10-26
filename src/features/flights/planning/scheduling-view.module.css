@@ -1,0 +1,511 @@
+.view {
+  display: grid;
+  gap: 24px;
+}
+
+/* Stage: agenda rail and map share one surface */
+.stage {
+  --stage-height: clamp(580px, 74vh, 700px);
+  display: grid;
+  grid-template-columns: 372px minmax(0, 1fr);
+  height: var(--stage-height);
+  border-radius: 28px;
+  overflow: hidden;
+  animation: stage-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 16px 20px 20px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, #f8faf6 0%, #f1f5ee 100%), var(--background);
+  background-image:
+    linear-gradient(180deg, #f8faf6e6 0%, #f1f5eef2 100%),
+    url("/textures/contours-light.svg");
+  background-size: auto, cover;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 30%, transparent)
+    transparent;
+}
+.railHeader h2 {
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.railHeader p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.tabs {
+  width: 100%;
+}
+.tabs button {
+  flex: 1;
+  font-size: 13px;
+  padding: 9px 6px;
+}
+.mapStage {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+}
+.mapStage :global(.site-map) {
+  height: 100%;
+  min-height: 0;
+}
+.mapTag {
+  position: absolute;
+  top: 16px;
+  right: 72px;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--accent-soft-foreground);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 8px 20px -10px
+    color-mix(in srgb, var(--overlay) 35%, transparent);
+  pointer-events: none;
+}
+
+/* Calendar (collapsible) */
+.calendar {
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border: 1px solid var(--border);
+}
+.calendarHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 4px 4px;
+}
+.calendarHeading > div {
+  display: flex;
+  gap: 2px;
+}
+.calendarToggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.calendarToggle span::first-letter {
+  text-transform: uppercase;
+}
+.calendarToggle svg:last-child {
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.calendarToggle[aria-expanded="true"] svg:last-child {
+  transform: rotate(180deg);
+}
+.calendarCollapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.calendarOpen {
+  grid-template-rows: 1fr;
+}
+.calendarInner {
+  overflow: hidden;
+  padding-inline: 12px;
+}
+.calendarOpen .calendarInner {
+  padding-bottom: 12px;
+}
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.weekDay {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 0;
+}
+.day {
+  position: relative;
+  min-height: 38px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition: background 150ms;
+}
+.day:hover {
+  background: var(--accent-soft);
+}
+.day i {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  bottom: 4px;
+  left: calc(50% - 2px);
+}
+.daySelected,
+.daySelected:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.daySelected i {
+  background: var(--accent-foreground);
+}
+.calendarFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.calendarFoot span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.calendarFoot i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.calendarFoot button {
+  color: var(--accent);
+  font-weight: 650;
+  padding: 4px;
+}
+
+.listHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 4px;
+}
+.listHeading h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+.listHeading span {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.filter {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.clearDate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+/* Briefing: flight facts + hangar */
+.briefing {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  gap: 24px;
+  animation: briefing-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.briefingMain {
+  display: grid;
+  gap: 26px;
+  padding: 30px 32px;
+  border-radius: 28px;
+  align-content: start;
+}
+.briefingHeader {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.briefingHeader h2 {
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.briefingHeader p {
+  margin-top: 10px;
+  max-width: 60ch;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.detailLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    background-color 200ms,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.detailLink:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--accent-soft));
+}
+.detailLink:hover svg {
+  transform: translateX(3px);
+}
+.detailLink svg {
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+.facts > div {
+  padding: 2px 18px;
+  border-left: 1px solid var(--border);
+}
+.facts > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.facts dt {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.facts dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.weather {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  color: var(--accent-soft-foreground);
+}
+.weather > svg {
+  flex-shrink: 0;
+}
+.weather strong {
+  font-size: 14px;
+}
+.weather p {
+  font-size: 13px;
+  margin-top: 3px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.weather > span {
+  font-size: 12px;
+  margin-left: auto;
+  border: 1px solid var(--border-strong);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.form {
+  display: grid;
+  gap: 19px;
+  padding: 6px 0 10px;
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.zoneField {
+  border: 0;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+}
+.zoneField input {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.zoneField legend {
+  margin-bottom: 12px;
+}
+.zoneField label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.zoneField small {
+  display: block;
+  color: var(--muted);
+  margin-top: 3px;
+  font-size: 12px;
+}
+.routeHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+.formMap {
+  height: 340px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-top: 10px;
+}
+.formMap :global(.site-map) {
+  height: 100%;
+  min-height: 0;
+}
+.formMap :global(.map-edit-controls) {
+  bottom: 34px;
+  font-size: 12px;
+}
+.formMap :global(.map-edit-controls button) {
+  min-height: 36px;
+  padding-inline: 10px;
+}
+.formHelp {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 6px;
+}
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+.error {
+  color: var(--danger);
+  background: var(--danger-soft);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+@keyframes stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+}
+@keyframes briefing-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(4px);
+  }
+}
+@media (max-width: 1280px) {
+  .stage {
+    grid-template-columns: 330px minmax(0, 1fr);
+  }
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 18px;
+  }
+  .facts > div:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+@media (max-width: 1100px) {
+  .briefing {
+    grid-template-columns: 1fr;
+  }
+  .hangar {
+    min-height: 420px;
+  }
+}
+@media (max-width: 860px) {
+  .stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 420px;
+    height: auto;
+  }
+  .rail {
+    max-height: 520px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .mapTag {
+    right: 14px;
+    top: 66px;
+  }
+  .briefingMain {
+    padding: 24px 20px;
+  }
+  .briefingHeader {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .formGrid,
+  .facts {
+    grid-template-columns: 1fr;
+  }
+  .facts > div {
+    padding: 0;
+    border-left: 0;
+  }
+  .weather {
+    align-items: start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage,
+  .briefing {
+    animation: none;
+  }
+  .day,
+  .detailLink,
+  .detailLink svg,
+  .calendarCollapse,
+  .calendarToggle svg:last-child {
+    transition: none;
+  }
+}

@@ -1,0 +1,137 @@
+.checklist {
+  display: grid;
+  gap: 10px;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.heading h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+.heading span {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--accent-soft-foreground);
+  font-variant-numeric: tabular-nums;
+}
+.progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  overflow: hidden;
+}
+.progress::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transform: scaleX(var(--progress));
+  transform-origin: left;
+  transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.help {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.groups {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+.group {
+  border-bottom: 1px solid var(--border);
+}
+.group:last-child {
+  border-bottom: 0;
+}
+.groupToggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 4px;
+  text-align: left;
+  font-size: 14px;
+}
+.groupToggle span {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.groupToggle span.complete {
+  color: var(--accent-soft-foreground);
+  font-weight: 650;
+}
+.groupToggle svg {
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.groupToggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.open {
+  grid-template-rows: 1fr;
+}
+.items {
+  overflow: hidden;
+  display: grid;
+  gap: 8px;
+}
+.open .items {
+  padding-bottom: 14px;
+}
+.itemWrap {
+  display: grid;
+  gap: 8px;
+  padding: 12px 16px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition:
+    background-color 200ms,
+    border-color 200ms;
+}
+.itemWrap:hover {
+  border-color: var(--border-strong);
+}
+.itemWrap:has(input:checked) {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.item input {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+@media (min-width: 1500px) {
+  .items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress::after,
+  .groupToggle svg,
+  .collapse,
+  .item {
+    transition: none;
+  }
+}

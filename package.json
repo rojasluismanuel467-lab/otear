@@ -16,20 +16,27 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{ts,json,mjs}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,json,mjs}\"",
-    "check": "npm run typecheck && npm run lint && npm run format:check"
+    "check": "npm run typecheck && npm run lint && npm run format:check",
+    "test": "node scripts/run-tests.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "5.3.0",
     "@heroui/react": "3.2.6",
     "@heroui/styles": "3.2.6",
+    "leaflet": "1.9.4",
+    "lucide-react": "1.61.0",
     "next": "16.4.3",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
+    "@types/leaflet": "1.9.22",
     "@types/node": "22.20.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.3",
     "eslint-config-prettier": "10.1.8",

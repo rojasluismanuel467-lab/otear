@@ -1,0 +1,606 @@
+"use client";
+
+import { useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { Button, Modal } from "@heroui/react";
+import {
+  ArrowRight,
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CloudSun,
+  MapPin,
+  Plus,
+  Route,
+  X,
+} from "lucide-react";
+import { useDemo } from "@/features/demo/demo-context";
+import type { Flight, Position, Site } from "@/features/demo/types";
+import { PageHeading } from "@/components/ui/page-heading";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SiteMap } from "@/components/maps/site-map";
+import { formatDate } from "@/lib/format";
+import { FlightTimeline } from "../flight-timeline";
+import { droneExamples } from "@/features/drones/drone-catalog";
+import { DroneHangar } from "./drone-hangar";
+import { FlightItinerary } from "./flight-itinerary";
+import { LogDialog } from "./log-dialog";
+import { PreparationChecklist } from "./preparation-checklist";
+import styles from "./scheduling-view.module.css";
+
+function Calendar({
+  flights,
+  date,
+  onDate,
+}: {
+  flights: Flight[];
+  date: string;
+  onDate: (date: string) => void;
+}) {
+  const [month, setMonth] = useState(new Date(2026, 9, 1));
+  const [isOpen, setIsOpen] = useState(false);
+  const year = month.getFullYear();
+  const monthIndex = month.getMonth();
+  const offset = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+  const days = new Date(year, monthIndex + 1, 0).getDate();
+  return (
+    <section className={styles.calendar} aria-label="Calendario de vuelos">
+      <div className={styles.calendarHeading}>
+        <button
+          type="button"
+          className={styles.calendarToggle}
+          aria-expanded={isOpen}
+          aria-controls="calendar-body"
+          onClick={() => setIsOpen((value) => !value)}
+        >
+          <CalendarDays size={18} aria-hidden="true" />
+          <span>
+            {new Intl.DateTimeFormat("es-CO", {
+              month: "long",
+              year: "numeric",
+            }).format(month)}
+          </span>
+          <ChevronDown size={16} aria-hidden="true" />
+        </button>
+        <div>
+          <button
+            className="icon-button"
+            aria-label="Mes anterior"
+            onClick={() => setMonth(new Date(year, monthIndex - 1, 1))}
+          >
+            <ChevronLeft size={17} />
+          </button>
+          <button
+            className="icon-button"
+            aria-label="Mes siguiente"
+            onClick={() => setMonth(new Date(year, monthIndex + 1, 1))}
+          >
+            <ChevronRight size={17} />
+          </button>
+        </div>
+      </div>
+      <div
+        id="calendar-body"
+        className={`${styles.calendarCollapse} ${isOpen ? styles.calendarOpen : ""}`}
+        inert={!isOpen}
+      >
+        <div className={styles.calendarInner}>
+          <div className={styles.calendarGrid}>
+            {["L", "M", "M", "J", "V", "S", "D"].map((day, index) => (
+              <span key={index} className={styles.weekDay} aria-hidden="true">
+                {day}
+              </span>
+            ))}
+            {Array.from({ length: offset }, (_, index) => (
+              <span key={`blank-${index}`} />
+            ))}
+            {Array.from({ length: days }, (_, index) => {
+              const day = index + 1;
+              const value = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const hasFlights = flights.some(
+                (flight) => flight.date === value,
+              );
+              return (
+                <button
+                  key={value}
+                  className={`${styles.day} ${date === value ? styles.daySelected : ""}`}
+                  aria-pressed={date === value}
+                  aria-label={`${formatDate(value)}${hasFlights ? ", con vuelos" : ""}`}
+                  onClick={() => onDate(date === value ? "" : value)}
+                >
+                  {day}
+                  {hasFlights && <i aria-hidden="true" />}
+                </button>
+              );
+            })}
+          </div>
+          <div className={styles.calendarFoot}>
+            <span>
+              <i /> Con vuelos
+            </span>
+            <button
+              onClick={() => {
+                onDate("");
+                setMonth(new Date(2026, 9, 1));
+              }}
+            >
+              Ver todo octubre
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FlightForm({
+  site,
+  seed,
+  onSave,
+  onCancel,
+}: {
+  site: Site;
+  seed?: Flight;
+  onSave: (flight: Omit<Flight, "id">) => void;
+  onCancel: () => void;
+}) {
+  const [zoneIds, setZoneIds] = useState<string[]>(
+    site.zones.map((zone) => zone.id),
+  );
+  const [route, setRoute] = useState<Position[]>([]);
+  const [error, setError] = useState("");
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const read = (key: string) => String(data.get(key) ?? "").trim();
+    if (!zoneIds.length) {
+      setError(
+        `Selecciona al menos una zona en ${site.zoneLabel.toLowerCase()}.`,
+      );
+      return;
+    }
+    if (route.length < 2) {
+      setError("Añade al menos dos puntos al recorrido previsto en el mapa.");
+      return;
+    }
+    if (
+      [
+        "title",
+        "objective",
+        "date",
+        "time",
+        "pilot",
+        "operator",
+        "manager",
+        "drone",
+      ].some((key) => !read(key))
+    ) {
+      setError(
+        "Completa los campos del plan; no se admiten valores en blanco.",
+      );
+      return;
+    }
+    onSave({
+      siteId: site.id,
+      title: read("title"),
+      objective: read("objective"),
+      date: read("date"),
+      time: read("time"),
+      pilot: read("pilot"),
+      operator: read("operator"),
+      manager: read("manager"),
+      drone: read("drone"),
+      zoneIds,
+      route,
+      status: "scheduled",
+      duration: 0,
+      distance: 0,
+      photoCount: 0,
+      checklist: [],
+    });
+  }
+  const draft: Flight = {
+    id: "draft",
+    siteId: site.id,
+    title: "Recorrido previsto",
+    objective: "",
+    date: "2026-10-29",
+    time: "07:00",
+    status: "scheduled",
+    pilot: "",
+    operator: "",
+    manager: "",
+    drone: "",
+    zoneIds,
+    route,
+    duration: 0,
+    distance: 0,
+    photoCount: 0,
+    checklist: [],
+  };
+  return (
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <p className="demo-note">
+        Plan de ejemplo para {site.name}. Se conserva únicamente en esta sesión.
+      </p>
+      <label className="form-field">
+        <span className="field-label">Nombre del vuelo</span>
+        <input
+          autoFocus
+          className="field-input"
+          name="title"
+          placeholder="Ej. Seguimiento de la zona norte"
+          required
+          maxLength={100}
+        />
+      </label>
+      <label className="form-field">
+        <span className="field-label">¿Qué necesitas revisar?</span>
+        <textarea
+          className="field-input"
+          name="objective"
+          rows={2}
+          placeholder="Describe el objetivo y la entrega que esperas."
+          required
+          maxLength={500}
+        />
+      </label>
+      <div className={styles.formGrid}>
+        {[
+          {
+            name: "date",
+            label: "Fecha prevista",
+            type: "date",
+            value: "2026-10-29",
+          },
+          {
+            name: "time",
+            label: "Hora · Colombia",
+            type: "time",
+            value: "07:00",
+          },
+          {
+            name: "pilot",
+            label: "Piloto",
+            type: "text",
+            value: seed?.pilot ?? "",
+          },
+          {
+            name: "operator",
+            label: "Operador",
+            type: "text",
+            value: seed?.operator ?? "",
+          },
+          {
+            name: "manager",
+            label: "Encargado",
+            type: "text",
+            value: seed?.manager ?? "",
+          },
+          {
+            name: "drone",
+            label: "Dron",
+            type: "text",
+            value: seed?.drone ?? "",
+          },
+        ].map((field) => (
+          <label className="form-field" key={field.name}>
+            <span className="field-label">{field.label}</span>
+            <input
+              className="field-input"
+              list={field.name === "drone" ? "drone-options" : undefined}
+              name={field.name}
+              type={field.type}
+              defaultValue={field.value}
+              required
+              maxLength={100}
+            />
+          </label>
+        ))}
+        <datalist id="drone-options">
+          {droneExamples.map((example) => (
+            <option key={example} value={example} />
+          ))}
+        </datalist>
+      </div>
+      <fieldset className={styles.zoneField}>
+        <legend className="field-label">{site.zoneLabel} por recorrer</legend>
+        {site.zones.map((zone) => (
+          <label key={zone.id}>
+            <input
+              type="checkbox"
+              checked={zoneIds.includes(zone.id)}
+              onChange={() =>
+                setZoneIds((current) =>
+                  current.includes(zone.id)
+                    ? current.filter((id) => id !== zone.id)
+                    : [...current, zone.id],
+                )
+              }
+            />
+            <span>
+              {zone.name}
+              <small>{zone.description}</small>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      <div>
+        <div className={styles.routeHeading}>
+          <span className="field-label">Recorrido previsto</span>
+          <span className="text-muted">{route.length} puntos</span>
+        </div>
+        <p className={styles.formHelp}>
+          Añade puntos en el mapa. Usa sus controles para editar el recorrido.
+        </p>
+        <div className={styles.formMap}>
+          <SiteMap
+            site={site}
+            flight={draft}
+            editable
+            onRouteChange={setRoute}
+          />
+        </div>
+        <p className={styles.formHelp}>
+          El recorrido no acredita autorización ni ausencia de restricciones.
+        </p>
+      </div>
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
+      <div className={styles.formActions}>
+        <Button variant="secondary" onPress={onCancel} type="button">
+          Cancelar
+        </Button>
+        <Button variant="primary" type="submit">
+          <Plus size={17} />
+          Guardar plan de ejemplo
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export function SchedulingView() {
+  const {
+    site,
+    flights,
+    selectedFlightId,
+    selectFlight,
+    addFlight,
+    updateFlight,
+  } = useDemo();
+  const [tab, setTab] = useState<"agenda" | "history">("agenda");
+  const [date, setDate] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const visibleFlights = flights
+    .filter(
+      (flight) =>
+        (tab === "agenda"
+          ? flight.status === "scheduled"
+          : flight.status !== "scheduled") &&
+        (!date || flight.date === date) &&
+        (filter === "all" || flight.status === filter),
+    )
+    .sort((a, b) =>
+      tab === "agenda"
+        ? a.date.localeCompare(b.date)
+        : b.date.localeCompare(a.date),
+    );
+  const activeFlight =
+    visibleFlights.find((flight) => flight.id === selectedFlightId) ??
+    visibleFlights[0];
+  function handleOpenChange(open: boolean) {
+    setIsOpen(open);
+    if (!open) setTimeout(() => triggerRef.current?.focus(), 50);
+  }
+  function saveFlight(input: Omit<Flight, "id">) {
+    const id = addFlight(input);
+    selectFlight(id);
+    setTab("agenda");
+    setFilter("all");
+    setDate("");
+    handleOpenChange(false);
+  }
+  const zoneNames = activeFlight
+    ? site.zones
+        .filter((zone) => activeFlight.zoneIds.includes(zone.id))
+        .map((zone) => zone.name)
+    : [];
+  return (
+    <div className={styles.view}>
+      <PageHeading
+        title="Programación"
+        description="Prepara el próximo vuelo. Conserva el contexto de cada recorrido."
+        actions={
+          <Button
+            ref={triggerRef}
+            variant="primary"
+            onPress={() => setIsOpen(true)}
+          >
+            <Plus size={18} />
+            Programar vuelo
+          </Button>
+        }
+      />
+      <section className={`surface ${styles.stage}`}>
+        <aside className={styles.rail}>
+          <header className={styles.railHeader}>
+            <h2>{site.name}</h2>
+            <p>
+              <MapPin size={14} aria-hidden="true" />
+              {site.location}
+            </p>
+          </header>
+          <div
+            className={`segmented-control ${styles.tabs}`}
+            aria-label="Tipo de vuelos"
+          >
+            <button
+              aria-pressed={tab === "agenda"}
+              onClick={() => {
+                setTab("agenda");
+                setFilter("all");
+              }}
+            >
+              Próximos vuelos
+            </button>
+            <button
+              aria-pressed={tab === "history"}
+              onClick={() => {
+                setTab("history");
+                setFilter("all");
+              }}
+            >
+              Historial
+            </button>
+          </div>
+          <Calendar flights={flights} date={date} onDate={setDate} />
+          <div className={styles.listHeading}>
+            <h3>
+              {date
+                ? formatDate(date, { day: "numeric", month: "long" })
+                : tab === "agenda"
+                  ? "Tu agenda"
+                  : "Vuelos anteriores"}
+            </h3>
+            <span>
+              {visibleFlights.length}{" "}
+              {visibleFlights.length === 1 ? "vuelo" : "vuelos"}
+            </span>
+          </div>
+          {tab === "history" && (
+            <label className={styles.filter}>
+              <span>Estado</span>
+              <select
+                className="field-select"
+                value={filter}
+                onChange={(event) => setFilter(event.target.value)}
+              >
+                <option value="all">Todos los estados</option>
+                <option value="completed">Completados</option>
+                <option value="cancelled">Cancelados</option>
+              </select>
+            </label>
+          )}
+          {date && (
+            <button className={styles.clearDate} onClick={() => setDate("")}>
+              <X size={13} />
+              Quitar filtro de fecha
+            </button>
+          )}
+          <FlightTimeline
+            key={`${tab}-${date}-${filter}`}
+            label="Vuelos del sitio"
+            flights={visibleFlights}
+            selectedId={activeFlight?.id}
+            onSelect={selectFlight}
+          />
+          {!visibleFlights.length && (
+            <EmptyState
+              title="Sin vuelos en esta selección"
+              description="Elige otra fecha o programa un nuevo recorrido."
+            />
+          )}
+        </aside>
+        <div className={styles.mapStage}>
+          <SiteMap site={site} flight={activeFlight} />
+          <span className={styles.mapTag}>
+            <Route size={14} aria-hidden="true" />
+            {activeFlight?.status === "completed"
+              ? "Trayectoria de ejemplo"
+              : "Recorrido previsto"}
+          </span>
+        </div>
+      </section>
+      {activeFlight && (
+        <div className={styles.briefing} key={activeFlight.id}>
+          <section className={`surface ${styles.briefingMain}`}>
+            <header className={styles.briefingHeader}>
+              <div>
+                <h2>{activeFlight.title}</h2>
+                <p>{activeFlight.objective}</p>
+              </div>
+              <div className={styles.headerActions}>
+                <LogDialog flight={activeFlight} />
+                <Link
+                  className={styles.detailLink}
+                  href="/vuelos"
+                  onClick={() => selectFlight(activeFlight.id)}
+                >
+                  Ver detalle
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+              </div>
+            </header>
+            <FlightItinerary flight={activeFlight} />
+            <dl className={styles.facts}>
+              <div>
+                <dt>Fecha y hora</dt>
+                <dd>
+                  {formatDate(activeFlight.date)} · {activeFlight.time}
+                </dd>
+              </div>
+              <div>
+                <dt>Piloto</dt>
+                <dd>{activeFlight.pilot}</dd>
+              </div>
+              <div>
+                <dt>Operador</dt>
+                <dd>{activeFlight.operator}</dd>
+              </div>
+              <div>
+                <dt>{site.zoneLabel}</dt>
+                <dd>{zoneNames.join(" · ") || "Sin asignar"}</dd>
+              </div>
+            </dl>
+            <PreparationChecklist
+              flight={activeFlight}
+              onChange={(checklist) =>
+                updateFlight(activeFlight.id, { checklist })
+              }
+            />
+            <div className={styles.weather}>
+              <CloudSun size={24} aria-hidden="true" />
+              <div>
+                <strong>Clima de la fecha del vuelo</strong>
+                <p>
+                  Sin conexión meteorológica. El pronóstico aún no está
+                  disponible.
+                </p>
+              </div>
+              <span>Muestra</span>
+            </div>
+          </section>
+          <DroneHangar droneName={activeFlight.drone} />
+        </div>
+      )}
+      <Modal isOpen={isOpen} onOpenChange={handleOpenChange}>
+        <Modal.Backdrop isDismissable={false}>
+          <Modal.Container size="lg" scroll="inside">
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading>Programar un vuelo</Modal.Heading>
+                <Modal.CloseTrigger aria-label="Cerrar formulario" />
+              </Modal.Header>
+              <Modal.Body>
+                <FlightForm
+                  key={site.id}
+                  site={site}
+                  seed={flights[0]}
+                  onSave={saveFlight}
+                  onCancel={() => handleOpenChange(false)}
+                />
+              </Modal.Body>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
+    </div>
+  );
+}

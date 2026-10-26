@@ -22,7 +22,7 @@ Reutilizar HeroUI y tokens compartidos antes de crear variantes o introducir dep
 
 Usar Node.js 22 y npm con `package-lock.json`. `npm ci` instala la base; `npm run dev` inicia desarrollo; `npm run check` verifica tipos, lint y formato; `npm run build` compila producción. `npm run format` aplica formato al código y configuración. Crear tests de comportamiento cuando existan funcionalidades que los justifiquen.
 
-Next.js: consultar las secciones necesarias de `node_modules/next/dist/docs/` correspondientes a la versión instalada. HeroUI v3 usa CSS global y no necesita el provider de v2. No introducir APIs antiguas ni otra librería de animación por defecto. Actualmente `src/app/page.tsx` devuelve `null` por petición del usuario; no diseñar una pantalla de bienvenida de ejemplo.
+Next.js: consultar las secciones necesarias de `node_modules/next/dist/docs/` correspondientes a la versión instalada. HeroUI v3 usa CSS global y no necesita el provider de v2. No introducir APIs antiguas ni otra librería de animación por defecto. El usuario autorizó ahora las pantallas de los módulos como propuesta frontend navegable; respetar los límites de archivos asignados, PRODUCT.md y DESIGN.md. Backend e integraciones operativas siguen fuera de alcance.
 
 ## Contexto provisional
 
@@ -35,3 +35,13 @@ Leer la actualización `docs/context/alcance-multisector-y-feedback.md` al plani
 Trabajar en cambios pequeños que completen una tarea. Si intervienen varios agentes, asignar componentes/archivos concretos, acordar límites y evitar ediciones simultáneas del mismo componente; integrar con una sola fuente de tokens y patrones.
 
 Verificar el recorrido cambiado, estados relevantes, teclado, móvil y movimiento reducido cuando corresponda. Ejecutar tipos, lint y compilación una vez configurados. Añadir pruebas para comportamiento significativo y ampliar comprobaciones ante fallos o regresiones; no repetir auditorías completas ni escribir pruebas que solo copien markup por ajustes cosméticos. Informar cambios, verificación y límites concretos.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

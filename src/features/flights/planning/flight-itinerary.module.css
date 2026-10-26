@@ -1,0 +1,108 @@
+.itinerary {
+  display: grid;
+  gap: 14px;
+}
+.itinerary header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.itinerary h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+.itinerary header span {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--accent-soft-foreground);
+  font-variant-numeric: tabular-nums;
+}
+.itinerary ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.itinerary li {
+  animation: stage-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+.itinerary a {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  height: 100%;
+  padding: 12px 10px 12px;
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  transition:
+    background-color 200ms,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.itinerary a:hover {
+  background: var(--accent-soft);
+  transform: translateY(-2px);
+}
+.mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--overlay) 14%, transparent);
+}
+.itinerary li[data-state="done"] .mark {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.itinerary li[data-state="partial"] .mark {
+  background: var(--warning-soft);
+  color: #6a4a0d;
+}
+.itinerary strong {
+  font-size: 13px;
+  line-height: 1.3;
+  margin-top: 4px;
+}
+.itinerary small {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+@keyframes stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (max-width: 1500px) {
+  .itinerary ol {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .itinerary ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .itinerary li {
+    animation: none;
+  }
+  .itinerary a {
+    transition: none;
+  }
+}

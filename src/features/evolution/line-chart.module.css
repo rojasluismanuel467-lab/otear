@@ -1,0 +1,65 @@
+.figure {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.box {
+  width: 100%;
+  min-width: 0;
+}
+.box svg {
+  display: block;
+  overflow: visible;
+}
+.grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.tick {
+  font-size: 12px;
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.cursor {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.swatch {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--swatch);
+}
+.swatchDashed {
+  width: 18px;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--swatch) 0 5px,
+    transparent 5px 9px
+  );
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
