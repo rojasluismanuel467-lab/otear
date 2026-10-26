@@ -1275,3 +1275,42 @@ textarea {
     transition: none;
   }
 }
+
+/* Chart paper: contour lines and a graticule with tick marks, tinted with the accent. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--accent);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+body::before {
+  opacity: 0.22;
+  -webkit-mask-image: url("/textures/chart-contours.svg");
+  mask-image: url("/textures/chart-contours.svg");
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+body::after {
+  opacity: 0.16;
+  -webkit-mask-image: url("/textures/chart-graticule.svg");
+  mask-image: url("/textures/chart-graticule.svg");
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-size: 240px 240px;
+  mask-size: 240px 240px;
+  -webkit-mask-position: 238px 73px;
+  mask-position: 238px 73px;
+}
+@media print {
+  body::before,
+  body::after {
+    display: none;
+  }
+}
