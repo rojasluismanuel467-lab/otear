@@ -224,7 +224,7 @@ export function ConditionMap({
             point: anchor.point,
             radius: (anchor.radius ?? 0.24) * (chosen ? 1.25 : 1),
             // The chosen part turns white so it stands out from the heat colours.
-            color: chosen ? "#f4f8f5" : heatColor(relative[part.id] ?? 0),
+            color: chosen ? "#f4f6f8" : heatColor(relative[part.id] ?? 0),
           };
         }),
       );

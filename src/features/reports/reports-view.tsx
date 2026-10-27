@@ -8,6 +8,7 @@ import { ArrowUpRight, Download, FileText, Printer } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { useDemo } from "@/features/demo/demo-context";
+import { useModuleTitle } from "@/features/config/use-config";
 import { FlightTimeline } from "@/features/flights/flight-timeline";
 import { preparationTotal } from "@/features/flights/planning/preparation-items";
 import {
@@ -40,6 +41,7 @@ function number(value: number, digits = 1) {
 }
 
 export function ReportsView() {
+  const moduleTitle = useModuleTitle("informes");
   const {
     site,
     flights,
@@ -109,7 +111,7 @@ export function ReportsView() {
     return (
       <>
         <PageHeading
-          title="Informes y cifras"
+          title={moduleTitle}
           description="El historial de vuelos y lo que se puede concluir de él."
         />
         <EmptyState
@@ -123,7 +125,7 @@ export function ReportsView() {
   return (
     <div className={styles.view}>
       <PageHeading
-        title="Informes y cifras"
+        title={moduleTitle}
         description={`Todos los vuelos de ${site.name} en un solo lugar: qué pasó, qué se repite y qué falta.`}
       />
       <section className={`surface ${styles.stage}`}>

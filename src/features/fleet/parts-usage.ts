@@ -139,7 +139,7 @@ export function usageFor(
 
 const stops: [number, [number, number, number]][] = [
   [0, [59, 130, 246]],
-  [0.35, [34, 195, 176]],
+  [0.35, [159, 180, 196]],
   [0.65, [245, 197, 24]],
   [1, [239, 108, 26]],
 ];
@@ -170,7 +170,7 @@ export function relativeUse(
   );
 }
 
-/** Blue for little use, through teal and yellow, to orange for a full interval. */
+/** Blue for little use, through gray-blue and amber, to orange for a full interval. */
 export function heatColor(fraction: number): string {
   const t = Math.max(0, Math.min(1, fraction));
   let i = 1;

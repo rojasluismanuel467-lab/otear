@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
+import { useModuleTitle, useTerm } from "@/features/config/use-config";
 import type { Finding, Flight } from "@/features/demo/types";
 import { SiteMap } from "@/components/maps/site-map";
 import { FlightTimeline } from "../flight-timeline";
@@ -44,6 +45,7 @@ const priorityLabels = {
 };
 
 export function FlightReviewView() {
+  const moduleTitle = useModuleTitle("vuelos");
   const { site, flights, selectedFlightId, selectFlight } = useDemo();
   const flight =
     flights.find((item) => item.id === selectedFlightId) ?? flights[0];
@@ -53,7 +55,7 @@ export function FlightReviewView() {
   return (
     <>
       <PageHeading
-        title="Archivo de vuelos"
+        title={moduleTitle}
         description="Revisa la entrega, conecta observaciones y prepara el siguiente paso."
       />
       {flight ? (
@@ -88,6 +90,7 @@ export function FlightReviewView() {
 }
 
 function FlightContent({ flight }: { flight: Flight }) {
+  const t = useTerm();
   const { site, findings, updateFinding, setNotice } = useDemo();
   const [activeTab, setActiveTab] = useState("summary");
   const [selectedFindingId, setSelectedFindingId] = useState("");
@@ -163,7 +166,7 @@ function FlightContent({ flight }: { flight: Flight }) {
             </Tabs.Tab>
             <Tabs.Tab id="findings">
               <Flag size={17} aria-hidden="true" />
-              Hallazgos
+              {t("finding", "plural")}
               {flightFindings.length > 0 && (
                 <span className={styles.tabCount}>{flightFindings.length}</span>
               )}

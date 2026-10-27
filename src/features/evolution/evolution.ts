@@ -190,9 +190,9 @@ export function comparisonReliability(
 export const phases = [
   { max: 25, label: "Movimiento de tierras", color: "#b5654a" },
   { max: 50, label: "Subbase", color: "#c28b2c" },
-  { max: 75, label: "Base", color: "#8a9a3a" },
-  { max: 99.9, label: "Carpeta asfáltica", color: "#3f7f9c" },
-  { max: Infinity, label: "Terminado", color: "#2f7d5b" },
+  { max: 75, label: "Base", color: "#8a9aa6" },
+  { max: 99.9, label: "Carpeta asfáltica", color: "#4a8fae" },
+  { max: Infinity, label: "Terminado", color: "#455967" },
 ];
 
 export function phaseOf(percent: number) {
@@ -203,19 +203,19 @@ export function phaseOf(percent: number) {
 
 const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
 
-/** Red to yellow to green, for vigor between 0.3 and 0.85. */
+/** Terracotta (low) to amber to brand blue (high), for vigor between 0.3 and 0.85. */
 export function vigorColor(value: number) {
   const t = Math.max(0, Math.min(1, (value - 0.3) / 0.55));
   const low = [181, 101, 74];
   const mid = [217, 180, 74];
-  const high = [47, 125, 91];
+  const high = [28, 111, 141];
   const [from, to, k] =
     t < 0.5 ? [low, mid, t * 2] : [mid, high, (t - 0.5) * 2];
   return `rgb(${lerp(from[0], to[0], k)}, ${lerp(from[1], to[1], k)}, ${lerp(from[2], to[2], k)})`;
 }
 
-/** Soft green scale for counts, from none (pale) to many (dark). */
+/** Pale blue-gray to terracotta for counts, from none to many. */
 export function countColor(value: number, max: number) {
   const t = max > 0 ? Math.min(1, value / max) : 0;
-  return `rgb(${lerp(226, 181, t)}, ${lerp(235, 101, t)}, ${lerp(226, 74, t)})`;
+  return `rgb(${lerp(226, 181, t)}, ${lerp(232, 101, t)}, ${lerp(237, 74, t)})`;
 }

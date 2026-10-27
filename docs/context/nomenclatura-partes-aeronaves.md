@@ -8,14 +8,14 @@ El mapa de estado de partes (Equipos y mantenimiento) dejó de usar una lista ge
 
 ## Fuentes y licencias
 
-| Aeronave | Documento | Versión | Licencia |
-| --- | --- | --- | --- |
-| Mavic 3 Enterprise | Manual de usuario, EN y ES | v3.0, 2025.09 | Derechos reservados de DJI |
-| Matrice 350 RTK | Manual de usuario; manual de mantenimiento | v1.2, 2024.08; v1.0, 2024.03 | Derechos reservados de DJI |
-| Matrice 4 | Manual de usuario; manual de mantenimiento | v1.0, 2025.01 | Derechos reservados de DJI |
-| Matrice 30 | Manual de usuario; manual de mantenimiento | v2.2, 2024.09; v1.0, 2025.01 | Derechos reservados de DJI |
-| Genéricas (multirrotor) | [PX4 User Guide](https://docs.px4.io/main/en/) | rama main | CC BY 4.0 (verificado en su página de licencias) |
-| Genéricas (multirrotor y ala fija) | Wikipedia, «Quadcopter» y «Fixed-wing aircraft» | consulta de octubre de 2026 | CC BY-SA 4.0 |
+| Aeronave                           | Documento                                       | Versión                      | Licencia                                         |
+| ---------------------------------- | ----------------------------------------------- | ---------------------------- | ------------------------------------------------ |
+| Mavic 3 Enterprise                 | Manual de usuario, EN y ES                      | v3.0, 2025.09                | Derechos reservados de DJI                       |
+| Matrice 350 RTK                    | Manual de usuario; manual de mantenimiento      | v1.2, 2024.08; v1.0, 2024.03 | Derechos reservados de DJI                       |
+| Matrice 4                          | Manual de usuario; manual de mantenimiento      | v1.0, 2025.01                | Derechos reservados de DJI                       |
+| Matrice 30                         | Manual de usuario; manual de mantenimiento      | v2.2, 2024.09; v1.0, 2025.01 | Derechos reservados de DJI                       |
+| Genéricas (multirrotor)            | [PX4 User Guide](https://docs.px4.io/main/en/)  | rama main                    | CC BY 4.0 (verificado en su página de licencias) |
+| Genéricas (multirrotor y ala fija) | Wikipedia, «Quadcopter» y «Fixed-wing aircraft» | consulta de octubre de 2026  | CC BY-SA 4.0                                     |
 
 **Límite importante.** No existe un manual de licencia libre de los equipos DJI: sus manuales son públicos, pero DJI se reserva los derechos y limita su reproducción (el de la M30 dice que son «materiales confidenciales» solo para operar el equipo). Por eso el código solo cita nombres de partes y la numeración de sus diagramas, sin copiar textos ni dibujos. Si se quiere una base 100 % libre, solo sirven las partes genéricas (PX4, Wikipedia). La decisión de seguir usando la nomenclatura de DJI es del usuario.
 
@@ -38,11 +38,11 @@ El modelo de la Matrice 350 se gira 180° en `drone-catalog.ts` (`yaw: Math.PI`)
 
 Los manuales de mantenimiento traen intervalos propios por modelo que difieren del plan genérico actual (200 h o 6 meses, tomado de la serie M300):
 
-| Modelo | Mantenimiento | Hélices | Batería |
-| --- | --- | --- | --- |
+| Modelo          | Mantenimiento                                                                     | Hélices                 | Batería                                           |
+| --------------- | --------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------- |
 | Matrice 350 RTK | básico a 150 h o 6 meses; estándar a 300 h o 12 meses; premium a 900 h o 36 meses | cambiar a 300 h o 1 año | mantenimiento cada 100 ciclos; nominal 400 ciclos |
-| Matrice 4 | amortiguadores del gimbal a 200 h o 1 año | cambiar a 200 h o 1 año | mantenimiento cada 50 ciclos |
-| Matrice 30 | hélices a 300 h o 1 año | cambiar a 300 h o 1 año | n. d. en lo leído |
+| Matrice 4       | amortiguadores del gimbal a 200 h o 1 año                                         | cambiar a 200 h o 1 año | mantenimiento cada 50 ciclos                      |
+| Matrice 30      | hélices a 300 h o 1 año                                                           | cambiar a 300 h o 1 año | n. d. en lo leído                                 |
 
 Calibración del sistema de visión de la M350: a 200 h. No se cambió `defaultPlan` en `fleet.ts`; sería razonable que cada modelo traiga su plan con la referencia a su manual.
 

@@ -25,8 +25,8 @@ import styles from "./building-scene.module.css";
 
 const WIDTH = 11;
 const DEPTH = 7;
-const CONCRETE = 0xdde3dc;
-const NEW_WORK = 0x2f9a6e;
+const CONCRETE = 0xdce0e3;
+const NEW_WORK = 0x2b8fb3;
 
 export interface BuildingMarker {
   id: string;
@@ -115,7 +115,7 @@ export function BuildingScene({
 
     const ground = new Mesh(
       track(new CircleGeometry(16, 64)),
-      new MeshStandardMaterial({ color: 0xe9eee6, roughness: 1 }),
+      new MeshStandardMaterial({ color: 0xe6ebee, roughness: 1 }),
     );
     materials.push(ground.material as Material);
     ground.rotation.x = -Math.PI / 2;
@@ -125,12 +125,12 @@ export function BuildingScene({
     const building = new Group();
     scene.add(building);
     const ghostMaterial = new LineBasicMaterial({
-      color: 0x8aa896,
+      color: 0x8a9ba8,
       transparent: true,
       opacity: 0.7,
     });
     const columnMaterial = new MeshStandardMaterial({
-      color: 0x7c8a82,
+      color: 0x7c848a,
       roughness: 0.6,
     });
     const referenceMaterial = new LineBasicMaterial({ color: 0x3f7f9c });

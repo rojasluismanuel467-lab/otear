@@ -22,28 +22,32 @@ import {
   TrendingUp,
   RotateCcw,
   Search,
+  Settings,
   Sprout,
   X,
+  type LucideIcon,
 } from "lucide-react";
+import {
+  moduleLabel,
+  visibleModules,
+  type ModuleId,
+} from "@/features/config/config";
+import { can } from "@/features/config/licence";
+import { ThemeApplier } from "@/features/config/theme-applier";
+import { useConfig } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
 import { formatDate } from "@/lib/format";
 
-function navigationFor(zoneLabel: string) {
-  return [
-    { href: "/programacion", label: "Programación", icon: CalendarDays },
-    { href: "/vuelos", label: "Vuelos y evidencias", icon: Plane },
-    {
-      href: "/mapa",
-      label: `Mapa y ${zoneLabel.toLowerCase()}`,
-      icon: MapIcon,
-    },
-    { href: "/evolucion", label: "Evolución", icon: TrendingUp },
-    { href: "/equipos", label: "Equipos y mantenimiento", icon: Wrench },
-    { href: "/informes", label: "Informes y cifras", icon: ChartColumn },
-    { href: "/pagos", label: "Pagos y costos", icon: CreditCard },
-    { href: "/documentos", label: "Documentos", icon: FolderCheck },
-  ];
-}
+const moduleIcons: Record<ModuleId, LucideIcon> = {
+  programacion: CalendarDays,
+  vuelos: Plane,
+  mapa: MapIcon,
+  evolucion: TrendingUp,
+  equipos: Wrench,
+  informes: ChartColumn,
+  pagos: CreditCard,
+  documentos: FolderCheck,
+};
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -73,11 +77,27 @@ export function AppShell({ children }: { children: ReactNode }) {
       .toLocaleLowerCase()
       .includes(query.toLocaleLowerCase()),
   );
-  const navigation = navigationFor(site.zoneLabel);
-  const activeNav = navigation.find((item) => pathname.startsWith(item.href));
+  const { config } = useConfig();
+  const navigation = visibleModules(config).map((item) => ({
+    href: item.href,
+    label: moduleLabel(config, item.id, site.zoneLabel),
+    icon: moduleIcons[item.id],
+  }));
+  const branded = can(config.planId, "branding");
+  const companyName = branded ? config.company.name.trim() : "";
+  const logo = branded ? config.company.logo : undefined;
+  const showVendor =
+    Boolean(companyName || logo) &&
+    !(can(config.planId, "whiteLabel") && config.company.hideVendor);
+  const activeNav =
+    navigation.find((item) => pathname.startsWith(item.href)) ??
+    (pathname.startsWith("/configuracion")
+      ? { href: "/configuracion", label: "Configuración", icon: Settings }
+      : undefined);
 
   return (
     <div className="app-shell">
+      <ThemeApplier />
       <a href="#main-content" className="skip-link">
         Saltar al contenido
       </a>
@@ -92,15 +112,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link
           href="/programacion"
           className="brand"
-          aria-label="Otear, programación"
+          aria-label={`${companyName || "Otear"}, inicio`}
         >
-          <span className="brand-symbol">
-            <MoveUpRight size={24} strokeWidth={2.4} />
-          </span>
-          <span>
-            otear<span className="brand-dot">.</span>
-          </span>
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt="" className="brand-logo" />
+          ) : (
+            <span className="brand-symbol">
+              <MoveUpRight size={24} strokeWidth={2.4} />
+            </span>
+          )}
+          {companyName || logo ? (
+            <span className="brand-name">{companyName}</span>
+          ) : (
+            <span>
+              otear<span className="brand-dot">.</span>
+            </span>
+          )}
         </Link>
+        {showVendor && <p className="vendor-note">Con tecnología de Otear</p>}
         <div className="workspace-label">
           <span>ESPACIO DE TRABAJO</span>
           <span className="tiny-avatar">LR</span>
@@ -162,6 +192,17 @@ export function AppShell({ children }: { children: ReactNode }) {
               Reiniciar demostración
             </button>
           </div>
+          <Link
+            href="/configuracion"
+            className={`help-link ${pathname.startsWith("/configuracion") ? "help-link--active" : ""}`}
+            aria-current={
+              pathname.startsWith("/configuracion") ? "page" : undefined
+            }
+            onClick={() => setMobileOpen(false)}
+          >
+            <Settings size={17} />
+            Configuración
+          </Link>
           <button className="help-link" onClick={() => setHelpOpen(true)}>
             <CircleHelp size={17} />
             Guía de la demo

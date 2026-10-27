@@ -15,6 +15,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import { useDemo } from "@/features/demo/demo-context";
+import { useModuleTitle } from "@/features/config/use-config";
 import type { Aircraft, Battery, PlanTask } from "@/features/demo/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import { AircraftDialog } from "./aircraft-dialog";
@@ -63,6 +64,7 @@ function number(value: number, digits = 1) {
 }
 
 export function FleetView() {
+  const moduleTitle = useModuleTitle("equipos");
   const { site, flights, aircraft, batteries, maintenance, partMarks } =
     useDemo();
   const [selectedId, setSelectedId] = useState<string>();
@@ -85,7 +87,7 @@ export function FleetView() {
   return (
     <div className={styles.view}>
       <PageHeading
-        title="Equipos y mantenimiento"
+        title={moduleTitle}
         description={`Las aeronaves de ${site.name}: su estado, su plan de mantenimiento y todo lo que les ha pasado.`}
         actions={<AircraftDialog />}
       />

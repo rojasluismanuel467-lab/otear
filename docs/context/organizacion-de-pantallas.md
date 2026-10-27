@@ -5,6 +5,7 @@ Fecha: 26 de octubre de 2026. Motivo: algunas pantallas (Equipos, Evolución) ac
 ## Qué dice la investigación consultada
 
 **Pestañas** ([Nielsen Norman Group, «Tabs, Used Right»](https://www.nngroup.com/articles/tabs-used-right/), leído completo):
+
 - Úselas para contenido largo con grupos claros que **no hay que comparar** entre sí, y cuando las pestañas no predeterminadas guardan contenido **complementario**, no crítico.
 - No las use si el contenido no tiene grupos claros (mejor una página con subtítulos), si hay que comparar entre pestañas, si la información crítica quedaría en una pestaña oculta o si las etiquetas son largas (en móvil, mejor acordeones).
 - «Cuantas menos pestañas, mejor». Evite barras que se desbordan en carrusel: lo oculto no se descubre.

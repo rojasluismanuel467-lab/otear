@@ -6,12 +6,12 @@ Fecha: 26 de octubre de 2026. Sección de la demo: `/evolucion` (`features/evolu
 
 Una empresa que vuela el mismo lugar muchas veces tiene una película de ese lugar, pero hoy cada vuelo es una carpeta suelta. Otear organiza todos los vuelos de un sitio como una línea de tiempo y responde una pregunta en cada sector:
 
-| Sector | Pregunta | Vista |
-| --- | --- | --- |
-| Construcción (edificio) | ¿Cuánto se ha construido y cómo va frente a lo previsto? | Modelo 3D que crece nivel a nivel, con lo previsto en transparencia y lo nuevo resaltado |
-| Carreteras | ¿Qué tramos avanzan, cuáles están detenidos y en qué fase está cada uno? | Franja por abscisas coloreada por fase, mapa y curva de avance acumulado |
-| Agricultura | ¿Qué lotes mejoran, cuáles bajan y desde cuándo? | Mapa de lotes por vigor, y la curva de cada lote |
-| Vigilancia y otros | ¿Dónde se acumulan las novedades? | Mapa por zonas según hallazgos por vuelo |
+| Sector                  | Pregunta                                                                 | Vista                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Construcción (edificio) | ¿Cuánto se ha construido y cómo va frente a lo previsto?                 | Modelo 3D que crece nivel a nivel, con lo previsto en transparencia y lo nuevo resaltado |
+| Carreteras              | ¿Qué tramos avanzan, cuáles están detenidos y en qué fase está cada uno? | Franja por abscisas coloreada por fase, mapa y curva de avance acumulado                 |
+| Agricultura             | ¿Qué lotes mejoran, cuáles bajan y desde cuándo?                         | Mapa de lotes por vigor, y la curva de cada lote                                         |
+| Vigilancia y otros      | ¿Dónde se acumulan las novedades?                                        | Mapa por zonas según hallazgos por vuelo                                                 |
 
 En todas: control de tiempo (arrastrar, reproducir), comparar dos fechas, y un panel de lectura que dice qué cambió, a qué ritmo, y cuándo se llegaría a la meta si el ritmo sigue.
 

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useDemo } from "@/features/demo/demo-context";
+import { useModuleTitle } from "@/features/config/use-config";
 import type { Invoice } from "@/features/demo/types";
 import { downloadText, formatDate, formatMoney } from "@/lib/format";
 import { PaymentAutomation } from "./payment-automation";
@@ -33,6 +34,7 @@ function invoiceStatus(invoice: Invoice) {
 }
 
 export function BillingView() {
+  const moduleTitle = useModuleTitle("pagos");
   const {
     site,
     invoices,
@@ -124,7 +126,7 @@ export function BillingView() {
   return (
     <div className={styles.view}>
       <PageHeading
-        title="Pagos y facturas"
+        title={moduleTitle}
         description={`Lo contratado, sus soportes y el saldo por pagar en ${site.name}.`}
       />
       <section className={`surface ${styles.stage}`}>

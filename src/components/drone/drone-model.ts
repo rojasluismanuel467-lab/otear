@@ -39,17 +39,17 @@ export type DroneModel = {
 };
 
 const palette = {
-  shell: 0xf1f3ee,
-  shellShade: 0xd5dcd3,
-  frame: 0x26332e,
-  motor: 0x1b2420,
-  prop: 0x35423c,
-  glass: 0x0a100e,
+  shell: 0xeef1f3,
+  shellShade: 0xd3d8dc,
+  frame: 0x262e33,
+  motor: 0x1b2024,
+  prop: 0x353d42,
+  glass: 0x0a0d10,
   accent: 0x1c6f8d,
   front: 0x81bfdb,
   rear: 0xe6a95c,
-  tank: 0xe9efe6,
-  steel: 0x8a968f,
+  tank: 0xe6ebef,
+  steel: 0x8a9196,
 };
 
 type Kit = ReturnType<typeof createKit>;
@@ -470,13 +470,13 @@ export async function loadFileDroneModel(
   loader.setMeshoptDecoder(MeshoptDecoder);
   const gltf = await loader.loadAsync(glbUrl);
   const plastic = new MeshStandardMaterial({
-    color: 0xd4dbd2,
+    color: 0xd2d7db,
     roughness: 0.4,
     metalness: 0.18,
   });
   // Propeller envelopes tagged "disc" by the conversion are drawn as a faint blur.
   const envelope = new MeshStandardMaterial({
-    color: 0xbfe6cf,
+    color: 0xcbd4da,
     transparent: true,
     opacity: 0.14,
     depthWrite: false,

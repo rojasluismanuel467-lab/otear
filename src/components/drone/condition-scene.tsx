@@ -187,8 +187,8 @@ function shadowTexture() {
   const context = canvas.getContext("2d");
   if (context) {
     const gradient = context.createRadialGradient(64, 64, 4, 64, 64, 64);
-    gradient.addColorStop(0, "rgba(2, 14, 9, 0.55)");
-    gradient.addColorStop(1, "rgba(2, 14, 9, 0)");
+    gradient.addColorStop(0, "rgba(2, 10, 16, 0.55)");
+    gradient.addColorStop(1, "rgba(2, 10, 16, 0)");
     context.fillStyle = gradient;
     context.fillRect(0, 0, 128, 128);
   }
@@ -404,7 +404,7 @@ export function ConditionScene({
     const pmrem = new PMREMGenerator(renderer);
     const environment = pmrem.fromScene(new RoomEnvironment(), 0.04);
     scene.environment = environment.texture;
-    scene.add(new HemisphereLight(0xe8f5ee, 0x0f2a21, 0.4));
+    scene.add(new HemisphereLight(0xebeff2, 0x171d22, 0.4));
     const key = new DirectionalLight(0xffffff, 1.7);
     key.position.set(3, 5, 4);
     scene.add(key);

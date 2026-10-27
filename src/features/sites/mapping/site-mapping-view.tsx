@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PageHeading } from "@/components/ui/page-heading";
 import { ParcelMap } from "@/components/maps/parcel-map";
 import { useDemo } from "@/features/demo/demo-context";
+import { useModuleTitle } from "@/features/config/use-config";
 import type { Position } from "@/features/demo/types";
 import { parseGeometry, splitPolygon, translateTo } from "@/lib/geo";
 import {
@@ -41,6 +42,7 @@ const stepNumber: Record<Step, number> = {
 };
 
 function SiteMapping() {
+  const moduleTitle = useModuleTitle("mapa");
   const { site, flights, replaceZones, setNotice } = useDemo();
   const kind = outlineKindFor(site.sector);
   const routes = routesOf(flights);
@@ -220,7 +222,7 @@ function SiteMapping() {
   return (
     <div className={styles.view}>
       <PageHeading
-        title={`Mapa y ${site.zoneLabel.toLowerCase()}`}
+        title={moduleTitle}
         description={`Parta de lo que ya existe y repártalo en ${site.zoneLabel.toLowerCase()}. Así los vuelos, hallazgos y costos hablan de lo mismo.`}
       />
       <section className={`surface ${styles.stage}`}>

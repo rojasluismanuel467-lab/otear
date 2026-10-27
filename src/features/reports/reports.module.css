@@ -200,7 +200,7 @@
 }
 .stack i[data-state="dismissed"],
 .legend span[data-state="dismissed"]::before {
-  background: #aab4ac;
+  background: #aab0b4;
 }
 .legend {
   display: flex;

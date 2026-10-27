@@ -38,12 +38,12 @@ Aplicado en `flight-report.tsx`: sección "Registro del vuelo", prioridad y coor
 
 El [Centro de descargas de DJI](https://www.dji.com/downloads/products/mavic-3-enterprise) publica archivos CAD en formato STEP (`.stp`) para algunos equipos. Verificado el 25 de octubre de 2026 (no se descargó ningún archivo):
 
-| Equipo | Archivo | Fecha |
-| --- | --- | --- |
-| Mavic 3 Enterprise | `dl.djicdn.com/downloads/DJI_Mavic_3_Enterprise/M3E.stp` | 2024-10-18 |
-| Matrice 4 Series | `dl.djicdn.com/downloads/DJI_Matrice_4_Series/M4T_v2.stp` | 2025-10-31 |
-| Matrice 350 RTK | `dl.djicdn.com/downloads/matrice_350_rtk/Matrice_350_RTK_3D_Model.stp` | 2023-05-30 |
-| Matrice 30 Series | `dl.djicdn.com/downloads/matrice-30-series/20220624STP/M30T.stp` | 2022-06-24 |
+| Equipo             | Archivo                                                                | Fecha      |
+| ------------------ | ---------------------------------------------------------------------- | ---------- |
+| Mavic 3 Enterprise | `dl.djicdn.com/downloads/DJI_Mavic_3_Enterprise/M3E.stp`               | 2024-10-18 |
+| Matrice 4 Series   | `dl.djicdn.com/downloads/DJI_Matrice_4_Series/M4T_v2.stp`              | 2025-10-31 |
+| Matrice 350 RTK    | `dl.djicdn.com/downloads/matrice_350_rtk/Matrice_350_RTK_3D_Model.stp` | 2023-05-30 |
+| Matrice 30 Series  | `dl.djicdn.com/downloads/matrice-30-series/20220624STP/M30T.stp`       | 2022-06-24 |
 
 Sin modelo: Mavic 3 Pro (solo PDF). No se pudo comprobar la página de Agras (la URL probada redirigió a 404).
 

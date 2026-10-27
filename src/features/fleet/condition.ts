@@ -5,7 +5,7 @@ export const conditionInfo: Record<
   PartCondition,
   { label: string; color: string; hint: string }
 > = {
-  ok: { label: "Bueno", color: "#2f9a6e", hint: "Revisada y sin novedad" },
+  ok: { label: "Bueno", color: "#506879", hint: "Revisada y sin novedad" },
   watch: {
     label: "Vigilar",
     color: "#d9a526",

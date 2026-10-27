@@ -1,10 +1,10 @@
 export const zonePalette = [
-  "#2f7d5b",
+  "#1c6f8d",
   "#c28b2c",
-  "#3f7f9c",
+  "#7a8b99",
   "#a35a7a",
-  "#6f8f3a",
+  "#4aa3c8",
   "#8a6bb0",
   "#b5654a",
-  "#4b8f8c",
+  "#5f8f9a",
 ];

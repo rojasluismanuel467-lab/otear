@@ -4,11 +4,11 @@ Dirección de esta propuesta: archivo visual de operaciones, inspirado en la cla
 
 ## Fundamentos
 
-- Fondo cálido muy claro `#f5f6f3`, superficies blancas, texto `#22322e`, secundario `#64716b`.
+- Fondo cálido muy claro `#f3f5f6`, superficies blancas, texto `#222b32`, secundario `#646c71`.
 - Azul de marca `#1c6f8d` para acciones, selección y marca (sombra más oscura del azul cielo de la Fuerza Aérea Colombiana, `#81bfdb`, convertido desde las coordenadas CIELAB de la especificación ET-FAC-002-03); azul claro `#e2f0f6`. El verde queda para estados correctos, ámbar para pendientes y rojo sobrio para atención.
 - Manrope autoalojada, cuerpo 14–15 px, encabezados 28–34 px, números tabulares en importes y fechas.
 - Barra lateral clara de 238 px, encabezado contextual persistente y espacio de trabajo amplio. Sin panel inicial de métricas: cada ruta abre una tarea.
-- Radios 12–22 px según nivel; bordes `#e3e8e1`; sombras con desplazamiento y difusión suave, nunca halos.
+- Radios 12–22 px según nivel; bordes `#e1e5e8`; sombras con desplazamiento y difusión suave, nunca halos.
 - Iconos Lucide, una sola familia, 18–20 px en controles, etiquetas visibles para acciones del dominio.
 
 ## Interacción distintiva

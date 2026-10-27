@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
+import { useModuleTitle } from "@/features/config/use-config";
 import type { Flight, Position, Site } from "@/features/demo/types";
 import { PageHeading } from "@/components/ui/page-heading";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -365,6 +366,7 @@ function FlightForm({
 }
 
 export function SchedulingView() {
+  const moduleTitle = useModuleTitle("programacion");
   const {
     site,
     flights,
@@ -415,7 +417,7 @@ export function SchedulingView() {
   return (
     <div className={styles.view}>
       <PageHeading
-        title="Programación"
+        title={moduleTitle}
         description="Prepara el próximo vuelo. Conserva el contexto de cada recorrido."
         actions={
           <Button

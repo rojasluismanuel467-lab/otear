@@ -145,7 +145,7 @@
 .stops button[aria-pressed="true"] .node {
   background: #fff;
   scale: 1.18;
-  box-shadow: 0 0 0 4px rgb(143 224 180 / 0.35);
+  box-shadow: 0 0 0 4px rgb(129 191 219 / 0.4);
 }
 .stops button[data-reference="true"] .node {
   border-style: dashed;

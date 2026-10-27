@@ -9,6 +9,7 @@ import { StageDrawer } from "@/components/ui/stage-drawer";
 import { ParcelMap } from "@/components/maps/parcel-map";
 import { zonePalette } from "@/components/maps/zone-palette";
 import { useDemo } from "@/features/demo/demo-context";
+import { useModuleTitle } from "@/features/config/use-config";
 import type { Site } from "@/features/demo/types";
 import { formatDate } from "@/lib/format";
 import {
@@ -72,6 +73,7 @@ const toneIcon = {
 } as const;
 
 export function EvolutionView() {
+  const moduleTitle = useModuleTitle("evolucion");
   const { site, flights, findings } = useDemo();
   const captures = useMemo(
     () => buildCaptures(site, flights, findings),
@@ -80,7 +82,7 @@ export function EvolutionView() {
   return (
     <div className={styles.view}>
       <PageHeading
-        title="Evolución"
+        title={moduleTitle}
         description={`Cómo ha cambiado ${site.name} vuelo a vuelo, y dónde está pasando algo.`}
       />
       {captures.length < 2 ? (
@@ -490,10 +492,10 @@ function Legend({ site }: { site: Site }) {
   }
   const text =
     site.sector === "agriculture"
-      ? "Color del lote: vigor, de rojizo (bajo) a verde (alto)."
+      ? "Color del lote: vigor, de rojizo (bajo) a azul (alto)."
       : site.sector === "security"
         ? "Color de la zona: más oscuro, más novedades."
-        : "Verde: obra nueva desde la fecha de comparación. Arrastre para girar.";
+        : "Azul: obra nueva desde la fecha de comparación. Arrastre para girar.";
   return <p className={styles.legendText}>{text}</p>;
 }
 
@@ -543,7 +545,7 @@ function EvolutionChart({
       series.push({
         id: "planned",
         name: "Lo previsto",
-        color: "#7a8a82",
+        color: "#7a838a",
         dashed: true,
         points: [
           { date: start, value: plannedAt(site.schedule, start, target) },

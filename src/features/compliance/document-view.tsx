@@ -18,6 +18,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDemo } from "@/features/demo/demo-context";
+import { useModuleTitle } from "@/features/config/use-config";
 import type { FlightDocument } from "@/features/demo/types";
 import { downloadText, formatDate } from "@/lib/format";
 import { DEMO_DATE } from "@/features/demo/demo-data";
@@ -68,6 +69,7 @@ function documentSummary(document: FlightDocument, siteName: string) {
 }
 
 export function DocumentView() {
+  const moduleTitle = useModuleTitle("documentos");
   const { site, documents, updateDocument, setNotice } = useDemo();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
@@ -169,7 +171,7 @@ export function DocumentView() {
   return (
     <div className={styles.view}>
       <PageHeading
-        title="Documentos"
+        title={moduleTitle}
         description="Los soportes de cada operación, vinculados a quien corresponden."
         actions={
           <span className={styles.context}>
