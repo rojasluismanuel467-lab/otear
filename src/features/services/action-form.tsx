@@ -9,6 +9,10 @@ import type { ActionId } from "./workflow";
 import styles from "./services.module.css";
 
 const number = (text: string) => Number(text.trim().replace(",", "."));
+const optional = (text: string) => {
+  const value = number(text);
+  return text && Number.isFinite(value) && value > 0 ? value : undefined;
+};
 
 /** One form per step of the flow; it validates what it can and hands the rest to the workflow. */
 export function ActionForm({
@@ -61,6 +65,8 @@ export function ActionForm({
             .map((item) => item.trim())
             .filter(Boolean),
           note: read("note"),
+          durationMin: optional(read("durationMin")),
+          photoCount: optional(read("photoCount")),
         };
         break;
       case "verify":
@@ -225,6 +231,26 @@ export function ActionForm({
                 placeholder="Ortomosaico (GeoTIFF), Registro de vuelo (CSV)"
               />
               <span className="text-muted">Sepárelos con comas.</span>
+            </label>
+          </div>
+          <div className={styles.formGrid}>
+            <label className="form-field">
+              <span className="field-label">
+                Duración del vuelo, en minutos (opcional)
+              </span>
+              <input
+                className="field-input"
+                name="durationMin"
+                inputMode="numeric"
+              />
+            </label>
+            <label className="form-field">
+              <span className="field-label">Fotos tomadas (opcional)</span>
+              <input
+                className="field-input"
+                name="photoCount"
+                inputMode="numeric"
+              />
             </label>
           </div>
           <label className="form-field">

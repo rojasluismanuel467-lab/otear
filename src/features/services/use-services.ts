@@ -14,7 +14,14 @@ export type ActionInput =
   | { id: "decline"; note: string }
   | { id: "assign"; operatorId: string }
   | { id: "schedule"; date: string; time: string; pilot: string }
-  | { id: "deliver"; coveredHa: number; deliverables: string[]; note: string }
+  | {
+      id: "deliver";
+      coveredHa: number;
+      deliverables: string[];
+      note: string;
+      durationMin?: number;
+      photoCount?: number;
+    }
   | { id: "verify"; result: "accepted" | "disputed"; note: string }
   | { id: "invoice"; billedHa?: number }
   | { id: "cancel"; note: string };
@@ -122,6 +129,8 @@ export function useServices() {
           const flight = flights.find((item) => item.id === request.flightId);
           updateFlight(request.flightId, {
             status: "completed",
+            ...(input.durationMin ? { duration: input.durationMin } : {}),
+            ...(input.photoCount ? { photoCount: input.photoCount } : {}),
             date: flight && flight.date > DEMO_DATE ? DEMO_DATE : flight?.date,
             log: flight?.log
               ? { ...flight.log, coveredHa: input.coveredHa }
