@@ -48,3 +48,13 @@ Cálculos (horas, ciclos, desgaste, avance) y su integridad; datos mínimos que 
 - ¿Se entrega como servicio en la nube o instalado en el cliente? Cambia dónde se valida la licencia.
 - ¿Los complementos los hace solo el propietario o también terceros (y con qué contrato)?
 - Revisión legal del contrato de licencia y de la propiedad de lo que el cliente personalice.
+
+## Campos propios (construidos)
+
+Reglas tomadas de la ayuda oficial de [Autodesk](https://help.autodesk.com/cloudhelp/ENU/Build-Issues/files/configure-issues/Issues_Custom_Fields.html): título y tipo obligatorios; después de crear solo cambian título y descripción (aquí también unidad y «obligatorio»); un campo con datos no se borra, se archiva; hay un tope por registro (Autodesk no publica la cifra; aquí son 15, propuesta mía).
+
+- **Dónde se crean:** Configuración > Campos propios, por tipo de registro (vuelo, hallazgo, aeronave, pago).
+- **Dónde se llenan:** un bloque «Campos de la empresa» en el resumen del vuelo, en el detalle del hallazgo, en Papeles y costos de la aeronave y en el detalle de un pago. Se guarda al salir del campo.
+- **Listas:** se puede renombrar una opción o agregar nuevas; una opción con datos no se quita.
+- **Obligatorio:** solo avisa («Falta 1 dato obligatorio»); no bloquea el flujo.
+- **Pendiente:** asignar un campo solo a un tipo o categoría (Autodesk lo hace), mostrarlos en informes y exportaciones, y validar en el servidor.

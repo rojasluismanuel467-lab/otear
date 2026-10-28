@@ -32,6 +32,7 @@ import {
   taskStatuses,
   type HistoryKind,
 } from "./fleet";
+import { CustomFieldsPanel } from "@/features/config/custom-fields-panel";
 import { ConditionMap } from "./condition-map";
 import { SectionTabs } from "@/components/ui/section-tabs";
 import { MaintenanceDialog } from "./maintenance-dialog";
@@ -505,6 +506,16 @@ function AircraftDetail({
                     Cálculo simple, sin depreciación ni seguro. Sirve para
                     comparar aeronaves, no como costeo contable.
                   </p>
+                </section>
+                <section className={styles.block}>
+                  <CustomFieldsPanel
+                    key={item.id}
+                    target="aircraft"
+                    values={item.customValues}
+                    onChange={(customValues) =>
+                      updateAircraft(item.id, { customValues })
+                    }
+                  />
                 </section>
               </>
             ),

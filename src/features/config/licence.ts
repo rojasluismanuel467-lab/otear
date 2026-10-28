@@ -52,7 +52,7 @@ export const featureLabels: Record<
   customFields: {
     label: "Campos propios",
     detail: "Agregar campos a vuelos, hallazgos, aeronaves y pagos.",
-    available: false,
+    available: true,
   },
   addons: {
     label: "Complementos",

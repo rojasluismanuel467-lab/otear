@@ -1344,3 +1344,87 @@ body::after {
   color: var(--accent);
   font-weight: 700;
 }
+
+/* Popups: frosted glass over a blurred, tinted page, sized to the screen.
+   The blur sits on the backdrop and on the dialog itself; the dialog stays opaque enough to read. */
+html [data-slot="modal-backdrop"] {
+  background: rgb(15 38 52 / 0.32);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  backdrop-filter: blur(14px) saturate(1.15);
+}
+html [data-slot="modal-dialog"] {
+  --dialog-w: clamp(440px, 40vw, 600px);
+  width: min(var(--dialog-w), calc(100vw - 2rem));
+  max-width: none;
+  max-height: min(90dvh, 960px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgb(255 255 255 / 0.76);
+  -webkit-backdrop-filter: blur(30px) saturate(1.7);
+  backdrop-filter: blur(30px) saturate(1.7);
+  border: 1px solid rgb(255 255 255 / 0.65);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.7) inset,
+    0 24px 60px -12px rgb(10 37 51 / 0.38),
+    0 4px 14px rgb(10 37 51 / 0.12);
+}
+html [data-slot="modal-dialog"].modal__dialog--lg {
+  --dialog-w: clamp(540px, 58vw, 900px);
+}
+html [data-slot="modal-dialog"].modal__dialog--sm,
+html [data-slot="modal-dialog"].modal__dialog--xs {
+  --dialog-w: clamp(340px, 30vw, 440px);
+}
+@media (max-width: 640px) {
+  html [data-slot="modal-dialog"] {
+    --dialog-w: 100vw;
+    max-height: 92dvh;
+    padding: 20px;
+  }
+}
+@media (min-height: 1100px) {
+  html [data-slot="modal-dialog"] {
+    max-height: min(84dvh, 1000px);
+  }
+}
+.notifications-panel,
+.app-toast {
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+}
+.notifications-panel.surface {
+  background: rgb(255 255 255 / 0.78);
+  border: 1px solid rgb(255 255 255 / 0.65);
+}
+.app-toast {
+  background: rgb(15 52 71 / 0.82);
+  border: 1px solid rgb(255 255 255 / 0.18);
+}
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  html [data-slot="modal-dialog"] {
+    background: #fff;
+  }
+  html [data-slot="modal-backdrop"] {
+    background: rgb(15 38 52 / 0.55);
+  }
+  .notifications-panel.surface {
+    background: #fff;
+  }
+  .app-toast {
+    background: #0f3447;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html [data-slot="modal-dialog"] {
+    background: #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  html [data-slot="modal-backdrop"] {
+    background: rgb(15 38 52 / 0.55);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

@@ -35,6 +35,7 @@ import {
   type PlanId,
 } from "./licence";
 import { applyPreset, presets } from "./presets";
+import { CustomFieldsAdmin } from "./custom-fields-admin";
 import { useConfig } from "./use-config";
 import styles from "./config-view.module.css";
 
@@ -157,13 +158,18 @@ export function ConfigView() {
             },
             {
               id: "terms",
-              label: "Vocabulario",
-              content: renderTerms(),
+              label: "Nombres y menú",
+              content: (
+                <>
+                  {renderTerms()}
+                  {renderModules()}
+                </>
+              ),
             },
             {
-              id: "modules",
-              label: "Módulos",
-              content: renderModules(),
+              id: "fields",
+              label: "Campos propios",
+              content: renderFields(),
             },
             {
               id: "licence",
@@ -359,6 +365,7 @@ export function ConfigView() {
     const open = allowed("vocabulary");
     return (
       <div className={styles.panel}>
+        <h3 className={styles.sectionTitle}>Vocabulario</h3>
         {!open && <Locked feature="vocabulary" />}
         <div className={styles.presetRow}>
           <label className={styles.field}>
@@ -463,6 +470,7 @@ export function ConfigView() {
     const order = config.order;
     return (
       <div className={styles.panel}>
+        <h3 className={styles.sectionTitle}>Módulos del menú</h3>
         {!open && <Locked feature="modules" />}
         <ol className={styles.modules}>
           {order.map((id, index) => {
@@ -545,6 +553,19 @@ export function ConfigView() {
           Ocultar un módulo solo lo quita del menú; sus datos siguen existiendo.
           «Configuración» siempre está disponible para el administrador.
         </p>
+      </div>
+    );
+  }
+
+  function renderFields() {
+    const open = allowed("customFields");
+    return (
+      <div className={styles.panel}>
+        {open ? (
+          <CustomFieldsAdmin onMessage={setMessage} />
+        ) : (
+          <Locked feature="customFields" />
+        )}
       </div>
     );
   }

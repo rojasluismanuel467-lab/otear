@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { useDemo } from "@/features/demo/demo-context";
+import type { CustomField } from "./custom-fields";
 import {
   defaultConfig,
   moduleTitle,
@@ -29,6 +30,9 @@ export function useConfig() {
     update: (change: (current: CompanyConfig) => CompanyConfig) =>
       setConfig(change(getSnapshot())),
     reset: () => setConfig({ ...defaultConfig, planId: getSnapshot().planId }),
+    /** Replaces only the list of custom fields. */
+    setFields: (fields: CustomField[]) =>
+      setConfig({ ...getSnapshot(), fields }),
   };
 }
 

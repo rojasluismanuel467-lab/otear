@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
 import { useModuleTitle, useTerm } from "@/features/config/use-config";
+import { CustomFieldsPanel } from "@/features/config/custom-fields-panel";
 import type { Finding, Flight } from "@/features/demo/types";
 import { SiteMap } from "@/components/maps/site-map";
 import { FlightTimeline } from "../flight-timeline";
@@ -91,7 +92,7 @@ export function FlightReviewView() {
 
 function FlightContent({ flight }: { flight: Flight }) {
   const t = useTerm();
-  const { site, findings, updateFinding, setNotice } = useDemo();
+  const { site, findings, updateFinding, updateFlight, setNotice } = useDemo();
   const [activeTab, setActiveTab] = useState("summary");
   const [selectedFindingId, setSelectedFindingId] = useState("");
   const flightFindings = findings.filter(
@@ -227,6 +228,14 @@ function FlightContent({ flight }: { flight: Flight }) {
                 <dd>{zoneNames.join(" · ") || "Sin asignar"}</dd>
               </div>
             </dl>
+            <CustomFieldsPanel
+              key={flight.id}
+              target="flight"
+              values={flight.customValues}
+              onChange={(customValues) =>
+                updateFlight(flight.id, { customValues })
+              }
+            />
             <section className={styles.nextStep}>
               <span className={styles.stepIcon}>
                 <ClipboardCheck size={22} aria-hidden="true" />
@@ -371,6 +380,14 @@ function FlightContent({ flight }: { flight: Flight }) {
                       <h3>{selectedFinding.title}</h3>
                       <p>{selectedFinding.description}</p>
                       <p className={styles.source}>{selectedFinding.source}</p>
+                      <CustomFieldsPanel
+                        key={selectedFinding.id}
+                        target="finding"
+                        values={selectedFinding.customValues}
+                        onChange={(customValues) =>
+                          updateFinding(selectedFinding.id, { customValues })
+                        }
+                      />
                       <p className="demo-note">
                         Imagen ilustrativa. Estos botones ensayan una decisión
                         humana; no diagnostican ni validan una inspección real.

@@ -1,0 +1,71 @@
+.panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: var(--surface-secondary);
+}
+.panel header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.missing {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--warning-soft);
+  color: #6a4a0d;
+  font-size: 12px;
+  font-weight: 650;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 18px;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-width: 0;
+}
+.field[data-wide="true"] {
+  grid-column: 1 / -1;
+}
+.field label {
+  font-size: 13px;
+  font-weight: 650;
+}
+.field abbr {
+  margin-left: 3px;
+  color: var(--danger);
+  text-decoration: none;
+}
+.field small {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.field small[data-error="true"] {
+  color: var(--danger);
+}
+.inputRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.inputRow span {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}

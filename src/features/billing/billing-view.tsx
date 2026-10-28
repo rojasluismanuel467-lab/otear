@@ -9,6 +9,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useDemo } from "@/features/demo/demo-context";
 import { useModuleTitle } from "@/features/config/use-config";
+import { CustomFieldsPanel } from "@/features/config/custom-fields-panel";
 import type { Invoice } from "@/features/demo/types";
 import { downloadText, formatDate, formatMoney } from "@/lib/format";
 import { PaymentAutomation } from "./payment-automation";
@@ -318,6 +319,14 @@ export function BillingView() {
                 </div>
               </dl>
             </div>
+            <CustomFieldsPanel
+              key={selectedInvoice.id}
+              target="invoice"
+              values={selectedInvoice.customValues}
+              onChange={(customValues) =>
+                updateInvoice(selectedInvoice.id, { customValues })
+              }
+            />
             {readiness && selectedInvoice.paid < selectedInvoice.total && (
               <section
                 className={styles.readiness}

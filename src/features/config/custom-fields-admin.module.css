@@ -1,0 +1,161 @@
+.admin {
+  display: grid;
+  gap: 16px;
+}
+.targets {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  width: fit-content;
+  max-width: 100%;
+}
+.targets button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--muted);
+}
+.targets button[aria-pressed="true"] {
+  background: #fff;
+  color: var(--foreground);
+  box-shadow: var(--otear-shadow);
+}
+.targets small {
+  min-width: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+  font-size: 12px;
+  text-align: center;
+}
+.hint,
+.empty {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface-secondary);
+}
+.rowBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.rowBody span,
+.rowBody small {
+  font-size: 13px;
+  color: var(--muted);
+}
+.rowActions {
+  display: inline-flex;
+  gap: 2px;
+}
+.rowActions button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: var(--muted);
+}
+.rowActions button:hover {
+  background: #fff;
+  color: var(--foreground);
+}
+.form {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface-secondary);
+}
+.create {
+  background: #fff;
+  box-shadow:
+    0 0 0 1px var(--border),
+    var(--otear-shadow);
+}
+.form h4 {
+  font-size: 15px;
+  font-weight: 700;
+}
+.form label {
+  display: grid;
+  gap: 6px;
+}
+.form label > span {
+  font-size: 13px;
+  font-weight: 650;
+}
+.form small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.check {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+.check span {
+  font-weight: 500 !important;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.archived {
+  font-size: 13px;
+  color: var(--muted);
+}
+.archived summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.archived ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.archived li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--surface-secondary);
+}
+.archived button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+  color: var(--accent);
+}

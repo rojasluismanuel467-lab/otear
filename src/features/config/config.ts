@@ -1,3 +1,4 @@
+import { sanitizeFields, type CustomField } from "./custom-fields.ts";
 import { can, type PlanId } from "./licence.ts";
 
 /**
@@ -124,16 +125,20 @@ export interface CompanyConfig {
   terms: Partial<Record<TermKey, TermForms>>;
   modules: Partial<Record<ModuleId, { hidden?: boolean; label?: string }>>;
   order: ModuleId[];
+  /** The company's own fields on flights, findings, aircraft and invoices. */
+  fields: CustomField[];
 }
 
 export const defaultConfig: CompanyConfig = {
   version: 1,
   company: { name: "" },
   presetId: "general",
-  planId: "pro",
+  // The demo starts with every layer open so each one can be seen; the licence tab changes it.
+  planId: "enterprise",
   terms: {},
   modules: {},
   order: moduleDefs.map((item) => item.id),
+  fields: [],
 };
 
 const clean = (text: string | undefined) => text?.trim() ?? "";
@@ -299,6 +304,7 @@ export function validateConfig(
     terms: {},
     modules: {},
     order: [],
+    fields: sanitizeFields(data.fields),
   };
   const terms = (data.terms ?? {}) as Record<string, Partial<TermForms>>;
   for (const key of Object.keys(termDefs) as TermKey[]) {

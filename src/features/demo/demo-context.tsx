@@ -313,6 +313,13 @@ function useDemoState() {
     ),
     savePartMark,
     removePartMark,
+    /** Every record of every site, for counting how much a company field is used. */
+    allRecords: {
+      flight: flightRecords,
+      finding: findingRecords,
+      aircraft: aircraftRecords,
+      invoice: invoiceRecords,
+    },
     payments,
     selectedFlightId,
     selectFlight: setSelectedFlightId,

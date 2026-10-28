@@ -23,6 +23,8 @@ export interface Site {
 }
 
 export interface Flight {
+  /** Values of the company's own fields (see features/config/custom-fields.ts). */
+  customValues?: Record<string, string | number>;
   id: string;
   siteId: string;
   title: string;
@@ -67,6 +69,8 @@ export interface FlightLog {
 }
 
 export interface Finding {
+  /** Values of the company's own fields (see features/config/custom-fields.ts). */
+  customValues?: Record<string, string | number>;
   id: string;
   siteId: string;
   flightId: string;
@@ -82,6 +86,8 @@ export interface Finding {
 }
 
 export interface Invoice {
+  /** Values of the company's own fields (see features/config/custom-fields.ts). */
+  customValues?: Record<string, string | number>;
   id: string;
   siteId: string;
   flightId: string;
@@ -166,6 +172,8 @@ export interface PlanTask {
 }
 
 export interface Aircraft {
+  /** Values of the company's own fields (see features/config/custom-fields.ts). */
+  customValues?: Record<string, string | number>;
   id: string;
   siteId: string;
   name: string;
