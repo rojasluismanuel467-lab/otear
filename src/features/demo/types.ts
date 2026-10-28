@@ -66,6 +66,8 @@ export interface FlightLog {
   deliverables?: string[];
   /** Lessons learned after landing. */
   debrief?: string;
+  /** Hectares the operator says it covered, from its own flight record. */
+  coveredHa?: number;
 }
 
 export interface Finding {
@@ -102,6 +104,8 @@ export interface Invoice {
   /** Buyer events recorded before paying (acuse de recibo and aceptación). */
   acknowledged?: boolean;
   accepted?: boolean;
+  /** Hectares the operator billed, when the service is priced by area. */
+  billedHa?: number;
 }
 
 export interface Payment {

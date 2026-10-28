@@ -14,6 +14,7 @@ import {
   ScrollText,
   Scissors,
   Undo2,
+  Layers,
 } from "lucide-react";
 import { zonePalette } from "@/components/maps/zone-palette";
 import type { Position, Site } from "@/features/demo/types";
@@ -126,6 +127,10 @@ function sourceCopy(
           ? "Calcula la línea central de la vía con los recorridos que ya volaron."
           : "Calcula el contorno con la zona que ya sobrevolaron.",
     },
+    zones: {
+      title: `Polígonos de mis ${site.zoneLabel.toLowerCase()}`,
+      text: "Un KML o GeoJSON con un polígono por cada una, como los de su GIS. Se conservan sus nombres.",
+    },
     file: {
       title: "Un mapa que ya tengo",
       text: "Archivo KML o GeoJSON de Google Earth, QGIS, el IGAC o su topógrafo.",
@@ -151,6 +156,7 @@ function sourceCopy(
 const sourceIcons = {
   history: History,
   file: FileUp,
+  zones: Layers,
   lidar: Boxes,
   deed: ScrollText,
   draw: PencilRuler,
@@ -162,6 +168,7 @@ export function SourceStep({
   routeCount,
   onHistory,
   onFile,
+  onZones,
   onSample,
   onLidar,
   onDeed,
@@ -174,6 +181,7 @@ export function SourceStep({
   routeCount: number;
   onHistory: () => void;
   onFile: (text: string, fileName: string) => void;
+  onZones: (text: string, fileName: string) => void;
   onSample: () => void;
   onLidar: (lidar: LidarInfo) => void;
   onDeed: (declared: number, fileName: string) => void;
@@ -188,13 +196,16 @@ export function SourceStep({
   const [localError, setLocalError] = useState("");
   const [deedName, setDeedName] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
+  const zonesInput = useRef<HTMLInputElement>(null);
   const deedInput = useRef<HTMLInputElement>(null);
   const copy = sourceCopy(site, kind);
   const lidarInput = useRef<HTMLInputElement>(null);
   const sources = (
     site.sector === "construction"
       ? ["history", "file", "lidar", "deed", "draw"]
-      : ["history", "file", "deed", "draw"]
+      : kind === "polygon"
+        ? ["history", "file", "zones", "deed", "draw"]
+        : ["history", "file", "deed", "draw"]
   ) as SourceKind[];
   const unit = kind === "line" ? "km" : "ha";
 
@@ -207,6 +218,17 @@ export function SourceStep({
     }
     setLocalError("");
     onFile(await file.text(), file.name);
+  }
+
+  async function handleZones(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      setLocalError("El archivo supera 5 MB. Prueba con uno más liviano.");
+      return;
+    }
+    setLocalError("");
+    onZones(await file.text(), file.name);
   }
 
   async function handleLidar(files: FileList | null) {
@@ -321,6 +343,38 @@ export function SourceStep({
                       <p className={styles.hint}>
                         Se lee en su navegador; no se envía a ningún servidor.
                         Shapefile y DXF aún no se admiten.
+                      </p>
+                    </>
+                  )}
+                  {key === "zones" && (
+                    <>
+                      <input
+                        ref={zonesInput}
+                        type="file"
+                        accept=".kml,.geojson,.json"
+                        className={styles.hiddenInput}
+                        aria-label="Elegir archivo KML o GeoJSON con varios polígonos"
+                        onChange={(event) => {
+                          void handleZones(event.target.files);
+                          event.target.value = "";
+                        }}
+                      />
+                      <div className={styles.inline}>
+                        <Button
+                          variant="primary"
+                          onPress={() => zonesInput.current?.click()}
+                        >
+                          <FileUp size={16} aria-hidden="true" />
+                          Elegir archivo
+                        </Button>
+                      </div>
+                      <p className={styles.hint}>
+                        Cada polígono pasa a ser una{" "}
+                        {singularOf(site.zoneLabel).toLowerCase()} con el nombre
+                        del archivo (campo «nombre», «suerte» o «lote» en
+                        GeoJSON; &lt;name&gt; en KML). Se lee en su navegador.
+                        Shapefile aún no se admite: expórtelo a GeoJSON o KML
+                        desde su GIS.
                       </p>
                     </>
                   )}

@@ -1,3 +1,4 @@
+import type { Sector } from "../demo/types";
 import { sanitizeFields, type CustomField } from "./custom-fields.ts";
 import { can, type PlanId } from "./licence.ts";
 
@@ -110,7 +111,12 @@ export const termDefs: Record<TermKey, TermForms & { hint: string }> = {
 };
 
 export type PresetId =
-  "general" | "agricultura" | "carreteras" | "construccion" | "vigilancia";
+  | "general"
+  | "cana"
+  | "agricultura"
+  | "carreteras"
+  | "construccion"
+  | "vigilancia";
 
 export interface CompanyConfig {
   version: 1;
@@ -127,6 +133,8 @@ export interface CompanyConfig {
   order: ModuleId[];
   /** The company's own fields on flights, findings, aircraft and invoices. */
   fields: CustomField[];
+  /** The company's word for the zones of a sector, in plural: «Suertes», «Frentes»… */
+  zoneWords?: Partial<Record<Sector, string>>;
 }
 
 export const defaultConfig: CompanyConfig = {
@@ -139,6 +147,7 @@ export const defaultConfig: CompanyConfig = {
   modules: {},
   order: moduleDefs.map((item) => item.id),
   fields: [],
+  zoneWords: {},
 };
 
 const clean = (text: string | undefined) => text?.trim() ?? "";
@@ -290,6 +299,7 @@ export function validateConfig(
       (
         [
           "general",
+          "cana",
           "agricultura",
           "carreteras",
           "construccion",
@@ -305,6 +315,7 @@ export function validateConfig(
     modules: {},
     order: [],
     fields: sanitizeFields(data.fields),
+    zoneWords: {},
   };
   const terms = (data.terms ?? {}) as Record<string, Partial<TermForms>>;
   for (const key of Object.keys(termDefs) as TermKey[]) {
@@ -332,6 +343,21 @@ export function validateConfig(
       label:
         typeof item.label === "string" ? item.label.slice(0, 40) : undefined,
     };
+  }
+  const words = (data.zoneWords ?? {}) as Record<string, unknown>;
+  for (const sector of [
+    "agriculture",
+    "roads",
+    "construction",
+    "security",
+  ] as const) {
+    const word = words[sector];
+    if (typeof word === "string" && word.trim()) {
+      config.zoneWords = {
+        ...config.zoneWords,
+        [sector]: word.trim().slice(0, 30),
+      };
+    }
   }
   const order = Array.isArray(data.order) ? data.order : [];
   config.order = [

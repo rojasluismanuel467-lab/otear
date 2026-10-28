@@ -156,3 +156,50 @@ test("payReadiness needs the signed delivery note, acknowledgement and acceptanc
   assert.equal(partial.ready, false);
   assert.equal(partial.items.find((item) => item.id === "accepted")?.ok, false);
 });
+
+import { checkArea, orderedHa } from "./coverage.ts";
+
+test("ordered area adds up the polygons of the flight's zones and ignores lines", () => {
+  const square: [number, number][] = [
+    [3.0, -76.0],
+    [3.0, -75.99],
+    [3.01, -75.99],
+    [3.01, -76.0],
+  ];
+  const zones = [
+    { id: "a", outline: square },
+    { id: "b", outline: square },
+    {
+      id: "road",
+      outline: [
+        [3, -76],
+        [3.01, -76],
+      ] as [number, number][],
+    },
+  ];
+  const one = orderedHa(zones, ["a"]);
+  assert.ok(one > 100 && one < 130);
+  assert.ok(Math.abs(orderedHa(zones, ["a", "b"]) - 2 * one) < 1e-6);
+  assert.equal(orderedHa(zones, ["road"]), 0);
+});
+
+test("area check compares billed with covered and says what is missing", () => {
+  assert.equal(
+    checkArea({ orderedHa: 240, coveredHa: 238, billedHa: 240 }).state,
+    "match",
+  );
+  const over = checkArea({ orderedHa: 240, coveredHa: 228, billedHa: 243 });
+  assert.equal(over.state, "over");
+  assert.ok(over.messages.some((text) => text.includes("justificación")));
+  assert.equal(
+    checkArea({ orderedHa: 240, coveredHa: 240, billedHa: 200 }).state,
+    "under",
+  );
+  const unknown = checkArea({ orderedHa: 240, coveredHa: 240 });
+  assert.equal(unknown.state, "unknown");
+  assert.ok(unknown.messages[0].includes("facturó"));
+  assert.equal(checkArea({ orderedHa: 240, billedHa: 240 }).state, "unknown");
+  const partial = checkArea({ orderedHa: 240, coveredHa: 180, billedHa: 180 });
+  assert.equal(partial.state, "match");
+  assert.ok(partial.messages.some((text) => text.includes("75")));
+});

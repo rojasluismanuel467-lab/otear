@@ -695,3 +695,110 @@ export function parseGeometry(text: string, fileName: string): ParsedGeometry {
   if (/\.(geo)?json$/i.test(fileName)) return parseGeoJson(text);
   return { error: "Usa un archivo KML o GeoJSON." };
 }
+
+export interface ParsedZone {
+  name?: string;
+  points: Position[];
+}
+
+const NAME_KEYS = ["name", "nombre", "suerte", "lote", "zona", "label", "id"];
+
+function nameFromProperties(properties: unknown): string | undefined {
+  if (!properties || typeof properties !== "object") return undefined;
+  const entries = Object.entries(properties as Record<string, unknown>);
+  for (const key of NAME_KEYS) {
+    const found = entries.find(([name]) => name.toLowerCase() === key);
+    if (
+      found &&
+      (typeof found[1] === "string" || typeof found[1] === "number") &&
+      String(found[1]).trim()
+    ) {
+      return String(found[1]).trim().slice(0, 60);
+    }
+  }
+  return undefined;
+}
+
+function collectPolygons(
+  node: unknown,
+  inherited: string | undefined,
+  out: ParsedZone[],
+) {
+  if (!node || typeof node !== "object" || out.length >= 500) return;
+  const value = node as Record<string, unknown>;
+  const name = nameFromProperties(value.properties) ?? inherited;
+  if (value.type === "FeatureCollection" && Array.isArray(value.features)) {
+    for (const feature of value.features)
+      collectPolygons(feature, undefined, out);
+  } else if (value.type === "Feature") {
+    collectPolygons(value.geometry, name, out);
+  } else if (
+    value.type === "GeometryCollection" &&
+    Array.isArray(value.geometries)
+  ) {
+    for (const geometry of value.geometries)
+      collectPolygons(geometry, name, out);
+  } else if (value.type === "Polygon" && Array.isArray(value.coordinates)) {
+    const points = toPositions(value.coordinates[0]);
+    if (points && points.length >= 4)
+      out.push({ name, points: openRing(points) });
+  } else if (
+    value.type === "MultiPolygon" &&
+    Array.isArray(value.coordinates)
+  ) {
+    (value.coordinates as unknown[]).forEach((polygon, index, all) => {
+      const points = toPositions((polygon as unknown[])?.[0]);
+      if (points && points.length >= 4) {
+        out.push({
+          name: name && all.length > 1 ? `${name} ${index + 1}` : name,
+          points: openRing(points),
+        });
+      }
+    });
+  }
+}
+
+/** Reads every polygon of a GeoJSON or KML (for example the plots of a farm), with its name when it has one. */
+export function parseZones(
+  text: string,
+  fileName: string,
+): { zones: ParsedZone[] } | { error: string } {
+  const zones: ParsedZone[] = [];
+  if (/\.kml$/i.test(fileName)) {
+    for (const block of text.match(/<Placemark[\s\S]*?<\/Placemark>/gi) ?? []) {
+      if (zones.length >= 500) break;
+      const polygon =
+        /<Polygon[\s\S]*?<coordinates>([\s\S]*?)<\/coordinates>/i.exec(block);
+      if (!polygon) continue;
+      const points: Position[] = [];
+      let valid = true;
+      for (const tuple of polygon[1].trim().split(/\s+/)) {
+        const [lng, lat] = tuple.split(",").map(Number);
+        if (!isPosition(lat, lng)) {
+          valid = false;
+          break;
+        }
+        points.push([lat, lng]);
+      }
+      if (!valid || points.length < 4) continue;
+      const name = /<name>([\s\S]*?)<\/name>/i
+        .exec(block)?.[1]
+        ?.replace(/<!\[CDATA\[|\]\]>/g, "")
+        .trim()
+        .slice(0, 60);
+      zones.push({ name: name || undefined, points: openRing(points) });
+    }
+  } else if (/\.(geo)?json$/i.test(fileName)) {
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return { error: "El archivo no es un GeoJSON válido." };
+    }
+    collectPolygons(data, undefined, zones);
+  } else {
+    return { error: "Usa un archivo KML o GeoJSON." };
+  }
+  if (!zones.length) return { error: "No encontré polígonos en el archivo." };
+  return { zones };
+}

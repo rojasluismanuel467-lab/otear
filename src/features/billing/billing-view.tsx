@@ -14,6 +14,8 @@ import type { Invoice } from "@/features/demo/types";
 import { downloadText, formatDate, formatMoney } from "@/lib/format";
 import { PaymentAutomation } from "./payment-automation";
 import { PaymentDialog } from "./payment-dialog";
+import { AreaCheckCard } from "./area-check-card";
+import { checkArea, orderedHa } from "./coverage";
 import { payReadiness } from "./readiness";
 import styles from "./billing.module.css";
 
@@ -108,6 +110,18 @@ export function BillingView() {
       ].join("\n")
     : "";
   const paidRatio = totals.total ? totals.paid / totals.total : 0;
+  const ordered =
+    flight && site.sector !== "roads"
+      ? orderedHa(site.zones, flight.zoneIds)
+      : 0;
+  const areaCheck =
+    selectedInvoice && flight && ordered > 0
+      ? checkArea({
+          orderedHa: ordered,
+          coveredHa: flight.log?.coveredHa,
+          billedHa: selectedInvoice.billedHa,
+        })
+      : undefined;
   const readiness = selectedInvoice
     ? payReadiness({
         invoice: selectedInvoice,
@@ -115,6 +129,7 @@ export function BillingView() {
         findings,
         documents,
         evidences,
+        area: areaCheck,
       })
     : null;
 
@@ -319,6 +334,16 @@ export function BillingView() {
                 </div>
               </dl>
             </div>
+            {areaCheck && (
+              <AreaCheckCard
+                key={`area-${selectedInvoice.id}`}
+                check={areaCheck}
+                zoneWord={site.zoneLabel}
+                onBilledChange={(billedHa) =>
+                  updateInvoice(selectedInvoice.id, { billedHa })
+                }
+              />
+            )}
             <CustomFieldsPanel
               key={selectedInvoice.id}
               target="invoice"

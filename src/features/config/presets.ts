@@ -1,3 +1,4 @@
+import type { Sector } from "../demo/types";
 import type {
   CompanyConfig,
   ModuleId,
@@ -12,6 +13,8 @@ export interface Preset {
   description: string;
   terms: Partial<Record<TermKey, TermForms>>;
   modules: Partial<Record<ModuleId, string>>;
+  /** Word for the zones of a sector, in plural. */
+  zoneWords?: Partial<Record<Sector, string>>;
 }
 
 /** Starting points by sector. They only fill in overrides; the company can change any of them. */
@@ -31,6 +34,17 @@ export const presets: Preset[] = [
       finding: { singular: "Hallazgo de campo", plural: "Hallazgos de campo" },
     },
     modules: { evolucion: "Evolución del cultivo" },
+  },
+  {
+    id: "cana",
+    label: "Caña de azúcar (ingenio o cañicultor)",
+    description: "Habla de suertes, haciendas, zafra y novedades de campo.",
+    terms: {
+      finding: { singular: "Novedad de campo", plural: "Novedades de campo" },
+      operator: { singular: "Aplicador", plural: "Aplicadores" },
+    },
+    modules: { evolucion: "Evolución del cultivo" },
+    zoneWords: { agriculture: "Suertes" },
   },
   {
     id: "carreteras",
@@ -88,5 +102,11 @@ export function applyPreset(
   ][]) {
     if (value.hidden && !modules[key]) modules[key] = { hidden: true };
   }
-  return { ...config, presetId: id, terms: { ...preset.terms }, modules };
+  return {
+    ...config,
+    presetId: id,
+    terms: { ...preset.terms },
+    modules,
+    zoneWords: { ...preset.zoneWords },
+  };
 }

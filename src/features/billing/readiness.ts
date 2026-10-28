@@ -6,6 +6,7 @@ import type {
   Invoice,
 } from "../demo/types";
 import { evidenceState } from "../traceability/integrity.ts";
+import type { AreaCheck } from "./coverage.ts";
 
 export interface ReadinessItem {
   id: string;
@@ -27,6 +28,8 @@ export function payReadiness(input: {
   findings: Finding[];
   documents: FlightDocument[];
   evidences: Evidence[];
+  /** Area check, for services priced by area. */
+  area?: AreaCheck;
 }): { items: ReadinessItem[]; ready: boolean } {
   const { invoice, flight, documents, evidences } = input;
   const findings = input.findings.filter(
@@ -101,5 +104,22 @@ export function payReadiness(input: {
       action: "accept",
     },
   ];
+  if (input.area) {
+    const { area } = input;
+    items.splice(2, 0, {
+      id: "area",
+      label: "El área facturada coincide con la cubierta en el vuelo",
+      ok: area.state === "match",
+      detail:
+        area.state === "match"
+          ? "Dentro de la tolerancia"
+          : (area.messages.find(
+              (text) =>
+                text.startsWith("Facturó") ||
+                text.startsWith("Falta") ||
+                text.startsWith("El operador"),
+            ) ?? "Sin verificar"),
+    });
+  }
   return { items, ready: items.every((item) => item.ok) };
 }

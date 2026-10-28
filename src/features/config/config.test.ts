@@ -142,3 +142,17 @@ test("licence plans gate the layers and tell which plan unlocks a feature", () =
   assert.equal(planFor("whiteLabel")?.id, "enterprise");
   assert.equal(planFor("vocabulary")?.id, "pro");
 });
+
+test("the sugar-cane preset renames the zones and the import keeps them", () => {
+  const result = applyPreset(pro(), "cana");
+  assert.equal(result.zoneWords?.agriculture, "Suertes");
+  assert.equal(term(result, "finding", "plural"), "Novedades de campo");
+  const cleaned = validateConfig({
+    version: 1,
+    zoneWords: { agriculture: "Suertes ", roads: "", nope: "x" },
+  });
+  assert.ok(cleaned.ok);
+  if (cleaned.ok)
+    assert.deepEqual(cleaned.config.zoneWords, { agriculture: "Suertes" });
+  assert.deepEqual(applyPreset(result, "general").zoneWords, {});
+});

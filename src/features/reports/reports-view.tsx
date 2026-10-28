@@ -22,6 +22,7 @@ import {
   type ReportSections,
 } from "./consolidated-report";
 import { computeInsights } from "./insights";
+import { operatorSummaries } from "./operators";
 import styles from "./reports.module.css";
 
 const weatherLabels = { clear: "Despejado", cloudy: "Nublado", rain: "Lluvia" };
@@ -106,6 +107,7 @@ export function ReportsView() {
     ? ""
     : buildConsolidatedReport(input, period, sections);
   const unit = insights.cost.unit;
+  const operators = operatorSummaries({ flights, findings, invoices });
 
   if (!history.length) {
     return (
@@ -365,6 +367,78 @@ export function ReportsView() {
                 </dd>
               </div>
             </dl>
+          </section>
+
+          <section className={styles.block} aria-labelledby="operators-title">
+            <h2 id="operators-title">Operadores</h2>
+            <p className={styles.muted}>
+              Quién voló, qué entregó y cuánto cobró. Con más de un operador
+              sirve para comparar; las hectáreas cubiertas las reporta cada
+              operador.
+            </p>
+            <div className={styles.tableScroll}>
+              <table className={styles.operatorTable}>
+                <thead>
+                  <tr>
+                    <th scope="col">Operador</th>
+                    <th scope="col">Vuelos y hallazgos</th>
+                    <th scope="col">Cobro</th>
+                    <th scope="col">Hectáreas facturadas / cubiertas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {operators.map((row) => (
+                    <tr key={row.operator}>
+                      <th scope="row">
+                        {row.operator}
+                        <small>
+                          {row.hours.toLocaleString("es-CO", {
+                            maximumFractionDigits: 1,
+                          })}{" "}
+                          h
+                          {row.lastFlight
+                            ? ` · último ${formatDate(row.lastFlight, { day: "numeric", month: "short" })}`
+                            : ""}
+                        </small>
+                      </th>
+                      <td>
+                        {row.flights} {row.flights === 1 ? "vuelo" : "vuelos"} ·{" "}
+                        {row.findings}{" "}
+                        {row.findings === 1 ? "hallazgo" : "hallazgos"}
+                        <small>
+                          {row.confirmed} confirmados · {row.dismissed}{" "}
+                          descartados
+                          {row.pending ? ` · ${row.pending} por revisar` : ""}
+                        </small>
+                      </td>
+                      <td>
+                        {formatMoney(row.billed)}
+                        <small>
+                          Saldo {formatMoney(row.balance)} ·{" "}
+                          {row.perHa === null
+                            ? "sin área facturada"
+                            : `${formatMoney(row.perHa)} por ha`}
+                        </small>
+                      </td>
+                      <td>
+                        {row.billedHa || row.coveredHa
+                          ? `${row.billedHa.toLocaleString("es-CO", { maximumFractionDigits: 1 })} / ${row.coveredHa.toLocaleString("es-CO", { maximumFractionDigits: 1 })} ha`
+                          : "—"}
+                        {row.overBilled > 0 && (
+                          <small data-bad="true">
+                            {row.overBilled}{" "}
+                            {row.overBilled === 1
+                              ? "factura con"
+                              : "facturas con"}{" "}
+                            más área de la cubierta
+                          </small>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section className={styles.block} aria-labelledby="report-title">

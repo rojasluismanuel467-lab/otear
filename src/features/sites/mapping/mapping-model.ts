@@ -25,7 +25,8 @@ import {
 import type { ProductionRow } from "./production";
 
 export type OutlineKind = "polygon" | "line";
-export type SourceKind = "history" | "file" | "lidar" | "deed" | "draw";
+export type SourceKind =
+  "history" | "file" | "zones" | "lidar" | "deed" | "draw";
 
 export interface DraftZone {
   id: string;

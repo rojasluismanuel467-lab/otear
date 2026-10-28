@@ -28,6 +28,7 @@ type Draft = {
   controlPoints: "yes" | "no";
   deliverables: string;
   debrief: string;
+  coveredHa: string;
 };
 
 function draftOf(log?: FlightLog): Draft {
@@ -44,6 +45,7 @@ function draftOf(log?: FlightLog): Draft {
     controlPoints: log?.controlPoints ? "yes" : "no",
     deliverables: log?.deliverables?.join("\n") ?? "",
     debrief: log?.debrief ?? "",
+    coveredHa: log?.coveredHa !== undefined ? String(log.coveredHa) : "",
   };
 }
 
@@ -145,6 +147,7 @@ function LogForm({
         .map((line) => line.trim())
         .filter(Boolean),
       debrief: draft.debrief.trim(),
+      coveredHa: optional(draft.coveredHa),
     });
   }
 
@@ -218,6 +221,19 @@ function LogForm({
       </label>
       <h3>Calidad de los datos</h3>
       <div className={styles.grid}>
+        <label className="form-field">
+          <span className="field-label">Hectáreas cubiertas</span>
+          <input
+            className="field-input"
+            inputMode="decimal"
+            value={draft.coveredHa}
+            placeholder="Según su registro de vuelo"
+            onChange={(e) => set("coveredHa", e.target.value)}
+          />
+          <small className={styles.note}>
+            Se compara con lo facturado antes de pagar.
+          </small>
+        </label>
         <label className="form-field">
           <span className="field-label">Sensor</span>
           <select

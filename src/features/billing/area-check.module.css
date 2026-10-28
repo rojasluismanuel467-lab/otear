@@ -1,0 +1,91 @@
+.card {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: var(--surface-secondary);
+}
+.card header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+}
+.chip[data-state="over"],
+.chip[data-state="under"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.chip[data-state="unknown"] {
+  background: var(--warning-soft);
+  color: #6a4a0d;
+}
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.numbers div {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+}
+.numbers dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.numbers dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.numbers dd input {
+  min-height: 36px;
+  font-size: 16px;
+  font-weight: 650;
+}
+.numbers small {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.messages {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.card[data-state="over"] .messages,
+.card[data-state="under"] .messages {
+  color: var(--danger);
+}
+.note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}

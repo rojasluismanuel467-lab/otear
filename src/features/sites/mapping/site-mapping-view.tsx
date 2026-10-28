@@ -6,7 +6,13 @@ import { ParcelMap } from "@/components/maps/parcel-map";
 import { useDemo } from "@/features/demo/demo-context";
 import { useModuleTitle } from "@/features/config/use-config";
 import type { Position } from "@/features/demo/types";
-import { parseGeometry, splitPolygon, translateTo } from "@/lib/geo";
+import {
+  convexHull,
+  parseGeometry,
+  parseZones,
+  splitPolygon,
+  translateTo,
+} from "@/lib/geo";
 import {
   distribute,
   measureOutline,
@@ -17,6 +23,7 @@ import {
   outlineKindFor,
   routesOf,
   sampleGeoJson,
+  zoneUses,
   singularOf,
   toZones,
   formatMeasure,
@@ -109,6 +116,31 @@ function SiteMapping() {
       `Leído de «${fileName}» en su navegador.`,
       null,
     );
+  }
+
+  function handleZones(text: string, fileName: string) {
+    const result = parseZones(text, fileName);
+    if ("error" in result) {
+      setSourceError(result.error);
+      return;
+    }
+    const drafts: DraftZone[] = result.zones.map((zone, index) => ({
+      id: `draft-${index + 1}`,
+      name: zone.name || `${singularOf(site.zoneLabel)} ${index + 1}`,
+      use: zoneUses[site.sector][0],
+      outline: zone.points,
+    }));
+    const named = result.zones.filter((zone) => zone.name).length;
+    setOutline(convexHull(drafts.flatMap((zone) => zone.outline)));
+    setOrigin(`Leído de «${fileName}» en su navegador.`);
+    setDeclared(null);
+    setSourceError("");
+    setZones(drafts);
+    setProposalNote(
+      `${drafts.length} ${drafts.length === 1 ? "polígono" : "polígonos"} leídos de «${fileName}»${named ? `; ${named} con nombre del archivo` : ""}. Revise los nombres y el uso de cada uno.`,
+    );
+    setSelectedId(undefined);
+    goTo("distribute");
   }
 
   function handleDeed(value: number, fileName: string) {
@@ -266,6 +298,7 @@ function SiteMapping() {
                 error={sourceError}
                 onHistory={handleHistory}
                 onFile={handleFile}
+                onZones={handleZones}
                 onSample={() =>
                   handleFile(sampleGeoJson(site), "predio-de-ejemplo.geojson")
                 }

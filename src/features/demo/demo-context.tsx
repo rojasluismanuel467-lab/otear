@@ -1,6 +1,19 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import { can } from "@/features/config/licence";
+import {
+  getServerSnapshot,
+  getSnapshot,
+  subscribe,
+} from "@/features/config/config-store";
 import {
   initialAircraft,
   initialBatteries,
@@ -48,7 +61,21 @@ function useDemoState() {
     initialFlights[0].id,
   );
   const [notice, setNotice] = useState("");
-  const site = siteRecords.find((item) => item.id === siteId) ?? siteRecords[0];
+  const config = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
+  const baseSite =
+    siteRecords.find((item) => item.id === siteId) ?? siteRecords[0];
+  // The company's word for its zones (for example «suertes» in sugar cane) replaces the site's.
+  const zoneWord = can(config.planId, "vocabulary")
+    ? (config.zoneWords?.[baseSite.sector]?.trim() ?? "")
+    : "";
+  const site = useMemo(
+    () => (zoneWord ? { ...baseSite, zoneLabel: zoneWord } : baseSite),
+    [baseSite, zoneWord],
+  );
 
   function setSiteId(id: string) {
     if (!sites.some((item) => item.id === id)) return;

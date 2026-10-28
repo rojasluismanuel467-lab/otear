@@ -10,6 +10,7 @@ import {
   pointInPolygon,
   lineLengthKm,
   parseGeometry,
+  parseZones,
   parseLasHeader,
   polygonAreaHa,
   rectangleAround,
@@ -220,4 +221,71 @@ test("parseLasHeader reads bounds and version", () => {
     assert.deepEqual(header.min, [60.5, 200.2, 20]);
   }
   assert.ok("error" in parseLasHeader(new ArrayBuffer(400)));
+});
+
+test("parseZones reads every polygon with its name, from GeoJSON and KML", () => {
+  const ring = (x: number) => [
+    [x, 3],
+    [x + 0.01, 3],
+    [x + 0.01, 3.01],
+    [x, 3.01],
+    [x, 3],
+  ];
+  const json = JSON.stringify({
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: { SUERTE: "S-101" },
+        geometry: { type: "Polygon", coordinates: [ring(-76)] },
+      },
+      {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "Polygon", coordinates: [ring(-75.9)] },
+      },
+      {
+        type: "Feature",
+        properties: { nombre: "Doble" },
+        geometry: {
+          type: "MultiPolygon",
+          coordinates: [[ring(-75.8)], [ring(-75.7)]],
+        },
+      },
+      {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "LineString",
+          coordinates: [
+            [-76, 3],
+            [-75.9, 3],
+          ],
+        },
+      },
+    ],
+  });
+  const result = parseZones(json, "suertes.geojson");
+  assert.ok("zones" in result);
+  if ("zones" in result) {
+    assert.deepEqual(
+      result.zones.map((zone) => zone.name),
+      ["S-101", undefined, "Doble 1", "Doble 2"],
+    );
+    assert.equal(result.zones[0].points.length, 4);
+  }
+  const kml = `<kml><Document>
+    <Placemark><name><![CDATA[Suerte 7]]></name><Polygon><outerBoundaryIs><LinearRing><coordinates>-76,3,0 -75.99,3,0 -75.99,3.01,0 -76,3.01,0 -76,3,0</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+    <Placemark><name>Camino</name><LineString><coordinates>-76,3 -75,3</coordinates></LineString></Placemark>
+  </Document></kml>`;
+  const fromKml = parseZones(kml, "x.kml");
+  assert.ok("zones" in fromKml);
+  if ("zones" in fromKml)
+    assert.deepEqual(
+      fromKml.zones.map((zone) => zone.name),
+      ["Suerte 7"],
+    );
+  assert.ok("error" in parseZones("{}", "x.geojson"));
+  assert.ok("error" in parseZones("no", "x.geojson"));
+  assert.ok("error" in parseZones("x", "x.shp"));
 });

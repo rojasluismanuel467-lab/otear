@@ -2,6 +2,7 @@ import { preparationGroups } from "@/features/flights/planning/preparation-items
 import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
+import { polygonAreaHa } from "@/lib/geo";
 import type {
   Aircraft,
   Capture,
@@ -344,7 +345,7 @@ function historyFor(
   }));
 }
 
-export const initialFlights: Flight[] = sites.flatMap((site, index) => {
+const baseFlights: Flight[] = sites.flatMap((site, index) => {
   const [lat, lng] = site.center;
   const common = {
     siteId: site.id,
@@ -421,6 +422,29 @@ export const initialFlights: Flight[] = sites.flatMap((site, index) => {
     },
     ...historyFor(site, common),
   ];
+});
+
+/**
+ * Hectares each operator reports having covered, for area-priced sites. The first flight of
+ * the agriculture site covers a bit less than was ordered, so the area check has something to find.
+ */
+export const initialFlights: Flight[] = baseFlights.map((flight) => {
+  const site = sites.find((item) => item.id === flight.siteId);
+  if (
+    !site ||
+    site.sector !== "agriculture" ||
+    flight.status !== "completed" ||
+    !flight.log
+  )
+    return flight;
+  const ordered = site.zones
+    .filter((zone) => flight.zoneIds.includes(zone.id))
+    .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0);
+  const factor = flight.id.endsWith("-01") ? 0.94 : 0.99;
+  return {
+    ...flight,
+    log: { ...flight.log, coveredHa: Math.round(ordered * factor * 10) / 10 },
+  };
 });
 
 const findingNames = {
@@ -530,6 +554,7 @@ export const initialInvoices: Invoice[] = [
       total: 850000,
       paid: 400000,
       dueDate: "2026-10-30",
+      ...(site.sector === "agriculture" ? { billedHa: 243 } : {}),
     },
     {
       id: `invoice-${site.id}-02`,

@@ -39,6 +39,12 @@ import { CustomFieldsAdmin } from "./custom-fields-admin";
 import { useConfig } from "./use-config";
 import styles from "./config-view.module.css";
 
+const zoneSectors = [
+  { sector: "agriculture", label: "Agricultura", placeholder: "Lotes" },
+  { sector: "roads", label: "Carreteras", placeholder: "Tramos" },
+  { sector: "construction", label: "Construcción", placeholder: "Frentes" },
+  { sector: "security", label: "Vigilancia", placeholder: "Zonas" },
+] as const;
 const swatches = [
   "#1c6f8d",
   "#2a5d8f",
@@ -454,6 +460,45 @@ export function ConfigView() {
                 </tr>
               );
             })}
+          </tbody>
+        </table>
+        <table className={styles.table}>
+          <caption className={styles.caption}>
+            Nombre de las zonas de cada sector, en plural. Se usa en el menú,
+            los mapas y las listas («Mapa y suertes»).
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Sector</th>
+              <th scope="col">Palabra de la empresa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {zoneSectors.map((item) => (
+              <tr key={item.sector}>
+                <th scope="row">{item.label}</th>
+                <td>
+                  <input
+                    className="field-input"
+                    aria-label={`Nombre de las zonas en ${item.label.toLowerCase()}`}
+                    value={config.zoneWords?.[item.sector] ?? ""}
+                    placeholder={item.placeholder}
+                    maxLength={30}
+                    disabled={!open}
+                    onChange={(event) =>
+                      update((c) => ({
+                        ...c,
+                        presetId: "custom",
+                        zoneWords: {
+                          ...c.zoneWords,
+                          [item.sector]: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
         <p className={styles.note}>
