@@ -1,6 +1,5 @@
 "use client";
 
-import { centerOf } from "@/lib/geo";
 import { orderedHa } from "@/features/billing/coverage";
 import { useDemo } from "@/features/demo/demo-context";
 import { DEMO_DATE } from "@/features/demo/demo-data";
@@ -14,7 +13,7 @@ export type ActionInput =
   | { id: "quote"; price: number; startDate: string; note: string }
   | { id: "decline"; note: string }
   | { id: "assign"; operatorId: string }
-  | { id: "schedule"; date: string; time: string }
+  | { id: "schedule"; date: string; time: string; pilot: string }
   | { id: "deliver"; coveredHa: number; deliverables: string[]; note: string }
   | { id: "verify"; result: "accepted" | "disputed"; note: string }
   | { id: "invoice"; billedHa?: number }
@@ -99,12 +98,12 @@ export function useServices() {
           date: input.date,
           time: input.time || "07:00",
           status: "scheduled",
-          pilot: "Por definir por el operador",
+          pilot: input.pilot.trim() || "Por definir",
           operator: nameOf(request.operatorId),
           manager: nameOf(request.requestedBy),
           drone: "Por definir",
           zoneIds: request.zoneIds,
-          route: zones.map((zone) => centerOf(zone.outline)),
+          route: zones.flatMap((zone) => zone.outline),
           duration: 0,
           distance: 0,
           photoCount: 0,

@@ -45,7 +45,12 @@ export function ActionForm({
         input = { id: "decline", note: read("note") };
         break;
       case "schedule":
-        input = { id: "schedule", date: read("date"), time: read("time") };
+        input = {
+          id: "schedule",
+          date: read("date"),
+          time: read("time"),
+          pilot: read("pilot"),
+        };
         break;
       case "deliver":
         input = {
@@ -182,6 +187,10 @@ export function ActionForm({
               type="time"
               defaultValue="07:00"
             />
+          </label>
+          <label className="form-field">
+            <span className="field-label">Piloto (opcional)</span>
+            <input className="field-input" name="pilot" maxLength={80} />
           </label>
         </div>
       )}
