@@ -67,7 +67,7 @@ test("hidden modules leave the menu and the order is the company's, but only whe
   const ids = visibleModules(config).map((item) => item.id);
   assert.equal(ids[0], "documentos");
   assert.ok(!ids.includes("pagos"));
-  assert.equal(visibleModules({ ...config, planId: "base" }).length, 8);
+  assert.equal(visibleModules({ ...config, planId: "base" }).length, 9);
   assert.deepEqual(moveModule(["a", "b", "c"] as never, "b" as never, -1), [
     "b",
     "a",
@@ -130,7 +130,7 @@ test("an imported file is cleaned: unknown plans, long texts and foreign images 
     assert.deepEqual(Object.keys(good.config.terms), ["finding"]);
     assert.deepEqual(Object.keys(good.config.modules), ["pagos"]);
     assert.equal(good.config.order[0], "pagos");
-    assert.equal(good.config.order.length, 8);
+    assert.equal(good.config.order.length, 9);
   }
 });
 

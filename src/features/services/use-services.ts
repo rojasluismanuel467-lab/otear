@@ -1,0 +1,193 @@
+"use client";
+
+import { centerOf } from "@/lib/geo";
+import { orderedHa } from "@/features/billing/coverage";
+import { useDemo } from "@/features/demo/demo-context";
+import { DEMO_DATE } from "@/features/demo/demo-data";
+import type { Party, ServiceRequest } from "@/features/demo/types";
+import * as workflow from "./workflow";
+
+type Outcome =
+  { ok: true; request: ServiceRequest } | { ok: false; error: string };
+
+export type ActionInput =
+  | { id: "quote"; price: number; startDate: string; note: string }
+  | { id: "decline"; note: string }
+  | { id: "assign"; operatorId: string }
+  | { id: "schedule"; date: string; time: string }
+  | { id: "deliver"; coveredHa: number; deliverables: string[]; note: string }
+  | { id: "verify"; result: "accepted" | "disputed"; note: string }
+  | { id: "invoice"; billedHa?: number }
+  | { id: "cancel"; note: string };
+
+const addDays = (date: string, days: number) => {
+  const value = new Date(`${date}T12:00:00`);
+  value.setDate(value.getDate() + days);
+  return value.toISOString().slice(0, 10);
+};
+
+/**
+ * Runs the steps of a service request and the effects each one has on the rest of the demo: a
+ * programmed service creates its flight, a delivery completes it, an invoice lands in Pagos.
+ */
+export function useServices() {
+  const {
+    site,
+    parties,
+    actor,
+    flights,
+    serviceRequests,
+    saveServiceRequest,
+    addFlight,
+    updateFlight,
+    addInvoice,
+    setNotice,
+  } = useDemo();
+  const ctx: workflow.Context = { today: DEMO_DATE, parties, actor };
+
+  const operators = parties.filter((party) => party.role === "operator");
+  const nameOf = (id: string | undefined) =>
+    parties.find((party: Party) => party.id === id)?.name ?? "Sin asignar";
+
+  function finish(result: Outcome, message: string): Outcome {
+    if (result.ok) {
+      saveServiceRequest(result.request);
+      setNotice(message);
+    }
+    return result;
+  }
+
+  function create(input: Parameters<typeof workflow.createRequest>[0]) {
+    return finish(
+      workflow.createRequest(input, ctx),
+      "Solicitud enviada a los operadores invitados.",
+    );
+  }
+
+  function act(request: ServiceRequest, input: ActionInput): Outcome {
+    const area = orderedHa(site.zones, request.zoneIds);
+    switch (input.id) {
+      case "quote":
+        return finish(
+          workflow.quote(request, input, ctx),
+          "Cotización enviada.",
+        );
+      case "decline":
+        return finish(
+          workflow.decline(request, input.note, ctx),
+          "Respondió que no puede atenderla.",
+        );
+      case "assign":
+        return finish(
+          workflow.assign(request, input.operatorId, ctx),
+          `Servicio asignado a ${nameOf(input.operatorId)}.`,
+        );
+      case "schedule": {
+        const checked = workflow.schedule(
+          request,
+          { date: input.date, flightId: "pending" },
+          ctx,
+        );
+        if (!checked.ok) return checked;
+        const zones = site.zones.filter((zone) =>
+          request.zoneIds.includes(zone.id),
+        );
+        const flightId = addFlight({
+          siteId: site.id,
+          title: request.title,
+          objective: request.description || workflow.kindLabels[request.kind],
+          date: input.date,
+          time: input.time || "07:00",
+          status: "scheduled",
+          pilot: "Por definir por el operador",
+          operator: nameOf(request.operatorId),
+          manager: nameOf(request.requestedBy),
+          drone: "Por definir",
+          zoneIds: request.zoneIds,
+          route: zones.map((zone) => centerOf(zone.outline)),
+          duration: 0,
+          distance: 0,
+          photoCount: 0,
+          checklist: [],
+        });
+        const result = workflow.schedule(
+          request,
+          { date: input.date, flightId },
+          ctx,
+        );
+        return finish(result, "Vuelo programado; ya aparece en Programación.");
+      }
+      case "deliver": {
+        const result = workflow.deliver(request, input, ctx);
+        if (result.ok && request.flightId) {
+          const flight = flights.find((item) => item.id === request.flightId);
+          updateFlight(request.flightId, {
+            status: "completed",
+            date: flight && flight.date > DEMO_DATE ? DEMO_DATE : flight?.date,
+            log: flight?.log
+              ? { ...flight.log, coveredHa: input.coveredHa }
+              : undefined,
+          });
+        }
+        return finish(result, "Entrega registrada; queda por verificar.");
+      }
+      case "verify":
+        return finish(
+          workflow.verify(request, input, ctx),
+          input.result === "accepted"
+            ? "Entrega aceptada; el operador ya puede facturar."
+            : "Se pidió corregir la entrega.",
+        );
+      case "invoice": {
+        const checked = workflow.invoice(
+          request,
+          { invoiceId: "pending", billedHa: input.billedHa },
+          ctx,
+        );
+        if (!checked.ok) return checked;
+        const quote = request.quotes.find((item) => item.state === "chosen");
+        if (!quote || !request.flightId)
+          return { ok: false, error: "Falta la cotización o el vuelo." };
+        const billed = input.billedHa ?? area;
+        const total = Math.round(
+          request.unit === "ha" ? quote.price * billed : quote.price,
+        );
+        const invoiceId = addInvoice({
+          siteId: site.id,
+          flightId: request.flightId,
+          reference: `FV-2026-${String(Math.floor(Math.random() * 900) + 100)}`,
+          description: request.title,
+          operator: nameOf(request.operatorId),
+          total,
+          paid: 0,
+          dueDate: addDays(DEMO_DATE, 30),
+          source: "manual",
+          ...(request.unit === "ha" ? { billedHa: billed } : {}),
+        });
+        return finish(
+          workflow.invoice(
+            request,
+            { invoiceId, billedHa: input.billedHa },
+            ctx,
+          ),
+          "Factura creada; está en Pagos y costos.",
+        );
+      }
+      case "cancel":
+        return finish(
+          workflow.cancel(request, input.note, ctx),
+          "Solicitud cancelada.",
+        );
+    }
+  }
+
+  return {
+    actor,
+    parties,
+    operators,
+    nameOf,
+    requests: serviceRequests,
+    create,
+    act,
+  };
+}

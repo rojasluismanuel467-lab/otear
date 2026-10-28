@@ -42,6 +42,8 @@ export const presets: Preset[] = [
     terms: {
       finding: { singular: "Novedad de campo", plural: "Novedades de campo" },
       operator: { singular: "Aplicador", plural: "Aplicadores" },
+      manager: { singular: "Ingenio", plural: "Ingenios" },
+      owner: { singular: "Cañicultor", plural: "Cañicultores" },
     },
     modules: { evolucion: "Evolución del cultivo" },
     zoneWords: { agriculture: "Suertes" },

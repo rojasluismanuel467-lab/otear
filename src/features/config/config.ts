@@ -10,6 +10,7 @@ import { can, type PlanId } from "./licence.ts";
 
 export type ModuleId =
   | "programacion"
+  | "servicios"
   | "vuelos"
   | "mapa"
   | "evolucion"
@@ -33,6 +34,12 @@ export const moduleDefs: ModuleDef[] = [
     href: "/programacion",
     label: "Programación",
     title: "Programación",
+  },
+  {
+    id: "servicios",
+    href: "/servicios",
+    label: "Servicios contratados",
+    title: "Servicios contratados",
   },
   {
     id: "vuelos",
@@ -74,7 +81,14 @@ export const moduleDefs: ModuleDef[] = [
 ];
 
 export type TermKey =
-  "flight" | "finding" | "pilot" | "aircraft" | "report" | "operator";
+  | "flight"
+  | "finding"
+  | "pilot"
+  | "aircraft"
+  | "report"
+  | "operator"
+  | "manager"
+  | "owner";
 
 export interface TermForms {
   singular: string;
@@ -97,6 +111,16 @@ export const termDefs: Record<TermKey, TermForms & { hint: string }> = {
     singular: "Operador",
     plural: "Operadores",
     hint: "La empresa que presta el servicio de vuelo.",
+  },
+  manager: {
+    singular: "Gestor",
+    plural: "Gestores",
+    hint: "Quien administra el programa y paga el servicio, por ejemplo un ingenio.",
+  },
+  owner: {
+    singular: "Propietario",
+    plural: "Propietarios",
+    hint: "Quien es dueño de la tierra o de la obra, por ejemplo un cañicultor.",
   },
   aircraft: {
     singular: "Aeronave",

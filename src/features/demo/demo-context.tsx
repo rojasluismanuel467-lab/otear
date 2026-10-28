@@ -20,6 +20,8 @@ import {
   initialDocuments,
   initialMaintenance,
   initialPartMarks,
+  initialParties,
+  initialServiceRequests,
   initialEvidences,
   initialFindings,
   initialFlights,
@@ -34,6 +36,7 @@ import type {
   Evidence,
   MaintenanceRecord,
   PartMark,
+  ServiceRequest,
   Finding,
   Flight,
   FlightDocument,
@@ -57,6 +60,8 @@ function useDemoState() {
   const [maintenanceRecords, setMaintenanceRecords] =
     useState(initialMaintenance);
   const [partMarkRecords, setPartMarkRecords] = useState(initialPartMarks);
+  const [requestRecords, setRequestRecords] = useState(initialServiceRequests);
+  const [actingAs, setActingAs] = useState<string | null>(null);
   const [selectedFlightId, setSelectedFlightId] = useState(
     initialFlights[0].id,
   );
@@ -76,6 +81,14 @@ function useDemoState() {
     () => (zoneWord ? { ...baseSite, zoneLabel: zoneWord } : baseSite),
     [baseSite, zoneWord],
   );
+
+  const siteParties = initialParties.filter((party) =>
+    party.siteIds.includes(siteId),
+  );
+  const actor =
+    siteParties.find((party) => party.id === actingAs) ??
+    siteParties.find((party) => party.role === "manager") ??
+    siteParties[0];
 
   function setSiteId(id: string) {
     if (!sites.some((item) => item.id === id)) return;
@@ -257,6 +270,18 @@ function useDemoState() {
     setNotice("Mantenimiento registrado solo en esta sesión de demostración.");
   }
 
+  function saveServiceRequest(request: ServiceRequest) {
+    setRequestRecords((current) =>
+      current.some((item) => item.id === request.id)
+        ? current.map((item) =>
+            item.id === request.id
+              ? { ...request, id: item.id, siteId: item.siteId }
+              : item,
+          )
+        : [...current, request],
+    );
+  }
+
   function savePartMark(mark: PartMark) {
     setPartMarkRecords((current) =>
       current.some((item) => item.id === mark.id)
@@ -308,6 +333,8 @@ function useDemoState() {
     setBatteryRecords(initialBatteries);
     setMaintenanceRecords(initialMaintenance);
     setPartMarkRecords(initialPartMarks);
+    setRequestRecords(initialServiceRequests);
+    setActingAs(null);
     setSelectedFlightId(`flight-${siteId}-01`);
     setNotice("Datos de ejemplo restablecidos.");
   }
@@ -340,6 +367,13 @@ function useDemoState() {
     ),
     savePartMark,
     removePartMark,
+    parties: siteParties,
+    actor,
+    setActingAs,
+    serviceRequests: requestRecords.filter(
+      (request) => request.siteId === siteId,
+    ),
+    saveServiceRequest,
     /** Every record of every site, for counting how much a company field is used. */
     allRecords: {
       flight: flightRecords,

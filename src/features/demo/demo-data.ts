@@ -14,7 +14,10 @@ import type {
   Flight,
   FlightDocument,
   Invoice,
+  Party,
   Payment,
+  ServiceEvent,
+  ServiceRequest,
   Site,
 } from "./types";
 
@@ -963,3 +966,455 @@ export const initialPartMarks: PartMark[] = sites.flatMap((site) => {
     }),
   ];
 });
+
+/** The three actors. All names are made up; the operator «AeroVisión del Valle» is the one the rest of the demo uses. */
+export const OPERATOR_A = "party-operator-aerovision";
+export const OPERATOR_B = "party-operator-pacifico";
+
+const siteParties: Record<string, [string, string]> = {
+  "santa-rita": [
+    "Ingenio Dulce Valle (ejemplo)",
+    "Hacienda Santa Rita · Hernando Rojas (ejemplo)",
+  ],
+  "via-la-habana": [
+    "Concesión Vía Buga (ejemplo)",
+    "Interventoría Vial (ejemplo)",
+  ],
+  "obra-alameda": [
+    "Constructora Alameda (ejemplo)",
+    "Propietario del lote (ejemplo)",
+  ],
+  "parque-del-pacifico": [
+    "Administración del parque (ejemplo)",
+    "Copropiedad del parque (ejemplo)",
+  ],
+};
+
+export const initialParties: Party[] = [
+  ...sites.flatMap((site): Party[] => {
+    const [manager, owner] = siteParties[site.id];
+    return [
+      {
+        id: `party-manager-${site.id}`,
+        role: "manager",
+        name: manager,
+        siteIds: [site.id],
+      },
+      {
+        id: `party-owner-${site.id}`,
+        role: "owner",
+        name: owner,
+        siteIds: [site.id],
+      },
+    ];
+  }),
+  {
+    id: OPERATOR_A,
+    role: "operator",
+    name: "AeroVisión del Valle",
+    siteIds: sites.map((site) => site.id),
+    contact: "operaciones@aerovision.example",
+  },
+  {
+    id: OPERATOR_B,
+    role: "operator",
+    name: "Drones del Pacífico (ejemplo)",
+    siteIds: sites.map((site) => site.id),
+    contact: "servicios@dronespacifico.example",
+  },
+];
+
+const ev = (
+  n: number,
+  on: string,
+  by: string,
+  role: ServiceEvent["role"],
+  type: string,
+  text: string,
+): ServiceEvent => ({
+  id: `ev-seed-${n}-${type}`,
+  on,
+  by,
+  role,
+  type,
+  text,
+});
+
+/** Example requests, at different steps so the board shows the whole flow. Prices are examples, not market prices. */
+export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
+  (site): ServiceRequest[] => {
+    const manager = `party-manager-${site.id}`;
+    const owner = `party-owner-${site.id}`;
+    const zoneIds = site.zones.map((zone) => zone.id);
+    // Road sites are priced per flight (a road has length, not hectares): the same example prices, scaled.
+    const unit =
+      site.sector === "roads" ? ("flight" as const) : ("ha" as const);
+    const k = unit === "flight" ? 200 : 1;
+    const money = (n: number) =>
+      `$ ${new Intl.NumberFormat("es-CO").format(n * k)}${unit === "ha" ? " por hectárea" : ""}`;
+    const base = {
+      siteId: site.id,
+      invited: [OPERATOR_A, OPERATOR_B],
+      unit,
+    };
+    const first: ServiceRequest = {
+      ...base,
+      id: `service-${site.id}-1`,
+      kind: "monitoring",
+      title: "Seguimiento del mes",
+      description:
+        "Monitoreo de todas las zonas con el mismo recorrido del mes anterior.",
+      zoneIds,
+      requestedBy: manager,
+      windowStart: "2026-10-18",
+      windowEnd: "2026-10-26",
+      maxPrice: 4500 * k,
+      status: "invoiced",
+      operatorId: OPERATOR_A,
+      flightId: `flight-${site.id}-01`,
+      invoiceId: `invoice-${site.id}-01`,
+      createdOn: "2026-10-12",
+      quotes: [
+        {
+          operatorId: OPERATOR_A,
+          price: 3500 * k,
+          startDate: "2026-10-22",
+          note: "Incluye ortomosaico y reporte de hallazgos.",
+          state: "chosen",
+          on: "2026-10-13",
+        },
+        {
+          operatorId: OPERATOR_B,
+          price: 4100 * k,
+          startDate: "2026-10-24",
+          note: "",
+          state: "declined",
+          on: "2026-10-14",
+        },
+      ],
+      delivery: {
+        coveredHa: 0,
+        deliveredOn: "2026-10-24",
+        note: "Cobertura completa.",
+        deliverables: ["Ortomosaico (GeoTIFF)", "Fotografías originales (JPG)"],
+      },
+      verification: {
+        result: "accepted",
+        note: "Recibido y revisado.",
+        on: "2026-10-25",
+        by: manager,
+      },
+      events: [
+        ev(
+          1,
+          "2026-10-12",
+          manager,
+          "manager",
+          "requested",
+          `${siteParties[site.id][0]} pidió el servicio e invitó a AeroVisión del Valle y Drones del Pacífico (ejemplo).`,
+        ),
+        ev(
+          2,
+          "2026-10-13",
+          OPERATOR_A,
+          "operator",
+          "quoted",
+          `AeroVisión del Valle cotizó ${money(3500)}, desde el 2026-10-22.`,
+        ),
+        ev(
+          3,
+          "2026-10-14",
+          OPERATOR_B,
+          "operator",
+          "quoted",
+          `Drones del Pacífico (ejemplo) cotizó ${money(4100)}, desde el 2026-10-24.`,
+        ),
+        ev(
+          4,
+          "2026-10-15",
+          manager,
+          "manager",
+          "assigned",
+          `${siteParties[site.id][0]} asignó el servicio a AeroVisión del Valle.`,
+        ),
+        ev(
+          5,
+          "2026-10-15",
+          OPERATOR_A,
+          "operator",
+          "scheduled",
+          "AeroVisión del Valle programó el vuelo para el 2026-10-24.",
+        ),
+        ev(
+          6,
+          "2026-10-24",
+          OPERATOR_A,
+          "operator",
+          "delivered",
+          "AeroVisión del Valle entregó ortomosaico y fotografías.",
+        ),
+        ev(
+          7,
+          "2026-10-25",
+          manager,
+          "manager",
+          "verified",
+          `${siteParties[site.id][0]} aceptó la entrega: Recibido y revisado.`,
+        ),
+        ev(
+          8,
+          "2026-10-25",
+          OPERATOR_A,
+          "operator",
+          "invoiced",
+          "AeroVisión del Valle facturó. El pago se gestiona en Pagos y costos.",
+        ),
+      ],
+    };
+    const second: ServiceRequest = {
+      ...base,
+      id: `service-${site.id}-2`,
+      kind: "monitoring",
+      title: "Seguimiento programado del 29 de octubre",
+      description: "Comparar el estado de las zonas con el registro anterior.",
+      zoneIds,
+      requestedBy: manager,
+      windowStart: "2026-10-27",
+      windowEnd: "2026-10-31",
+      maxPrice: 4500 * k,
+      status: "scheduled",
+      operatorId: OPERATOR_A,
+      flightId: `flight-${site.id}-02`,
+      createdOn: "2026-10-20",
+      quotes: [
+        {
+          operatorId: OPERATOR_A,
+          price: 3500 * k,
+          startDate: "2026-10-27",
+          note: "",
+          state: "chosen",
+          on: "2026-10-21",
+        },
+        {
+          operatorId: OPERATOR_B,
+          price: 3900 * k,
+          startDate: "2026-10-28",
+          note: "",
+          state: "declined",
+          on: "2026-10-21",
+        },
+      ],
+      events: [
+        ev(
+          11,
+          "2026-10-20",
+          manager,
+          "manager",
+          "requested",
+          `${siteParties[site.id][0]} pidió el servicio e invitó a AeroVisión del Valle y Drones del Pacífico (ejemplo).`,
+        ),
+        ev(
+          12,
+          "2026-10-21",
+          OPERATOR_A,
+          "operator",
+          "quoted",
+          `AeroVisión del Valle cotizó ${money(3500)}, desde el 2026-10-27.`,
+        ),
+        ev(
+          13,
+          "2026-10-21",
+          OPERATOR_B,
+          "operator",
+          "quoted",
+          `Drones del Pacífico (ejemplo) cotizó ${money(3900)}, desde el 2026-10-28.`,
+        ),
+        ev(
+          14,
+          "2026-10-22",
+          manager,
+          "manager",
+          "assigned",
+          `${siteParties[site.id][0]} asignó el servicio a AeroVisión del Valle.`,
+        ),
+        ev(
+          15,
+          "2026-10-22",
+          OPERATOR_A,
+          "operator",
+          "scheduled",
+          "AeroVisión del Valle programó el vuelo para el 2026-10-29.",
+        ),
+      ],
+    };
+    const third: ServiceRequest = {
+      ...base,
+      id: `service-${site.id}-3`,
+      kind: site.sector === "agriculture" ? "monitoring" : "inspection",
+      title:
+        site.sector === "agriculture"
+          ? "Vigor del cultivo, para decidir riego"
+          : "Verificar los puntos críticos",
+      description:
+        "Cotización pedida a dos operadores para elegir el más conveniente.",
+      zoneIds: zoneIds.slice(0, 2),
+      requestedBy: site.sector === "agriculture" ? owner : manager,
+      windowStart: "2026-11-02",
+      windowEnd: "2026-11-12",
+      maxPrice: 6500 * k,
+      status: "quoted",
+      createdOn: "2026-10-23",
+      quotes: [
+        {
+          operatorId: OPERATOR_A,
+          price: 6000 * k,
+          startDate: "2026-11-03",
+          note: "Cámara multiespectral y mapa de vigor por suerte.",
+          state: "open",
+          on: "2026-10-24",
+        },
+        {
+          operatorId: OPERATOR_B,
+          price: 5200 * k,
+          startDate: "2026-11-06",
+          note: "Entrega en 72 horas.",
+          state: "open",
+          on: "2026-10-24",
+        },
+      ],
+      events: [
+        ev(
+          21,
+          "2026-10-23",
+          site.sector === "agriculture" ? owner : manager,
+          site.sector === "agriculture" ? "owner" : "manager",
+          "requested",
+          "Pidió el servicio e invitó a AeroVisión del Valle y Drones del Pacífico (ejemplo).",
+        ),
+        ev(
+          22,
+          "2026-10-24",
+          OPERATOR_A,
+          "operator",
+          "quoted",
+          `AeroVisión del Valle cotizó ${money(6000)}, desde el 2026-11-03.`,
+        ),
+        ev(
+          23,
+          "2026-10-24",
+          OPERATOR_B,
+          "operator",
+          "quoted",
+          `Drones del Pacífico (ejemplo) cotizó ${money(5200)}, desde el 2026-11-06.`,
+        ),
+      ],
+    };
+    const fourth: ServiceRequest = {
+      ...base,
+      id: `service-${site.id}-4`,
+      kind: "mapping",
+      title: "Mapeo de la última zona",
+      description:
+        "Ortomosaico y modelo de superficie para actualizar la cartografía.",
+      zoneIds: zoneIds.slice(-1),
+      requestedBy: manager,
+      windowStart: "2026-10-20",
+      windowEnd: "2026-10-27",
+      maxPrice: 8000 * k,
+      status: "delivered",
+      operatorId: OPERATOR_B,
+      createdOn: "2026-10-16",
+      quotes: [
+        {
+          operatorId: OPERATOR_B,
+          price: 7200 * k,
+          startDate: "2026-10-21",
+          note: "",
+          state: "chosen",
+          on: "2026-10-17",
+        },
+        {
+          operatorId: OPERATOR_A,
+          price: 7900 * k,
+          startDate: "2026-10-22",
+          note: "",
+          state: "declined",
+          on: "2026-10-17",
+        },
+      ],
+      delivery: {
+        coveredHa: 0,
+        deliveredOn: "2026-10-24",
+        note: "Quedó una franja sin cubrir por viento.",
+        deliverables: [
+          "Ortomosaico (GeoTIFF)",
+          "Modelo de superficie (GeoTIFF)",
+        ],
+      },
+      events: [
+        ev(
+          31,
+          "2026-10-16",
+          manager,
+          "manager",
+          "requested",
+          `${siteParties[site.id][0]} pidió el servicio e invitó a AeroVisión del Valle y Drones del Pacífico (ejemplo).`,
+        ),
+        ev(
+          32,
+          "2026-10-17",
+          OPERATOR_B,
+          "operator",
+          "quoted",
+          `Drones del Pacífico (ejemplo) cotizó ${money(7200)}, desde el 2026-10-21.`,
+        ),
+        ev(
+          33,
+          "2026-10-17",
+          OPERATOR_A,
+          "operator",
+          "quoted",
+          `AeroVisión del Valle cotizó ${money(7900)}, desde el 2026-10-22.`,
+        ),
+        ev(
+          34,
+          "2026-10-18",
+          manager,
+          "manager",
+          "assigned",
+          `${siteParties[site.id][0]} asignó el servicio a Drones del Pacífico (ejemplo).`,
+        ),
+        ev(
+          35,
+          "2026-10-18",
+          OPERATOR_B,
+          "operator",
+          "scheduled",
+          "Drones del Pacífico (ejemplo) programó el vuelo para el 2026-10-24.",
+        ),
+        ev(
+          36,
+          "2026-10-24",
+          OPERATOR_B,
+          "operator",
+          "delivered",
+          "Drones del Pacífico (ejemplo) entregó ortomosaico y modelo de superficie.",
+        ),
+      ],
+    };
+    // Hectares the operators say they covered: the invoiced one matches what its flight record says, the delivered one falls a bit short.
+    const polygonHa = (ids: string[]) =>
+      site.sector === "roads"
+        ? 0
+        : Math.round(
+            site.zones
+              .filter((zone) => ids.includes(zone.id))
+              .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0) * 10,
+          ) / 10;
+    first.delivery!.coveredHa =
+      Math.round(polygonHa(first.zoneIds) * 0.94 * 10) / 10 || 1;
+    fourth.delivery!.coveredHa =
+      Math.round(polygonHa(fourth.zoneIds) * 0.88 * 10) / 10 || 1;
+    return [first, second, third, fourth];
+  },
+);

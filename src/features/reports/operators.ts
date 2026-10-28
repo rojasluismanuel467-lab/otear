@@ -1,4 +1,5 @@
-import type { Finding, Flight, Invoice } from "../demo/types";
+import type { Finding, Flight, Invoice, ServiceRequest } from "../demo/types";
+import { coveredHaFor } from "../services/links.ts";
 
 export interface OperatorSummary {
   operator: string;
@@ -31,6 +32,8 @@ export function operatorSummaries(input: {
   flights: Flight[];
   findings: Finding[];
   invoices: Invoice[];
+  /** Service requests, whose deliveries also state the hectares covered. */
+  requests?: ServiceRequest[];
   tolerancePct?: number;
 }): OperatorSummary[] {
   const tolerance = input.tolerancePct ?? 5;
@@ -85,7 +88,7 @@ export function operatorSummaries(input: {
     summary.balance += invoice.total - invoice.paid;
     if (invoice.billedHa !== undefined) {
       summary.billedHa += invoice.billedHa;
-      const covered = flight?.log?.coveredHa;
+      const covered = coveredHaFor(flight, input.requests ?? []);
       if (covered !== undefined) {
         summary.coveredHa += covered;
         if (

@@ -15,6 +15,7 @@ import { downloadText, formatDate, formatMoney } from "@/lib/format";
 import { PaymentAutomation } from "./payment-automation";
 import { PaymentDialog } from "./payment-dialog";
 import { AreaCheckCard } from "./area-check-card";
+import { coveredHaFor } from "@/features/services/links";
 import { checkArea, orderedHa } from "./coverage";
 import { payReadiness } from "./readiness";
 import styles from "./billing.module.css";
@@ -48,6 +49,7 @@ export function BillingView() {
     evidences,
     selectFlight,
     updateInvoice,
+    serviceRequests,
     setNotice,
   } = useDemo();
   const router = useRouter();
@@ -118,7 +120,7 @@ export function BillingView() {
     selectedInvoice && flight && ordered > 0
       ? checkArea({
           orderedHa: ordered,
-          coveredHa: flight.log?.coveredHa,
+          coveredHa: coveredHaFor(flight, serviceRequests),
           billedHa: selectedInvoice.billedHa,
         })
       : undefined;

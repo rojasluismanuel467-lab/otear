@@ -50,6 +50,7 @@ export function ReportsView() {
     invoices,
     documents,
     evidences,
+    serviceRequests,
     selectFlight,
     setNotice,
   } = useDemo();
@@ -107,7 +108,12 @@ export function ReportsView() {
     ? ""
     : buildConsolidatedReport(input, period, sections);
   const unit = insights.cost.unit;
-  const operators = operatorSummaries({ flights, findings, invoices });
+  const operators = operatorSummaries({
+    flights,
+    findings,
+    invoices,
+    requests: serviceRequests,
+  });
 
   if (!history.length) {
     return (

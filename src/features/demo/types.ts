@@ -266,3 +266,86 @@ export interface PartMark {
   /** Date the part was replaced or repaired; the mark stops raising alerts. */
   resolvedOn?: string;
 }
+
+/** The three actors of a contracted drone service. */
+export type PartyRole = "manager" | "owner" | "operator";
+
+export interface Party {
+  id: string;
+  role: PartyRole;
+  name: string;
+  /** Sites it takes part in; operators serve every site. */
+  siteIds: string[];
+  contact?: string;
+}
+
+export type ServiceKind =
+  "monitoring" | "application" | "mapping" | "inspection";
+
+export type ServiceStatus =
+  | "requested"
+  | "quoted"
+  | "assigned"
+  | "scheduled"
+  | "delivered"
+  | "disputed"
+  | "verified"
+  | "invoiced"
+  | "cancelled";
+
+export interface ServiceQuote {
+  operatorId: string;
+  /** Price per hectare, or the total when the request is priced per flight. */
+  price: number;
+  /** First day the operator can fly. */
+  startDate: string;
+  note: string;
+  state: "open" | "chosen" | "declined";
+  on: string;
+}
+
+export interface ServiceEvent {
+  id: string;
+  on: string;
+  by: string;
+  role: PartyRole;
+  type: string;
+  text: string;
+}
+
+export interface ServiceRequest {
+  id: string;
+  siteId: string;
+  kind: ServiceKind;
+  title: string;
+  description: string;
+  zoneIds: string[];
+  /** The manager or the owner who asked for the service. */
+  requestedBy: string;
+  /** Operators invited to quote. */
+  invited: string[];
+  windowStart: string;
+  windowEnd: string;
+  unit: "ha" | "flight";
+  /** Ceiling the requester is willing to pay, in the same unit as a quote. */
+  maxPrice?: number;
+  status: ServiceStatus;
+  quotes: ServiceQuote[];
+  operatorId?: string;
+  flightId?: string;
+  delivery?: {
+    coveredHa: number;
+    deliveredOn: string;
+    note: string;
+    deliverables: string[];
+  };
+  verification?: {
+    result: "accepted" | "disputed";
+    note: string;
+    on: string;
+    by: string;
+  };
+  invoiceId?: string;
+  createdOn: string;
+  events: ServiceEvent[];
+}

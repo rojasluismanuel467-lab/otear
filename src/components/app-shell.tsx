@@ -11,6 +11,7 @@ import {
   CalendarDays,
   ChevronDown,
   CircleHelp,
+  Handshake,
   CreditCard,
   FolderCheck,
   Layers3,
@@ -40,6 +41,7 @@ import { formatDate } from "@/lib/format";
 
 const moduleIcons: Record<ModuleId, LucideIcon> = {
   programacion: CalendarDays,
+  servicios: Handshake,
   vuelos: Plane,
   mapa: MapIcon,
   evolucion: TrendingUp,
