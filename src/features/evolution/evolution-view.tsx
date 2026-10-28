@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { CircleCheck, Info, TriangleAlert } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -25,7 +25,9 @@ import { issuesFor, type Issue } from "./issues";
 import { IssueSheet } from "./issue-sheet";
 import { LineChart, type ChartSeries } from "./line-chart";
 import { narrate, type Line } from "./narrative";
+import { DeliverablesHelp, ModelBar, type ModelStatus } from "./model-panel";
 import { TimelineBar } from "./timeline-bar";
+import type { LoadedModel, Up } from "@/components/evolution/model-loader";
 import styles from "./evolution.module.css";
 
 const BuildingScene = dynamic(
@@ -110,6 +112,21 @@ function EvolutionContent({
   const [playing, setPlaying] = useState(false);
   const [refPicked, setRefPicked] = useState(0);
   const [issueId, setIssueId] = useState<string>();
+  const [models, setModels] = useState<Record<string, LoadedModel>>({});
+  const [modelStatus, setModelStatus] = useState<ModelStatus>({
+    state: "idle",
+  });
+  const [up, setUp] = useState<Up>("z");
+  const modelsRef = useRef(models);
+
+  useEffect(() => {
+    modelsRef.current = models;
+  }, [models]);
+  useEffect(
+    () => () =>
+      Object.values(modelsRef.current).forEach((item) => item.dispose()),
+    [],
+  );
   const index = picked ?? last;
   const refIndex = Math.min(refPicked, Math.max(index - 1, 0));
   const isPlaying = playing && index < last;
@@ -163,6 +180,31 @@ function EvolutionContent({
   );
   const selected = issues.find((item) => item.id === issueId);
 
+  async function loadModel(file: File) {
+    const flightId = current.flightId;
+    setModelStatus({ state: "loading", name: file.name });
+    const { loadDeliverable } =
+      await import("@/components/evolution/model-loader");
+    const result = await loadDeliverable(file, up);
+    if (!result.ok)
+      return setModelStatus({ state: "error", text: result.error });
+    setModels((all) => {
+      all[flightId]?.dispose();
+      return { ...all, [flightId]: result.model };
+    });
+    setModelStatus({ state: "idle" });
+  }
+  function clearModel() {
+    setModels((all) => {
+      all[current.flightId]?.dispose();
+      const rest = { ...all };
+      delete rest[current.flightId];
+      return rest;
+    });
+    setModelStatus({ state: "idle" });
+  }
+  const model = models[current.flightId] ?? null;
+
   function go(next: number) {
     setPlaying(false);
     setPicked(next);
@@ -203,11 +245,23 @@ function EvolutionContent({
           stage={
             <>
               <div className={styles.stage}>
+                {site.sector === "construction" && (
+                  <ModelBar
+                    loaded={model?.name}
+                    info={model?.info}
+                    status={modelStatus}
+                    up={up}
+                    onUp={setUp}
+                    onFile={(file) => void loadModel(file)}
+                    onClear={clearModel}
+                  />
+                )}
                 {site.sector === "construction" ? (
                   <BuildingScene
                     levels={current.levels ?? 0}
                     planned={target}
                     reference={index > 0 ? (reference.levels ?? 0) : null}
+                    model={model}
                     markers={issues.map((issue) =>
                       buildingMarker(site, issue, current, target),
                     )}
@@ -308,6 +362,7 @@ function EvolutionContent({
                     No se detectaron problemas en este vuelo.
                   </p>
                 )}
+                {site.sector === "construction" && <DeliverablesHelp />}
                 <details className={styles.reading}>
                   <summary>Lectura completa de los datos</summary>
                   <ul>
