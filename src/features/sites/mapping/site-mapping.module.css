@@ -6,7 +6,8 @@
   --stage-height: clamp(640px, 78vh, 760px);
   display: grid;
   grid-template-columns: 420px minmax(0, 1fr);
-  height: var(--stage-height);
+  /* Altura mínima, no fija: si el carril es más largo el recuadro crece y no hay un segundo scroll. */
+  min-height: var(--stage-height);
   border-radius: 28px;
   overflow: hidden;
   animation: stage-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -16,7 +17,6 @@
   flex-direction: column;
   gap: 14px;
   padding: 22px 18px 20px 22px;
-  overflow-y: auto;
   border-right: 1px solid var(--border);
 }
 .mapStage {
@@ -25,6 +25,8 @@
   height: 100%;
 }
 .mapStage :global(.site-map) {
+  position: absolute;
+  inset: 0;
   height: 100%;
   min-height: 0;
 }
@@ -359,7 +361,7 @@
   .stage {
     grid-template-columns: 1fr;
     grid-template-rows: 460px auto;
-    height: auto;
+    min-height: 0;
   }
   .mapStage {
     order: -1;

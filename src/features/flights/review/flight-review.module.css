@@ -8,15 +8,12 @@
   gap: 28px;
   align-items: start;
 }
+/* Sin scroll propio: la lista crece y la página es la única que se desplaza. */
 .rail {
-  position: sticky;
-  top: 90px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-height: calc(100vh - 110px);
   padding: 20px 14px 16px 16px;
-  overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 28px;
   box-shadow: var(--otear-shadow);
@@ -24,7 +21,6 @@
     linear-gradient(180deg, #f8faf6e6 0%, #f1f6f8f2 100%),
     url("/textures/contours-light.svg");
   background-size: auto, cover;
-  scrollbar-width: thin;
 }
 .railHeader h2 {
   font-size: var(--heading-section);
@@ -268,10 +264,6 @@
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
-  }
-  .rail {
-    position: static;
-    max-height: 340px;
   }
   .nextStep {
     grid-template-columns: 1fr;

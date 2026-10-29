@@ -1,5 +1,7 @@
 .view {
   display: grid;
+  /* La pista automática se ensanchaba con el contenido y la página se desbordaba en móvil. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
 .content {
@@ -255,6 +257,16 @@
   width: 18px;
   height: 18px;
 }
+/* Táctil: botones, casillas y fechas a 44 px de alto (medían 18–43 px). */
+@media (max-width: 900px) {
+  .touch,
+  .reportControls input {
+    min-height: 44px;
+  }
+  .sections label {
+    min-height: 44px;
+  }
+}
 .preview {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -295,6 +307,11 @@
   }
   .content .tabBar {
     --tabs-inset: 24px;
+  }
+}
+@media (max-width: 480px) {
+  .content .tabBar {
+    --tabs-inset: 16px;
   }
 }
 @media (max-width: 900px) {

@@ -204,10 +204,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             Guía de la demo
             <ArrowUpRight size={14} className="help-link-arrow" />
           </button>
-          <button className="help-link" onClick={resetDemo}>
-            <RotateCcw size={17} />
-            Reiniciar demostración
-          </button>
           <div className="profile-row">
             <span className="profile-avatar">LR</span>
             <div>
@@ -399,7 +395,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </ol>
                   <p>
                     Los cambios que hagas se conservan al navegar y se reinician
-                    al recargar la página.
+                    al recargar la página, o ahora mismo con «Reiniciar
+                    demostración».
                   </p>
                   <p>
                     Clima, coordenadas, documentos y registros son muestras. Las
@@ -409,6 +406,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </div>
               </Modal.Body>
               <Modal.Footer>
+                <Button
+                  variant="secondary"
+                  onPress={() => {
+                    resetDemo();
+                    setHelpOpen(false);
+                  }}
+                >
+                  <RotateCcw size={16} />
+                  Reiniciar demostración
+                </Button>
                 <Button onPress={() => setHelpOpen(false)}>Entendido</Button>
               </Modal.Footer>
             </Modal.Dialog>

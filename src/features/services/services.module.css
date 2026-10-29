@@ -1,5 +1,7 @@
 .view {
   display: grid;
+  /* La pista automática se ensanchaba con el contenido y la página se desbordaba en móvil. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
 .viewAs {
@@ -12,7 +14,7 @@
   color: var(--muted);
 }
 .viewAs select {
-  min-width: 220px;
+  min-width: min(220px, 100%);
 }
 .filters {
   display: flex;

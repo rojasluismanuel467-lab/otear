@@ -65,7 +65,7 @@
 @media (max-width: 480px) {
   .list [role="tab"] {
     gap: 6px;
-    padding-inline: 10px;
+    padding-inline: 8px;
     font-size: 13px;
   }
 }

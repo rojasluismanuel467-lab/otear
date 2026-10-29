@@ -787,7 +787,8 @@ textarea {
 }
 @media (max-width: 900px) {
   .master-detail {
-    grid-template-columns: 1fr;
+    /* `minmax(0, 1fr)`: con `1fr` a secas un hijo ancho ensanchaba la pantalla entera. */
+    grid-template-columns: minmax(0, 1fr);
   }
   .master-rail {
     min-height: 0;
@@ -1512,6 +1513,7 @@ textarea {
   }
   .page-actions {
     width: 100%;
+    flex-wrap: wrap;
   }
   .page-actions .button {
     flex: 1;

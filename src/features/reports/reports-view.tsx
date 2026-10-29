@@ -102,11 +102,9 @@ export function ReportsView() {
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    requestAnimationFrame(() =>
-      document
-        .getElementById("selected-flight")
-        ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" }),
-    );
+    document
+      .getElementById("selected-flight")
+      ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
   }
   const selectedPoint = insights.timeline.find(
     (point) => point.flightId === selected?.id,
@@ -195,6 +193,7 @@ export function ReportsView() {
                 </div>
                 <Button
                   variant="secondary"
+                  className={styles.touch}
                   onPress={() => {
                     selectFlight(selected.id);
                     router.push("/vuelos");
@@ -280,6 +279,7 @@ export function ReportsView() {
                       {insights.attention.length > 6 && (
                         <Button
                           variant="ghost"
+                          className={styles.touch}
                           onPress={() => setShowAllAttention((value) => !value)}
                         >
                           {showAllAttention
@@ -598,6 +598,7 @@ export function ReportsView() {
                           </pre>
                           <Button
                             variant="primary"
+                            className={styles.touch}
                             onPress={() => {
                               downloadText(
                                 `otear-${site.id}-informe-consolidado.txt`,
@@ -613,6 +614,7 @@ export function ReportsView() {
                           </Button>
                           <Button
                             variant="secondary"
+                            className={styles.touch}
                             onPress={() =>
                               printHtml(
                                 textToHtml(
