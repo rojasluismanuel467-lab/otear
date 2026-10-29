@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Check, Sprout } from "lucide-react";
 import { DronePreview } from "@/components/drone/drone-preview";
 import styles from "./landing.module.css";
+import { DroneCursor } from "./drone-cursor";
+import { FlyingDrone } from "./flying-drone";
 import { LeadForm } from "./lead-form";
 
 const steps = [
@@ -43,7 +45,9 @@ const roles = [
 export function LandingPage() {
   return (
     <div className={styles.page}>
-      <header className={styles.topbar}>
+      <DroneCursor />
+      <FlyingDrone />
+      <header className={styles.topbar} data-cursor-theme="dark">
         <div className={styles.topbarInner}>
           <Link href="/" className={styles.brand} aria-label="Otear, inicio">
             <span className={styles.brandDot} aria-hidden />
@@ -66,7 +70,7 @@ export function LandingPage() {
         </div>
       </header>
 
-      <section className={styles.hero}>
+      <section className={styles.hero} data-cursor-theme="dark">
         <div className={styles.heroContours} aria-hidden />
         <div className={styles.heroInner}>
           <div>
@@ -183,7 +187,7 @@ export function LandingPage() {
       </section>
 
       <section>
-        <div className={styles.demoStrip}>
+        <div className={styles.demoStrip} data-cursor-theme="dark">
           <div className={styles.demoStripInner}>
             <h3 className={styles.demoStripTitle}>
               Entre a la demo. Sin registro, sin instalar nada.

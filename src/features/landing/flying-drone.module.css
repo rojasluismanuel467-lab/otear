@@ -1,0 +1,137 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  overflow: visible;
+}
+
+/* Hide on touch — on phones a scroll-pinned object competes with content and
+   the thumb hovers over it. Mobile users get the hero 3D drone instead. */
+@media (pointer: coarse) {
+  .layer {
+    display: none;
+  }
+}
+
+/* Flight trace: a dashed line that follows the drone's wake. */
+.trace {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.tracePath {
+  fill: none;
+  stroke: var(--sky);
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
+  opacity: 0.35;
+  stroke-linecap: round;
+  animation: traceCrawl 6s linear infinite;
+}
+
+@keyframes traceCrawl {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+/* The drone silhouette */
+.craft {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 64px;
+  will-change: transform;
+  transform-origin: 50% 50%;
+  color: var(--accent);
+  filter: drop-shadow(0 6px 12px #1c6f8d33);
+  transition:
+    color 400ms ease,
+    opacity 400ms ease;
+}
+
+/* Craft adapts to section background */
+.craftDark {
+  color: var(--sky);
+  filter: drop-shadow(0 10px 18px #0005);
+}
+
+/* Subtle idle bobbing on top of scroll motion */
+.craftInner {
+  width: 100%;
+  height: 100%;
+  animation: bob 2600ms ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Spinning rotor hint */
+.rotorHub {
+  animation: rotorSpin 1800ms linear infinite;
+  transform-origin: center;
+}
+
+@keyframes rotorSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Label badge that reads out what the drone is doing right now */
+.callout {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0b1a24e8;
+  color: #e3eef3;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border: 1px solid #ffffff1a;
+  opacity: 0;
+  transition: opacity 320ms ease;
+  pointer-events: none;
+}
+
+.calloutVisible {
+  opacity: 1;
+}
+
+.calloutDark {
+  background: #e3eef3f0;
+  color: #0b1a24;
+  border-color: #ffffff44;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .craftInner,
+  .rotorHub,
+  .tracePath {
+    animation: none !important;
+  }
+}

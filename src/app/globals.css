@@ -1428,3 +1428,18 @@ html [data-slot="modal-dialog"].modal__dialog--xs {
     backdrop-filter: none;
   }
 }
+
+/* Custom drone cursor: hide the OS cursor when the landing enables it. */
+html[data-cursor="on"] {
+  cursor: none;
+}
+html[data-cursor="on"] * {
+  cursor: inherit;
+}
+html[data-cursor="on"] input,
+html[data-cursor="on"] textarea {
+  cursor: text;
+}
+html[data-cursor="on"] select {
+  cursor: pointer;
+}

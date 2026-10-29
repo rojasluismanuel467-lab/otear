@@ -1,0 +1,165 @@
+/* Only enabled on fine pointers; touch devices keep native cursor. */
+@media (pointer: coarse) {
+  .wrap {
+    display: none;
+  }
+}
+
+.wrap {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: normal;
+}
+
+/* Global cursor overrides live in src/app/globals.css under
+   `html[data-cursor="on"]` because Turbopack rejects attribute-only
+   selectors inside a CSS module (even in a :global block). */
+
+.craft {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  transform: translate3d(-999px, -999px, 0) rotate(0deg);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  color: #0b1a24;
+}
+
+/* Darker craft on light surfaces, invert on dark hero */
+.light {
+  color: #0b1a24;
+}
+
+.dark {
+  color: #e3eef3;
+}
+
+/* Idle: small quadcopter silhouette */
+.body {
+  transition:
+    opacity 180ms ease,
+    transform 220ms cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+/* Ring reveals on interactive hover (target lock) */
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  opacity: 0;
+  transform: scale(0.55);
+  transition:
+    opacity 180ms ease,
+    transform 220ms cubic-bezier(0.22, 0.9, 0.3, 1);
+  pointer-events: none;
+}
+
+/* Corner ticks reinforce the "target" state */
+.ticks {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  color: currentColor;
+}
+
+.tick {
+  position: absolute;
+  width: 6px;
+  height: 1.5px;
+  background: currentColor;
+}
+
+.tickTL {
+  top: 0;
+  left: 0;
+  transform: rotate(-45deg) translateX(2px);
+}
+.tickTR {
+  top: 0;
+  right: 0;
+  transform: rotate(45deg) translateX(-2px);
+}
+.tickBL {
+  bottom: 0;
+  left: 0;
+  transform: rotate(45deg) translateX(2px);
+}
+.tickBR {
+  bottom: 0;
+  right: 0;
+  transform: rotate(-45deg) translateX(-2px);
+}
+
+/* States set on the craft via data-state */
+.craft[data-state="hover"] .ring {
+  opacity: 0.7;
+  transform: scale(1);
+}
+.craft[data-state="hover"] .ticks {
+  opacity: 1;
+}
+.craft[data-state="hover"] .body {
+  transform: scale(0.78);
+  opacity: 0.9;
+}
+
+.craft[data-state="active"] .ring {
+  opacity: 1;
+  transform: scale(0.85);
+  border-color: #ff6b4a;
+  color: #ff6b4a;
+}
+.craft[data-state="active"] .ticks {
+  opacity: 1;
+}
+.craft[data-state="active"] .body {
+  transform: scale(0.72);
+}
+
+.craft[data-state="text"] .ring,
+.craft[data-state="text"] .ticks,
+.craft[data-state="text"] .body {
+  opacity: 0;
+}
+
+/* Blinking rotor dots on the quadcopter arms */
+.rotor {
+  animation: rotor 1200ms linear infinite;
+  transform-origin: center;
+}
+
+.rotor:nth-child(2) {
+  animation-delay: -300ms;
+}
+.rotor:nth-child(3) {
+  animation-delay: -600ms;
+}
+.rotor:nth-child(4) {
+  animation-delay: -900ms;
+}
+
+@keyframes rotor {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body,
+  .ring,
+  .ticks,
+  .rotor {
+    transition: none !important;
+    animation: none !important;
+  }
+}
