@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -131,8 +132,16 @@ export function LandingPage() {
       <header className={styles.topbar} data-cursor-theme="dark">
         <div className={styles.topbarInner}>
           <Link href="/" className={styles.brand} aria-label="Otear, inicio">
-            <span className={styles.brandDot} aria-hidden />
-            Otear
+            <span className={styles.brandMark}>
+              <Image
+                src="/brand/otear-logo.webp"
+                alt=""
+                width={960}
+                height={384}
+                priority
+                className={styles.brandLogo}
+              />
+            </span>
           </Link>
           <nav className={styles.topbarLinks} aria-label="Principal">
             <Link
@@ -397,6 +406,13 @@ export function LandingPage() {
       </section>
 
       <footer className={styles.footer}>
+        <Image
+          src="/brand/otear-logo.webp"
+          alt=""
+          width={960}
+          height={384}
+          className={styles.footerLogo}
+        />
         <strong>Otear</strong> · Validación comercial — datos sintéticos.
         <br />
         No conectamos aún con sistemas reales de empresas ni de operadores.

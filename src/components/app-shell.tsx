@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button, Modal } from "@heroui/react";
@@ -116,20 +117,27 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="brand"
           aria-label={`${companyName || "Otear"}, inicio`}
         >
-          {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt="" className="brand-logo" />
+          {!logo && !companyName ? (
+            <Image
+              src="/brand/otear-logo.webp"
+              alt=""
+              width={960}
+              height={384}
+              priority
+              className="brand-otear"
+            />
           ) : (
-            <span className="brand-symbol">
-              <MoveUpRight size={24} strokeWidth={2.4} />
-            </span>
-          )}
-          {companyName || logo ? (
-            <span className="brand-name">{companyName}</span>
-          ) : (
-            <span>
-              otear<span className="brand-dot">.</span>
-            </span>
+            <>
+              {logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logo} alt="" className="brand-logo" />
+              ) : (
+                <span className="brand-symbol">
+                  <MoveUpRight size={24} strokeWidth={2.4} />
+                </span>
+              )}
+              <span className="brand-name">{companyName}</span>
+            </>
           )}
         </Link>
         {showVendor && <p className="vendor-note">Con tecnología de Otear</p>}

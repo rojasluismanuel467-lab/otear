@@ -56,12 +56,19 @@
   color: #fff;
 }
 
-.brandDot {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  background: var(--sky);
-  box-shadow: 0 0 0 4px #81bfdb26;
+/* El logo es azul oscuro sobre transparente: en la barra oscura va sobre una pastilla clara. */
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 12px;
+  background: #f3f5f6;
+}
+
+.brandLogo {
+  display: block;
+  width: auto;
+  height: 40px;
 }
 
 .topbarLinks {
@@ -853,6 +860,13 @@
   line-height: 1.6;
 }
 
+.footerLogo {
+  display: block;
+  width: 132px;
+  height: auto;
+  margin: 0 auto 14px;
+}
+
 .footer strong {
   color: var(--foreground);
 }
@@ -931,6 +945,14 @@
 
   .topbarInner {
     padding: 12px 16px;
+  }
+
+  .brandMark {
+    padding: 2px 8px;
+  }
+
+  .brandLogo {
+    height: 30px;
   }
 
   .linkBtn {
