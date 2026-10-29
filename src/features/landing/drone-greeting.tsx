@@ -21,6 +21,10 @@ type DroneGreetingProps = {
   /** CSS selector of the hero element whose rect the stage docks into. */
   slotSelector: string;
   spec?: DroneModelSpec;
+  /** When docked, whether the user has activated the drone for drag. Off by
+   * default so the canvas doesn't swallow clicks meant for the hero's CTAs or
+   * scroll. */
+  interactive?: boolean;
 };
 
 const CAPTIONS: Array<{ text: string; delay: number; duration: number }> = [
@@ -40,6 +44,7 @@ const CAPTIONS: Array<{ text: string; delay: number; duration: number }> = [
 export function DroneGreeting({
   slotSelector,
   spec = { kind: "enterprise" },
+  interactive = false,
 }: DroneGreetingProps) {
   // Intro state defaults to true, but we read sessionStorage in an effect so
   // SSR hydration doesn't mismatch.
@@ -175,13 +180,16 @@ export function DroneGreeting({
   // still rendered — that's how the chunk loads and the first render fires —
   // just invisible. Returning visitors (docked from mount) skip this gate.
   const overlayHidden = introActive && !canvasReady;
+  // When docked and the hero hasn't been clicked, let clicks pass through the
+  // canvas to the page beneath (CTAs, scroll).
+  const stageInactive = docked && !interactive;
 
   return (
     <div
       ref={stageRef}
       className={`${styles.stage} ${docked ? styles.stageDocked : ""} ${
         overlayHidden ? styles.stageHidden : ""
-      }`}
+      } ${stageInactive ? styles.stageInactive : ""}`}
       style={stageStyle}
       data-cursor-theme="dark"
       aria-live="polite"
@@ -225,7 +233,7 @@ export function DroneGreeting({
         </>
       )}
 
-      {docked && (
+      {docked && interactive && (
         <>
           <span
             className={`${styles.hint} ${hasInteracted ? "" : styles.hintVisible}`}

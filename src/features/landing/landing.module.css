@@ -253,32 +253,16 @@
   background: var(--sky);
 }
 
-/* Drone stage (reuses DronePreview with dark tone) */
+/* Dock target rect for the hovering 3D drone. No card: the drone floats on
+ * top of the hero's own gradient and topographic texture. The wrapper only
+ * reserves layout space so the hero grid doesn't collapse and so the stage
+ * has a rect to dock into after the intro. */
 .droneWrap {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 5;
   max-height: 68vh;
-  border-radius: 22px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 20%, #ffffff10, transparent 70%),
-    linear-gradient(180deg, #0f2a38 0%, #081821 100%);
-  border: 1px solid #ffffff14;
-  box-shadow:
-    0 30px 70px #0007,
-    inset 0 1px 0 #ffffff14;
-}
-
-.droneWrap::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("/textures/contours-dark.svg");
-  background-size: 900px auto;
-  opacity: 0.35;
   pointer-events: none;
-  mix-blend-mode: screen;
 }
 
 .droneInner {

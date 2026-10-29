@@ -20,10 +20,11 @@
   will-change: top, left, width, height;
 }
 
+/* Docked: the stage sits in front of the hero as a transparent surface so
+ * the drone appears to float on the hero's own gradient and topographic
+ * texture (no card, no border). */
 .stageDocked {
-  background:
-    radial-gradient(circle at 50% 20%, #ffffff10, transparent 70%),
-    linear-gradient(180deg, #0f2a38 0%, #081821 100%);
+  background: transparent;
   border-radius: 22px;
 }
 
@@ -33,6 +34,13 @@
  * the existing opacity transition when the class drops. */
 .stageHidden {
   opacity: 0;
+  pointer-events: none;
+}
+
+/* Docked and not yet activated: the canvas lets clicks pass through to the
+ * hero (so CTAs and scroll keep working). Activating the drone by clicking
+ * the hero background drops this class and re-enables drag. */
+.stageInactive {
   pointer-events: none;
 }
 
@@ -48,9 +56,10 @@
   mix-blend-mode: screen;
 }
 
+/* Docked: the hero already renders its own topographic texture — don't
+ * paint a second layer on top. */
 .stageDocked::before {
-  background-size: 900px auto;
-  opacity: 0.35;
+  display: none;
 }
 
 .canvasHost {

@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Sprout } from "lucide-react";
 import styles from "./landing.module.css";
@@ -43,11 +46,49 @@ const roles = [
 ];
 
 export function LandingPage() {
+  // The drone sits in the hero background; it only becomes draggable when the
+  // user clicks on the hero's empty area (not on text/CTAs). It also stops
+  // being interactive once the user scrolls past the hero so the canvas never
+  // steals pointer events further down the page.
+  const [heroInteractive, setHeroInteractive] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+
+  function handleHeroPointerDown(event: React.PointerEvent<HTMLElement>) {
+    const target = event.target as HTMLElement | null;
+    // Clicks on interactive children (CTAs, links, buttons) keep working as
+    // links — they must not toggle drone interactivity.
+    if (target?.closest("a, button, input, textarea, select, [role='button']"))
+      return;
+    setHeroInteractive(true);
+  }
+
+  useEffect(() => {
+    const hero: HTMLElement | null = heroRef.current;
+    if (!hero) return;
+    const onScroll = () => {
+      // Deactivate as soon as the hero leaves the viewport.
+      if (hero.getBoundingClientRect().bottom < 80) setHeroInteractive(false);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target || !hero.contains(target)) setHeroInteractive(false);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, []);
+
   return (
     <div className={styles.page}>
       <DroneCursor />
       <FlyingDrone />
-      <DroneGreeting slotSelector="[data-drone-slot]" />
+      <DroneGreeting
+        slotSelector="[data-drone-slot]"
+        interactive={heroInteractive}
+      />
       <header className={styles.topbar} data-cursor-theme="dark">
         <div className={styles.topbarInner}>
           <Link href="/" className={styles.brand} aria-label="Otear, inicio">
@@ -71,7 +112,12 @@ export function LandingPage() {
         </div>
       </header>
 
-      <section className={styles.hero} data-cursor-theme="dark">
+      <section
+        ref={heroRef}
+        className={styles.hero}
+        data-cursor-theme="dark"
+        onPointerDown={handleHeroPointerDown}
+      >
         <div className={styles.heroContours} aria-hidden />
         <div className={styles.heroInner}>
           <div>
