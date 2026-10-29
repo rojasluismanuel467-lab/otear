@@ -2,17 +2,35 @@ import {
   BoxGeometry,
   BufferGeometry,
   CapsuleGeometry,
+  CatmullRomCurve3,
   CircleGeometry,
+  Color,
   ConeGeometry,
   CylinderGeometry,
+  CanvasTexture,
   DoubleSide,
   Box3,
+  ExtrudeGeometry,
+  Float32BufferAttribute,
   Group,
+  LatheGeometry,
   Material,
   Mesh,
+  MeshBasicMaterial,
+  MeshPhysicalMaterial,
+  type MeshPhysicalMaterialParameters,
   MeshStandardMaterial,
   type MeshStandardMaterialParameters,
+  PlaneGeometry,
+  Shape,
   SphereGeometry,
+  SplineCurve,
+  SRGBColorSpace,
+  Texture,
+  TextureLoader,
+  TorusGeometry,
+  TubeGeometry,
+  Vector2,
   Vector3,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -38,6 +56,10 @@ export type DroneModel = {
   propellers: Group[];
   /** Half of the widest horizontal dimension; used to frame the camera. */
   extent: number;
+  /** Opacity multiplier for the ground shadow (default 1). */
+  shadow?: number;
+  /** Wants the scene's key and rim lights on top of the soft environment. */
+  lit?: boolean;
   dispose: () => void;
 };
 
@@ -56,11 +78,16 @@ const palette = {
 };
 
 type Kit = ReturnType<typeof createKit>;
-type Parts = Pick<DroneModel, "group" | "propellers" | "extent">;
+type Parts = Pick<
+  DroneModel,
+  "group" | "propellers" | "extent" | "shadow" | "lit"
+>;
 
 function createKit() {
   const geometries: BufferGeometry[] = [];
   const materials: Material[] = [];
+  const textures: Texture[] = [];
+  const state = { disposed: false };
 
   const material = (
     color: number,
@@ -80,9 +107,21 @@ function createKit() {
     return new Mesh(geometry, mat);
   };
 
+  const track = <T extends Material>(created: T) => {
+    materials.push(created);
+    return created;
+  };
+  const texture = <T extends Texture>(created: T) => {
+    textures.push(created);
+    return created;
+  };
+
   return {
     mesh,
     material,
+    texture,
+    track,
+    state,
     shell: material(palette.shell, { roughness: 0.36 }),
     shellShade: material(palette.shellShade, { roughness: 0.5 }),
     frame: material(palette.frame, { roughness: 0.55 }),
@@ -99,8 +138,10 @@ function createKit() {
       depthWrite: false,
     }),
     dispose: () => {
+      state.disposed = true;
       geometries.forEach((geometry) => geometry.dispose());
       materials.forEach((item) => item.dispose());
+      textures.forEach((item) => item.dispose());
     },
   };
 }
@@ -453,123 +494,550 @@ function buildFixedWing(kit: Kit): Parts {
  * tips, V-tail on a thin boom, rear pusher propeller and a camera ball under the belly.
  * Nose toward +z, like the other procedural aircraft. Illustrative, not a real product.
  */
+/** The company logo (glider over the name), 960×384. */
+const LOGO_URL = "/brand/otear-logo.webp";
+
+/** A flat, transparent marking laid just above a wing's upper skin. */
+function createDecal(
+  kit: Kit,
+  texture: Texture | null,
+  width: number,
+  height: number,
+  rows = 1,
+) {
+  // Unlit and untonemapped: under the studio lighting the ink washes out, and
+  // a brand mark should keep its real colour.
+  const material = kit.track(
+    new MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      toneMapped: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      depthWrite: false,
+    }),
+  );
+  const decal = kit.mesh(new PlaneGeometry(width, height, 1, rows), material);
+  // Lies flat with its top edge toward the tail, so it reads from the nose side.
+  decal.rotation.x = -Math.PI / 2;
+  return { decal, material };
+}
+
+/** The aircraft's name in the livery: navy letters over a thin brand-teal bar. */
+function createNameTexture(kit: Kit, name: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 256;
+  const texture = kit.texture(new CanvasTexture(canvas));
+  texture.colorSpace = SRGBColorSpace;
+  texture.anisotropy = 4;
+  const paint = () => {
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    const family = getComputedStyle(document.body).fontFamily || "sans-serif";
+    context.font = `800 168px ${family}`;
+    context.textBaseline = "alphabetic";
+    context.fillStyle = "#0b1820";
+    context.strokeStyle = "#0b1820";
+    context.lineWidth = 7;
+    context.lineJoin = "round";
+    // Manual tracking: ctx.letterSpacing is not available everywhere.
+    const tracking = 22;
+    const widths = [...name].map((char) => context.measureText(char).width);
+    const total =
+      widths.reduce((sum, width) => sum + width, 0) +
+      tracking * (name.length - 1);
+    let x = (canvas.width - total) / 2;
+    [...name].forEach((char, index) => {
+      context.strokeText(char, x, 178);
+      context.fillText(char, x, 178);
+      x += widths[index] + tracking;
+    });
+    context.fillStyle = "#0d6286";
+    context.fillRect((canvas.width - total) / 2, 204, total, 14);
+    texture.needsUpdate = true;
+  };
+  paint();
+  // The first paint may use a fallback face; repaint once fonts are in.
+  document.fonts?.ready.then(() => {
+    if (!kit.state.disposed) paint();
+  });
+  return texture;
+}
+
+/** One cross-section of a lifting surface, with its leading edge at (x, y, zLE). */
+type Station = {
+  x: number;
+  y: number;
+  zLE: number;
+  chord: number;
+  /** Maximum thickness as a fraction of the chord. */
+  t: number;
+  /** Rotation about the z axis, so the section stays square to the surface's path. */
+  bank: number;
+};
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+/** NACA-style cambered section: thickness and mean line at chord fraction `xc`. */
+function airfoilAt(xc: number, t: number, camber: number) {
+  const thickness =
+    5 *
+    t *
+    (0.2969 * Math.sqrt(xc) -
+      0.126 * xc -
+      0.3516 * xc ** 2 +
+      0.2843 * xc ** 3 -
+      0.1036 * xc ** 4);
+  const p = 0.42;
+  const mean =
+    xc < p
+      ? (camber / p ** 2) * (2 * p * xc - xc * xc)
+      : (camber / (1 - p) ** 2) * (1 - 2 * p + 2 * p * xc - xc * xc);
+  return { mean, thickness };
+}
+
+/** A point on a section's upper or lower skin. `lift` moves it along the skin's normal. */
+function surfacePoint(
+  station: Station,
+  xc: number,
+  upper: boolean,
+  camber: number,
+  lift = 0,
+) {
+  const { mean, thickness } = airfoilAt(xc, station.t, camber);
+  const height =
+    (mean + (upper ? thickness : -thickness)) * station.chord +
+    (upper ? lift : -lift);
+  return new Vector3(
+    station.x - Math.sin(station.bank) * height,
+    station.y + Math.cos(station.bank) * height,
+    station.zLE - xc * station.chord,
+  );
+}
+
+const LOFT_STEPS = 18;
+
+/**
+ * Skins a row of sections into one smooth surface (the +x half). The loop runs from
+ * the upper trailing edge over the nose and back along the underside, so the leading
+ * edge shares its vertices and shades without a seam. Colour is per vertex: a dark
+ * leading edge, a light top and a dark underside.
+ */
+function loftSurface(
+  stations: Station[],
+  camber: number,
+  top: Color,
+  edge: Color,
+  under: Color,
+) {
+  const loop = 2 * LOFT_STEPS + 1;
+  const positions: number[] = [];
+  const colors: number[] = [];
+  for (const station of stations) {
+    for (let k = 0; k < loop; k += 1) {
+      const upper = k <= LOFT_STEPS;
+      const xc = upper
+        ? (1 + Math.cos((Math.PI * k) / LOFT_STEPS)) / 2
+        : (1 - Math.cos((Math.PI * (k - LOFT_STEPS)) / LOFT_STEPS)) / 2;
+      const point = surfacePoint(station, xc, upper, camber);
+      positions.push(point.x, point.y, point.z);
+      const color = !upper ? under : xc > 0.05 ? top : edge;
+      colors.push(color.r, color.g, color.b);
+    }
+  }
+  const indices: number[] = [];
+  for (let row = 0; row < stations.length - 1; row += 1) {
+    for (let k = 0; k < loop - 1; k += 1) {
+      const a = row * loop + k;
+      const b = a + 1;
+      const c = a + loop;
+      const d = c + 1;
+      indices.push(a, b, c, b, d, c);
+    }
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** A thin dark groove along a line on the upper skin: hinge lines and panel gaps. */
+function skinLine(
+  kit: Kit,
+  material: Material,
+  points: Vector3[],
+  radius = 0.0026,
+) {
+  const curve = new CatmullRomCurve3(points, false, "centripetal");
+  return kit.mesh(
+    new TubeGeometry(curve, Math.max(2, points.length * 4), radius, 5, false),
+    material,
+  );
+}
+
+/** Wing planform: a flat inboard panel, then taper, sweep and a gradual upturn. */
+const WING_HALF_SPAN = 2.7;
+const WING_FLAT = 1.1;
+const WING_Y = 0.1;
+const WING_CAMBER = 0.028;
+
+function wingStation(x: number): Station {
+  const u = clamp01((x - WING_FLAT) / (WING_HALF_SPAN - WING_FLAT));
+  const slope =
+    x > WING_FLAT ? (0.62 * 2.2 * u ** 1.2) / (WING_HALF_SPAN - WING_FLAT) : 0;
+  return {
+    x,
+    y: WING_Y + 0.62 * u ** 2.2,
+    zLE: 0.48 - 0.42 * u ** 1.3,
+    chord: 0.58 * (1 - 0.6 * u - 0.33 * u ** 4),
+    t: 0.1 - 0.025 * u,
+    bank: Math.atan(slope),
+  };
+}
+
+const WING_STATIONS = [
+  0.06, 0.3, 0.6, 0.9, 1.1, 1.25, 1.4, 1.55, 1.7, 1.85, 2.0, 2.15, 2.3, 2.42,
+  2.52, 2.6, 2.66, 2.7,
+];
+
+/** V-tail: two surfaces canted up and out from the boom. */
+const TAIL_ANGLE = 0.74;
+const TAIL_SPAN = 0.74;
+const TAIL_CAMBER = 0.012;
+
+function tailStation(s: number): Station {
+  const v = s / TAIL_SPAN;
+  return {
+    x: s * Math.cos(TAIL_ANGLE),
+    y: 0.01 + s * Math.sin(TAIL_ANGLE),
+    zLE: -1.36 - 0.2 * v,
+    chord: 0.3 * (1 - 0.55 * v - 0.2 * v ** 4),
+    t: 0.09,
+    bank: TAIL_ANGLE,
+  };
+}
+
+const TAIL_STATIONS = [0.02, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.67, 0.72, 0.74];
+
+/** Fuselage radius by z, tail to nose: boom, tapered tail cone, pod and rounded nose. */
+const FUSELAGE_PROFILE: [number, number][] = [
+  [-1.78, 0.032],
+  [-1.4, 0.034],
+  [-1.0, 0.04],
+  [-0.8, 0.05],
+  [-0.6, 0.075],
+  [-0.4, 0.11],
+  [-0.2, 0.145],
+  [0.0, 0.165],
+  [0.25, 0.172],
+  [0.5, 0.166],
+  [0.7, 0.145],
+  [0.85, 0.115],
+  [0.95, 0.08],
+  [1.02, 0.04],
+  [1.05, 0],
+];
+
+/** A lathe turned about z (nose at +z) over an angular range, then flattened a little. */
+function fuselageSkin(phiStart: number, phiLength: number, segments: number) {
+  const curve = new SplineCurve(
+    FUSELAGE_PROFILE.map(([z, r]) => new Vector2(r, z)),
+  );
+  const points = curve
+    .getPoints(90)
+    .map((point) => new Vector2(Math.max(0, point.x), point.y));
+  const geometry = new LatheGeometry(points, segments, phiStart, phiLength);
+  geometry.rotateX(Math.PI / 2);
+  geometry.scale(1, 0.84, 1);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** Propeller blade: tapered planform extruded thin, with twist from root to tip. */
+function createBladeGeometry() {
+  const outline = new Shape();
+  outline.moveTo(0.03, -0.016);
+  outline.lineTo(0.03, 0.02);
+  outline.lineTo(0.09, 0.036);
+  outline.lineTo(0.17, 0.042);
+  outline.lineTo(0.26, 0.038);
+  outline.lineTo(0.34, 0.028);
+  outline.lineTo(0.385, 0.012);
+  outline.lineTo(0.4, -0.004);
+  outline.lineTo(0.385, -0.014);
+  outline.lineTo(0.3, -0.02);
+  outline.lineTo(0.17, -0.022);
+  outline.lineTo(0.09, -0.02);
+  outline.closePath();
+  const geometry = new ExtrudeGeometry(outline, {
+    depth: 0.006,
+    bevelEnabled: true,
+    bevelThickness: 0.003,
+    bevelSize: 0.003,
+    bevelSegments: 1,
+  });
+  geometry.rotateX(Math.PI / 2);
+  const position = geometry.getAttribute("position");
+  for (let index = 0; index < position.count; index += 1) {
+    const along = clamp01((position.getX(index) - 0.03) / 0.37);
+    const pitch = 0.75 - 0.5 * along;
+    const y = position.getY(index);
+    const z = position.getZ(index);
+    position.setY(index, y * Math.cos(pitch) - z * Math.sin(pitch));
+    position.setZ(index, y * Math.sin(pitch) + z * Math.cos(pitch));
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function buildViper(kit: Kit): Parts {
   const root = new Group();
   const body = new Group();
   // Centre the long aircraft (propeller at -z, nose at +z) on the origin.
-  body.position.z = 0.55;
+  body.position.z = 0.5;
   root.add(body);
   const propellers: Group[] = [];
 
-  const light = kit.material(0xcdd2d6, { roughness: 0.34 });
-  const navy = kit.material(0x15262f, { roughness: 0.5 });
-
-  // Pod: light upper half over a dark belly, as in the logo.
-  const belly = kit.mesh(new CapsuleGeometry(0.155, 1.5, 8, 24), navy);
-  belly.rotation.x = Math.PI / 2;
-  belly.scale.set(1, 1, 0.6);
-  belly.position.y = -0.05;
-  body.add(belly);
-  const pod = kit.mesh(new CapsuleGeometry(0.15, 1.5, 8, 24), light);
-  pod.rotation.x = Math.PI / 2;
-  pod.scale.set(1, 1, 0.72);
-  pod.position.y = 0.02;
-  body.add(pod);
-
-  // Wing: a shallow dihedral inboard, then a steep upturn outboard with some sweep.
-  const wingY = 0.13;
-  for (const side of [-1, 1]) {
-    const inner = new Group();
-    inner.position.set(side * 0.12, wingY, 0.2);
-    inner.rotation.z = side * 0.06;
-    const innerTop = kit.mesh(
-      new RoundedBoxGeometry(1.3, 0.045, 0.56, 3, 0.02),
-      light,
+  const topColor = new Color(0xc4cbd0);
+  const navyColor = new Color(0x15262f);
+  const paint = (options: MeshPhysicalMaterialParameters) =>
+    kit.track(
+      new MeshPhysicalMaterial({
+        roughness: 0.3,
+        metalness: 0.04,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.3,
+        ...options,
+      }),
     );
-    innerTop.position.x = side * 0.65;
-    const innerUnder = kit.mesh(new BoxGeometry(1.28, 0.03, 0.5), navy);
-    innerUnder.position.set(side * 0.65, -0.03, 0);
-    // Dark leading edge: gives the wing the outline it has in the logo.
-    const innerEdge = kit.mesh(new BoxGeometry(1.28, 0.052, 0.035), navy);
-    innerEdge.position.set(side * 0.65, 0, 0.265);
-    inner.add(innerTop, innerUnder, innerEdge);
+  const light = paint({ color: topColor });
+  const navy = paint({ color: navyColor, roughness: 0.45, clearcoat: 0.3 });
+  const skin = paint({ vertexColors: true });
+  const groove = kit.material(0x0f1a20, { roughness: 0.8 });
+  const glass = paint({
+    color: 0x0a1218,
+    roughness: 0.05,
+    metalness: 0.3,
+    clearcoat: 1,
+    clearcoatRoughness: 0.03,
+  });
 
-    const outer = new Group();
-    outer.position.x = side * 1.3;
-    outer.rotation.z = side * 0.3;
-    const outerTop = kit.mesh(
-      new RoundedBoxGeometry(1.15, 0.04, 0.38, 3, 0.02),
-      light,
-    );
-    outerTop.position.set(side * 0.575, 0, -0.1);
-    const outerUnder = kit.mesh(new BoxGeometry(1.13, 0.028, 0.32), navy);
-    outerUnder.position.set(side * 0.575, -0.028, -0.1);
-    const outerEdge = kit.mesh(new BoxGeometry(1.13, 0.046, 0.03), navy);
-    outerEdge.position.set(side * 0.575, 0, 0.075);
-    outer.add(outerTop, outerUnder, outerEdge);
-    inner.add(outer);
-    body.add(inner);
-  }
+  // Fuselage: light upper skin over a dark belly, split a little below the waterline.
+  const bellyHalf = 1.14;
+  const belly = kit.mesh(fuselageSkin(-bellyHalf, bellyHalf * 2, 28), navy);
+  const upper = kit.mesh(
+    fuselageSkin(bellyHalf, Math.PI * 2 - bellyHalf * 2, 44),
+    light,
+  );
+  body.add(belly, upper);
 
-  // Tail boom and V-tail
-  const boom = kit.mesh(new CylinderGeometry(0.06, 0.03, 0.95, 14), light);
-  boom.rotation.x = Math.PI / 2;
-  boom.position.set(0, 0.02, -1.3);
-  body.add(boom);
-  for (const side of [-1, 1]) {
-    const hinge = new Group();
-    hinge.position.set(0, 0.04, -1.55);
-    hinge.rotation.z = side * 0.75;
-    const surface = kit.mesh(
-      new RoundedBoxGeometry(0.66, 0.035, 0.34, 3, 0.015),
-      light,
-    );
-    surface.position.x = side * 0.33;
-    const edge = kit.mesh(new BoxGeometry(0.64, 0.02, 0.1), navy);
-    edge.position.set(side * 0.33, -0.02, -0.1);
-    hinge.add(surface, edge);
-    body.add(hinge);
-  }
-
-  // Camera ball on a short stalk under the belly
-  const stalk = kit.mesh(new CylinderGeometry(0.018, 0.018, 0.14, 10), navy);
-  stalk.position.set(0, -0.15, 0.25);
-  body.add(stalk);
-  const ball = kit.mesh(new SphereGeometry(0.095, 20, 16), navy);
-  ball.position.set(0, -0.25, 0.25);
-  body.add(ball);
-  const lens = kit.mesh(
-    new CylinderGeometry(0.045, 0.045, 0.04, 16),
+  // Smoked sensor canopy, pitot tube and GPS fin.
+  const canopy = kit.mesh(new SphereGeometry(1, 28, 18), glass);
+  canopy.scale.set(0.105, 0.062, 0.3);
+  canopy.position.set(0, 0.098, 0.56);
+  body.add(canopy);
+  const pitot = kit.mesh(
+    new CylinderGeometry(0.007, 0.007, 0.24, 10),
     kit.steel,
   );
-  lens.rotation.x = Math.PI / 2;
-  lens.position.set(0, -0.25, 0.335);
+  pitot.rotation.x = Math.PI / 2;
+  pitot.position.set(0, -0.004, 1.12);
+  body.add(pitot);
+  const gps = kit.mesh(
+    new RoundedBoxGeometry(0.014, 0.07, 0.12, 2, 0.006),
+    light,
+  );
+  gps.position.set(0, 0.125, -0.38);
+  body.add(gps);
+
+  // Wing: one lofted surface per half, with hinge lines for flaps and ailerons.
+  const wingSurface = kit.mesh(
+    loftSurface(
+      WING_STATIONS.map(wingStation),
+      WING_CAMBER,
+      topColor,
+      navyColor,
+      navyColor,
+    ),
+    skin,
+  );
+  const wingRight = new Group();
+  wingRight.add(wingSurface);
+  const onWing = (x: number, xc: number) =>
+    surfacePoint(wingStation(x), xc, true, WING_CAMBER, 0.0012);
+  const span = (from: number, to: number, count: number) =>
+    Array.from(
+      { length: count },
+      (_, i) => from + ((to - from) * i) / (count - 1),
+    );
+  // Behind the logo's footprint on the inner wing (it spans up to ~66% of the chord).
+  const hinge = 0.76;
+  wingRight.add(
+    skinLine(
+      kit,
+      groove,
+      span(1.3, 2.3, 7).map((x) => onWing(x, hinge)),
+    ),
+    skinLine(
+      kit,
+      groove,
+      span(0.3, 1.2, 5).map((x) => onWing(x, hinge)),
+    ),
+    skinLine(kit, groove, [onWing(1.3, hinge), onWing(1.3, 0.97)]),
+    skinLine(kit, groove, [onWing(2.3, hinge), onWing(2.3, 0.97)]),
+    skinLine(kit, groove, [onWing(1.2, hinge), onWing(1.2, 0.97)]),
+    skinLine(kit, groove, [onWing(0.3, hinge), onWing(0.3, 0.97)]),
+  );
+  const wingLeft = wingRight.clone();
+  wingLeft.scale.x = -1;
+  body.add(wingRight, wingLeft);
+
+  // Livery, as on a real airframe: the Otear mark on the left wing and the aircraft's
+  // name on the right one. Both read from the nose side and follow the wing's camber.
+  const inner = wingStation(0.6);
+  const topAt = (z: number) => {
+    const { mean, thickness } = airfoilAt(
+      (inner.zLE - z) / inner.chord,
+      inner.t,
+      WING_CAMBER,
+    );
+    return inner.y + (mean + thickness) * inner.chord + 0.003;
+  };
+  /** Lays a flat decal over the wing's camber (its local z becomes world height). */
+  const drape = (decal: Mesh, zCenter: number) => {
+    const position = decal.geometry.getAttribute("position");
+    for (let index = 0; index < position.count; index += 1) {
+      position.setZ(index, topAt(zCenter - position.getY(index)));
+    }
+    decal.position.z = zCenter;
+  };
+  const nameCenter = 0.18;
+  const markCenter = 0.25;
+  const { decal: mark, material: markMaterial } = createDecal(
+    kit,
+    null,
+    0.76,
+    0.304,
+    14,
+  );
+  mark.position.x = -0.62;
+  drape(mark, markCenter);
+  mark.visible = false;
+  body.add(mark);
+  new TextureLoader().load(LOGO_URL, (loaded) => {
+    loaded.colorSpace = SRGBColorSpace;
+    loaded.anisotropy = 4;
+    if (kit.state.disposed) {
+      loaded.dispose();
+      return;
+    }
+    kit.texture(loaded);
+    markMaterial.map = loaded;
+    markMaterial.needsUpdate = true;
+    mark.visible = true;
+  });
+  const { decal: name } = createDecal(
+    kit,
+    createNameTexture(kit, "VIPER"),
+    0.74,
+    0.185,
+    8,
+  );
+  name.position.x = 0.64;
+  drape(name, nameCenter);
+  body.add(name);
+
+  // V-tail with hinged ruddervators
+  const tailRight = new Group();
+  tailRight.add(
+    kit.mesh(
+      loftSurface(
+        TAIL_STATIONS.map(tailStation),
+        TAIL_CAMBER,
+        topColor,
+        navyColor,
+        navyColor,
+      ),
+      skin,
+    ),
+    skinLine(
+      kit,
+      groove,
+      span(0.06, 0.7, 6).map((s) =>
+        surfacePoint(tailStation(s), 0.64, true, TAIL_CAMBER, 0.0012),
+      ),
+    ),
+  );
+  const tailLeft = tailRight.clone();
+  tailLeft.scale.x = -1;
+  body.add(tailRight, tailLeft);
+
+  // Camera under the belly: faired mount, graphite ball and a ringed lens
+  const fairing = kit.mesh(
+    new RoundedBoxGeometry(0.1, 0.08, 0.26, 3, 0.035),
+    navy,
+  );
+  fairing.position.set(0, -0.125, 0.3);
+  body.add(fairing);
+  const ball = kit.mesh(
+    new SphereGeometry(0.075, 28, 20),
+    kit.material(0x10181d, { roughness: 0.32, metalness: 0.3 }),
+  );
+  ball.position.set(0, -0.2, 0.3);
+  body.add(ball);
+  const lens = new Group();
+  const aim = 0.5;
+  lens.position.set(0, -0.2 - Math.sin(aim) * 0.07, 0.3 + Math.cos(aim) * 0.07);
+  lens.rotation.x = aim;
+  const ring = kit.mesh(new TorusGeometry(0.034, 0.008, 10, 28), kit.steel);
+  const disc = kit.mesh(new CircleGeometry(0.03, 24), glass);
+  disc.position.z = 0.002;
+  lens.add(ring, disc);
   body.add(lens);
 
-  // Pusher propeller: spins around the boom axis
-  const holder = new Group();
-  holder.position.set(0, 0.02, -1.8);
-  holder.rotation.x = Math.PI / 2;
-  const spinner = kit.mesh(new ConeGeometry(0.055, 0.16, 16), kit.motor);
-  spinner.rotation.x = -Math.PI / 2;
-  spinner.position.set(0, 0.02, -1.9);
+  // Pusher motor, ogive spinner and a twisted two-blade propeller
+  const motor = kit.mesh(
+    new CylinderGeometry(0.046, 0.04, 0.12, 20),
+    kit.motor,
+  );
+  motor.rotation.x = Math.PI / 2;
+  motor.position.set(0, 0.002, -1.84);
+  body.add(motor);
+  const spinnerProfile = [0, 0.012, 0.04, 0.09, 0.16].map(
+    (y) =>
+      new Vector2(0.046 * Math.sqrt(Math.max(0, 1 - (y / 0.16) ** 2.2)), y),
+  );
+  const spinnerGeometry = new LatheGeometry(spinnerProfile, 24);
+  spinnerGeometry.rotateX(-Math.PI / 2);
+  const spinner = kit.mesh(spinnerGeometry, kit.motor);
+  spinner.position.set(0, 0.002, -1.9);
   body.add(spinner);
+
+  const holder = new Group();
+  holder.position.set(0, 0.002, -1.915);
+  holder.rotation.x = Math.PI / 2;
   const propeller = new Group();
+  const bladeGeometry = createBladeGeometry();
+  const bladeMaterial = kit.material(0x1c2328, { roughness: 0.42 });
   for (let blade = 0; blade < 2; blade += 1) {
-    const arm = kit.mesh(new CapsuleGeometry(0.025, 0.74, 4, 10), kit.prop);
-    arm.rotation.z = Math.PI / 2;
-    arm.rotation.y = blade * Math.PI;
-    arm.scale.set(1, 0.16, 1);
-    propeller.add(arm);
+    const holderOfBlade = new Group();
+    holderOfBlade.rotation.y = blade * Math.PI;
+    holderOfBlade.add(kit.mesh(bladeGeometry, bladeMaterial));
+    propeller.add(holderOfBlade);
   }
-  const blur = kit.mesh(new CircleGeometry(0.4, 32), kit.blur);
+  const blur = kit.mesh(new CircleGeometry(0.4, 40), kit.blur);
   blur.rotation.x = -Math.PI / 2;
   propeller.add(blur);
   holder.add(propeller);
   body.add(holder);
   propellers.push(propeller);
 
-  return { group: root, propellers, extent: 2.9 };
+  // extent = widest reach from the vertical axis (wing tip), so it fits at any yaw.
+  return { group: root, propellers, extent: 2.75, shadow: 0.35, lit: true };
 }
 
 const builders: Record<DroneKind | BrandKind, (kit: Kit) => Parts> = {

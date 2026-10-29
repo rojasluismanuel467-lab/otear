@@ -4,13 +4,17 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ACESFilmicToneMapping,
   CanvasTexture,
+  DirectionalLight,
+  Euler,
   Group,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   PMREMGenerator,
+  Quaternion,
   Scene,
+  Vector3,
   WebGLRenderer,
 } from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -28,6 +32,29 @@ const PITCH_LIMITS = { min: -0.5, max: 1.15 };
 const IDLE_DELAY_MS = 2800;
 const KEY_STEP = 0.2;
 const INTRO_DURATION_MS = 6500;
+const FOV = 30;
+const TAN_HALF_FOV = Math.tan((FOV / 2) * (Math.PI / 180));
+/** Camera height as a share of its distance, so the viewing angle stays put. */
+const CAMERA_RISE = 0.227;
+/** Fraction of the aircraft's scale the intro flies at, so there is room to move. */
+const INTRO_SCALE = 0.72;
+const PARALLAX = { yaw: 0.3, pitch: 0.12, roll: 0.1 };
+/** Nose-follow, tuned to be calm: how far the pointer can be (as a share of the stage's larger side),
+ * the share at which the aircraft follows fully, the dead zone around its centre (px), how fast it
+ * turns, how quickly the follow engages and fades, how much the pointer's direction is smoothed,
+ * how far the pointer must cross the vertical before it shows its other side, and its slight pitch. */
+const FOLLOW = {
+  reach: 0.7,
+  full: 0.4,
+  deadzone: 60,
+  turn: 2.4,
+  engage: 2,
+  smoothing: 3.5,
+  hysteresis: 0.45,
+  pitch: 0.2,
+};
+const AXIS_Z = new Vector3(0, 0, 1);
+const wrapPi = (angle: number) => Math.atan2(Math.sin(angle), Math.cos(angle));
 
 type DroneSceneProps = {
   /** Increment to animate the model back to its default orientation. */
@@ -45,6 +72,12 @@ type DroneSceneProps = {
   onIntroEnd?: () => void;
   /** Fired after the first renderer.render(). Caller can gate overlay UI on it. */
   onReady?: () => void;
+  /** Tilts the aircraft slightly toward the pointer (fine pointers only, off
+   * with reduced motion). Listens on the window, so the canvas can stay inert. */
+  parallax?: boolean;
+  /** Turns the aircraft's nose toward the pointer while it is near, as if flying that way
+   * (fine pointers only, off with reduced motion). */
+  followPointer?: boolean;
 };
 
 function easeOutCubic(t: number) {
@@ -86,6 +119,8 @@ export function DroneScene({
   playIntro = false,
   onIntroEnd,
   onReady,
+  parallax = false,
+  followPointer = false,
 }: DroneSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<{ yaw: number; pitch: number } | null>(null);
@@ -96,6 +131,8 @@ export function DroneScene({
   const onUnavailableRef = useRef(onUnavailable);
   const onIntroEndRef = useRef(onIntroEnd);
   const onReadyRef = useRef(onReady);
+  const parallaxRef = useRef(parallax);
+  const followRef = useRef(followPointer);
   // playIntro is read every frame via this ref so a false → true flip after
   // mount starts the intro script without rebuilding the renderer.
   const playIntroRef = useRef(playIntro);
@@ -111,7 +148,9 @@ export function DroneScene({
     onUnavailableRef.current = onUnavailable;
     onIntroEndRef.current = onIntroEnd;
     onReadyRef.current = onReady;
-  }, [onInteract, onUnavailable, onIntroEnd, onReady]);
+    parallaxRef.current = parallax;
+    followRef.current = followPointer;
+  }, [onInteract, onUnavailable, onIntroEnd, onReady, parallax, followPointer]);
 
   // Sync playIntroRef in a layout effect so the render loop sees the new value
   // on the frame immediately after React commits (before the browser paints
@@ -135,7 +174,11 @@ export function DroneScene({
 
     let renderer: WebGLRenderer;
     try {
-      renderer = new WebGLRenderer({ antialias: true, alpha: true });
+      // MSAA is redundant at 2x density and costs fill rate there.
+      renderer = new WebGLRenderer({
+        antialias: window.devicePixelRatio < 2,
+        alpha: true,
+      });
     } catch {
       queueMicrotask(() => {
         setIsUnavailable(true);
@@ -143,7 +186,11 @@ export function DroneScene({
       });
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    // Pixel ratio is the cheapest quality/cost dial: cap lower on touch devices.
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, coarsePointer ? 1.5 : 2),
+    );
     renderer.toneMapping = ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
     renderer.domElement.className = styles.canvas;
@@ -155,11 +202,24 @@ export function DroneScene({
 
     const scene = new Scene();
     const pmrem = new PMREMGenerator(renderer);
-    const environment = pmrem.fromScene(new RoomEnvironment(), 0.04);
+    const room = new RoomEnvironment();
+    const environment = pmrem.fromScene(room, 0.04);
+    room.dispose();
     scene.environment = environment.texture;
+    // Studio lights for aircraft that ask for them: the soft environment alone
+    // shades everything evenly, and a glossy airframe needs highlights to read.
+    const keyLight = new DirectionalLight(0xfff1e0, 0);
+    keyLight.position.set(-3.5, 6, 4.5);
+    const rimLight = new DirectionalLight(0x9ed3ea, 0);
+    rimLight.position.set(4, 2.5, -5);
+    scene.add(keyLight, rimLight);
+    const applyLights = (model: DroneModel) => {
+      keyLight.intensity = model.lit ? 1.25 : 0;
+      rimLight.intensity = model.lit ? 1.0 : 0;
+    };
 
-    const camera = new PerspectiveCamera(30, 1, 0.1, 50);
-    camera.position.set(0, 1.5, 6.6);
+    const camera = new PerspectiveCamera(FOV, 1, 0.1, 60);
+    camera.position.set(0, 6.6 * CAMERA_RISE, 6.6);
     camera.lookAt(0, -0.05, 0);
 
     const initialSpec = specRef.current;
@@ -176,6 +236,7 @@ export function DroneScene({
     const pivot = new Group();
     pivot.add(drone.group);
     scene.add(pivot);
+    applyLights(drone);
 
     const shadowTexture = createShadowTexture(tone);
     const shadowGeometry = new PlaneGeometry(3.4, 3.4);
@@ -184,6 +245,7 @@ export function DroneScene({
       transparent: true,
       depthWrite: false,
     });
+    shadowMaterial.opacity = drone.shadow ?? 1;
     const shadow = new Mesh(shadowGeometry, shadowMaterial);
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.y = -1.05;
@@ -197,6 +259,25 @@ export function DroneScene({
     let visible = true;
     let frame = 0;
     let previousTime = performance.now();
+    // Half the visible width at the aircraft's plane; the intro uses it to
+    // size its flight path to whatever frame the stage currently has.
+    let frameHalfWidth = 3;
+    // Reduced motion has nothing to animate, so it only redraws when dirty.
+    let dirty = true;
+    const tilt = { x: 0, y: 0 };
+    const tiltTarget = { x: 0, y: 0 };
+    // Nose-follow: the pointer, how strongly the aircraft follows it, the direction it points
+    // (screen space, y up), which side it shows, and its eased orientation.
+    const pointer = { x: 0, y: 0, seen: false };
+    const aimRaw = { x: 1, y: 0 };
+    const aim = { x: 1, y: 0 };
+    const qFollow = new Quaternion();
+    const qTarget = new Quaternion();
+    const qRoll = new Quaternion();
+    const euler = new Euler();
+    let follow = 0;
+    let side = 1;
+    let followReady = false;
 
     // Scripted entry flight. Only park the drone off-screen if the parent has
     // already asked for the intro and we haven't started it yet — that keeps
@@ -208,7 +289,7 @@ export function DroneScene({
     ) {
       view.yaw = 0;
       view.pitch = 0.12;
-      drone.group.position.set(-3.6, 0.4, 0);
+      drone.group.position.set(-6, 0.4, 0);
       drone.group.scale.setScalar(0.6);
     }
     let didFireReady = false;
@@ -219,13 +300,30 @@ export function DroneScene({
       onInteractRef.current?.();
     };
 
+    let sizedWidth = 0;
+    let sizedHeight = 0;
     const resize = () => {
       const { clientWidth, clientHeight } = container;
       if (!clientWidth || !clientHeight) return;
-      renderer.setSize(clientWidth, clientHeight, false);
+      // The dock transition resizes every frame; skip the buffer
+      // reallocation when nothing changed.
+      if (clientWidth !== sizedWidth || clientHeight !== sizedHeight) {
+        sizedWidth = clientWidth;
+        sizedHeight = clientHeight;
+        renderer.setSize(clientWidth, clientHeight, false);
+      }
       camera.aspect = clientWidth / clientHeight;
-      camera.position.z = Math.max(6, (4.1 * drone.extent) / camera.aspect);
+      // Fit the aircraft's reach (with 10% air) across the frame's width.
+      const distance = Math.max(
+        6,
+        (drone.extent * 1.1) / (TAN_HALF_FOV * camera.aspect),
+      );
+      camera.position.set(0, distance * CAMERA_RISE, distance);
+      // Re-aim every time: moving back without turning pushes the model off-centre.
+      camera.lookAt(0, -0.05, 0);
       camera.updateProjectionMatrix();
+      frameHalfWidth = TAN_HALF_FOV * distance * camera.aspect;
+      dirty = true;
     };
 
     const applyModel = (model: DroneModel, token: number) => {
@@ -239,6 +337,8 @@ export function DroneScene({
       pivot.add(drone.group);
       swapStart = performance.now();
       shadow.scale.setScalar(drone.extent / 1.7);
+      shadowMaterial.opacity = drone.shadow ?? 1;
+      applyLights(drone);
       resize();
     };
 
@@ -265,7 +365,7 @@ export function DroneScene({
       previousTime = time;
 
       // --- Intro script -----------------------------------------------------
-      // Oto's entry: fly in from the left side of the overlay, sweep across
+      // Viper's entry: fly in from the left side of the overlay, sweep across
       // to the right, swing back to the centre, nod to greet, and settle to
       // the hangar pose. Camera stays near front-on so motion is readable.
       //
@@ -283,7 +383,7 @@ export function DroneScene({
         introStartRef.current = time;
         view.yaw = 0;
         view.pitch = 0.12;
-        drone.group.position.set(-3.6, 0.4, 0);
+        drone.group.position.set(-(frameHalfWidth + drone.extent), 0.4, 0);
         drone.group.scale.setScalar(0.6);
       }
       const introActive = introStartedRef.current && !introDoneRef.current;
@@ -301,6 +401,14 @@ export function DroneScene({
         const camYaw = 0;
         const camPitch = 0.12;
         const seconds = time / 1000;
+        // Flight path measured against the frame: the aircraft enters from
+        // just outside the left edge and sweeps as far as keeps it fully in view.
+        const travel = clamp(
+          frameHalfWidth - drone.extent * INTRO_SCALE * 1.05,
+          0.25,
+          1.8,
+        );
+        const startX = -(frameHalfWidth + drone.extent * 0.6);
 
         let px = 0;
         let py = 0;
@@ -311,9 +419,9 @@ export function DroneScene({
         if (t <= enterUntil) {
           // Fly in from the left, slightly descending, banking right.
           const k = easeOutCubic(t / enterUntil);
-          px = -3.6 + 2.4 * k; // -3.6 → -1.2 (off-screen → visible left)
+          px = startX + (-travel - startX) * k; // off-screen → visible left
           py = 0.4 - 0.4 * k;
-          scale = 0.6 + 0.35 * k;
+          scale = 0.6 + (INTRO_SCALE - 0.6) * k;
           rotZ = -0.35 * (1 - k * 0.3); // banked right (negative roll)
           view.yaw = camYaw;
           view.pitch = camPitch;
@@ -322,9 +430,9 @@ export function DroneScene({
           const k = easeInOutCubic(
             (t - enterUntil) / (sweepUntil - enterUntil),
           );
-          px = -1.2 + 2.4 * k; // -1.2 → +1.2 (crosses centre)
+          px = -travel + 2 * travel * k; // crosses the centre
           py = Math.sin(seconds * 2) * 0.1;
-          scale = 0.95;
+          scale = INTRO_SCALE;
           rotZ = -0.25 + 0.55 * k; // transitions bank right → bank left
           view.yaw = camYaw;
           view.pitch = camPitch;
@@ -333,9 +441,9 @@ export function DroneScene({
           const k = easeInOutCubic(
             (t - sweepUntil) / (arriveUntil - sweepUntil),
           );
-          px = 1.2 - 1.2 * k; // +1.2 → 0
+          px = travel - travel * k; // back to the centre
           py = Math.sin(seconds * 1.6) * 0.08;
-          scale = 0.95 + 0.1 * k;
+          scale = INTRO_SCALE;
           rotZ = 0.3 * (1 - k); // bank fades back to level
           view.yaw = camYaw;
           view.pitch = camPitch;
@@ -346,7 +454,7 @@ export function DroneScene({
           py = Math.sin(seconds * 1.4) * 0.06;
           rotX = Math.sin(k * Math.PI * 2) * 0.3;
           rotZ = 0;
-          scale = 1.05;
+          scale = INTRO_SCALE;
           view.yaw = camYaw;
           view.pitch = camPitch;
         } else {
@@ -356,7 +464,7 @@ export function DroneScene({
           py = Math.sin(seconds * 1.6) * 0.045;
           rotX = 0;
           rotZ = 0;
-          scale = 1.05 + (1 - 1.05) * k;
+          scale = INTRO_SCALE + (1 - INTRO_SCALE) * k;
           view.yaw = camYaw + (DEFAULT_VIEW.yaw - camYaw) * k;
           view.pitch = camPitch + (DEFAULT_VIEW.pitch - camPitch) * k;
         }
@@ -404,11 +512,83 @@ export function DroneScene({
         }
       }
 
+      // Nose-follow: while the pointer is near, the aircraft shows its profile and rolls in the plane
+      // of the screen so its nose points at the pointer, even straight up (a climb) or down. Never
+      // fights a drag, a reset or the intro.
+      const followOn =
+        followRef.current &&
+        pointer.seen &&
+        !reducedMotion &&
+        !introOverride &&
+        !dragging &&
+        targetRef.current === null;
+      let followTarget = 0;
+      if (followOn) {
+        const rect = container.getBoundingClientRect();
+        const dx = pointer.x - (rect.left + rect.width / 2);
+        const dy = pointer.y - (rect.top + rect.height / 2);
+        const dist = Math.hypot(dx, dy);
+        const reach = Math.max(rect.width, rect.height) * FOLLOW.reach;
+        followTarget =
+          1 -
+          clamp(
+            (dist - reach * FOLLOW.full) / (reach * (1 - FOLLOW.full)),
+            0,
+            1,
+          );
+        if (dist > FOLLOW.deadzone) {
+          aimRaw.x = dx;
+          aimRaw.y = -dy;
+        }
+      }
+      follow +=
+        (followTarget - follow) * (1 - Math.exp(-delta * FOLLOW.engage));
+      // The pointer's direction is smoothed, so quick flicks of the mouse do not whip the nose around.
+      const aimEase = 1 - Math.exp(-delta * FOLLOW.smoothing);
+      aim.x += (aimRaw.x - aim.x) * aimEase;
+      aim.y += (aimRaw.y - aim.y) * aimEase;
+      if (follow > 0.01) {
+        const theta = Math.atan2(aim.y, aim.x);
+        // Profile with the nose to the right, or to the left when the pointer is left of the
+        // vertical (with some margin so it does not flip back and forth), always right side up.
+        if (side === 1 && Math.cos(theta) < -FOLLOW.hysteresis) side = -1;
+        else if (side === -1 && Math.cos(theta) > FOLLOW.hysteresis) side = 1;
+        const roll = side === 1 ? theta : wrapPi(theta - Math.PI);
+        euler.set(FOLLOW.pitch, (side * Math.PI) / 2, 0, "YXZ");
+        qTarget.setFromEuler(euler);
+        qRoll.setFromAxisAngle(AXIS_Z, roll);
+        qTarget.premultiply(qRoll);
+        lastInteraction = time; // no idle spin while it is following (or right after)
+        velocity.yaw = 0;
+      }
+
       const swap = reducedMotion ? 1 : clamp((time - swapStart) / 480, 0, 1);
       if (!introOverride) {
         drone.group.scale.setScalar(0.78 + 0.22 * (1 - Math.pow(1 - swap, 3)));
       }
-      pivot.rotation.set(view.pitch, view.yaw, 0, "YXZ");
+      // Pointer tilt eases toward its target and never fights a drag or the intro.
+      const tiltEase = 1 - Math.exp(-delta * 4);
+      const tiltOn = parallaxRef.current && !introOverride && !dragging;
+      tilt.x += ((tiltOn ? tiltTarget.x : 0) - tilt.x) * tiltEase;
+      tilt.y += ((tiltOn ? tiltTarget.y : 0) - tilt.y) * tiltEase;
+      pivot.rotation.set(
+        view.pitch + tilt.y * PARALLAX.pitch,
+        view.yaw + tilt.x * PARALLAX.yaw,
+        0,
+        "YXZ",
+      );
+      if (follow > 0.01) {
+        if (!followReady) {
+          qFollow.copy(pivot.quaternion);
+          followReady = true;
+        }
+        qFollow.slerp(qTarget, 1 - Math.exp(-delta * FOLLOW.turn));
+        pivot.quaternion.slerp(qFollow, follow);
+      } else {
+        followReady = false;
+      }
+      if (!introOverride)
+        drone.group.rotation.z = -tilt.x * PARALLAX.roll * (1 - follow);
       if (!reducedMotion) {
         if (!introOverride) {
           const seconds = time / 1000;
@@ -421,7 +601,16 @@ export function DroneScene({
           propeller.rotation.y += delta * (index % 2 ? -26 : 26);
         });
       }
-      renderer.render(scene, camera);
+      const animating =
+        !reducedMotion ||
+        dirty ||
+        dragging ||
+        introActive ||
+        targetRef.current !== null ||
+        swap < 1 ||
+        Math.abs(velocity.yaw) + Math.abs(velocity.pitch) > 0.001;
+      if (animating) renderer.render(scene, camera);
+      dirty = false;
       if (!didFireReady) {
         didFireReady = true;
         onReadyRef.current?.();
@@ -486,6 +675,23 @@ export function DroneScene({
       velocity.pitch = clamp(velocity.pitch, -6, 6);
     };
 
+    const handleWindowPointerMove = (event: PointerEvent) => {
+      if (reducedMotion || event.pointerType !== "mouse") return;
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      pointer.seen = true;
+      if (!parallaxRef.current) return;
+      tiltTarget.x = (event.clientX / window.innerWidth) * 2 - 1;
+      tiltTarget.y = (event.clientY / window.innerHeight) * 2 - 1;
+    };
+    window.addEventListener("pointermove", handleWindowPointerMove, {
+      passive: true,
+    });
+    const handlePointerLeave = () => {
+      pointer.seen = false;
+    };
+    document.addEventListener("pointerleave", handlePointerLeave);
+
     nudgeRef.current = (yaw, pitch) => {
       markInteraction();
       targetRef.current = {
@@ -523,6 +729,8 @@ export function DroneScene({
       canvas.removeEventListener("pointermove", handlePointerMove);
       canvas.removeEventListener("pointerup", handlePointerUp);
       canvas.removeEventListener("pointercancel", handlePointerUp);
+      window.removeEventListener("pointermove", handleWindowPointerMove);
+      document.removeEventListener("pointerleave", handlePointerLeave);
       nudgeRef.current = () => {};
       swapRef.current = () => {};
       drone.dispose();

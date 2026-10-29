@@ -17,7 +17,6 @@
     background 900ms ease,
     border-radius 900ms ease,
     opacity 320ms ease;
-  will-change: top, left, width, height;
 }
 
 /* Docked: the stage sits in front of the hero as a transparent surface so
@@ -26,6 +25,13 @@
 .stageDocked {
   background: transparent;
   border-radius: 22px;
+}
+
+/* Docked and transition over: ride the page instead of the viewport, so the
+ * browser scrolls it natively and window resizes don't animate. */
+.stageSettled {
+  position: absolute;
+  transition: opacity 320ms ease;
 }
 
 /* Held invisible while the three.js chunk loads: the DroneScene still mounts

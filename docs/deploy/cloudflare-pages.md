@@ -36,6 +36,13 @@ En el proyecto de Pages → **Settings** → **Environment variables** → **Pro
 | `NODE_VERSION` | `22` | Fija la versión de Node para el build. |
 | `NEXT_PUBLIC_WEB3FORMS_KEY` | tu Access Key de web3forms.com | Si está, el formulario envía al correo configurado en Web3Forms. Si no está, los leads quedan en `localStorage` del navegador del visitante (útil para pruebas, no para producción). |
 
+Opcionales, para el paso 2 del formulario de contacto (si faltan, esa opción no aparece en producción; en desarrollo se muestra como «Pendiente»):
+
+| Variable | Valor | Qué hace |
+|---|---|---|
+| `NEXT_PUBLIC_BOOKING_URL` | enlace de su calendario (Cal.com, Calendly…) | Botón «Elegir una hora» después de enviar el contacto. |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | número con indicativo, solo dígitos (ej. `573001234567`) | Botón «Escribir por WhatsApp»; el mensaje precargado solo incluye el sector. |
+
 Después de cambiar una variable, **Retry deployment** desde el panel.
 
 ## 5. Correo profesional gratis

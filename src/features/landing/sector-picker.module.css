@@ -1,0 +1,379 @@
+.wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 40px;
+  align-items: center;
+  padding: 48px;
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(135deg, #0b1a24 0%, #1c3b4e 100%);
+  box-shadow: 0 20px 60px #0b1a2440;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/textures/contours-dark.svg");
+  background-size: 1200px auto;
+  opacity: 0.4;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.controls,
+.preview {
+  position: relative;
+}
+
+.tag {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 5px 12px;
+  border: 1px solid #ffffff2b;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--sky);
+}
+
+.title {
+  --accent: var(--sky);
+  margin: 0 0 10px;
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.lead {
+  margin: 0 0 22px;
+  max-width: 52ch;
+  font-size: 16px;
+  line-height: 1.55;
+  color: #c7d6de;
+  text-wrap: pretty;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.choice {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #ffffff2b;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e3eef3;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease-out,
+    border-color 180ms ease-out,
+    transform 180ms cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+.choice:hover {
+  border-color: var(--sky);
+  background: #ffffff12;
+}
+
+.choice:active {
+  transform: scale(0.97);
+}
+
+.choiceOn {
+  border-color: var(--sky);
+  background: var(--sky);
+  color: #0b1a24;
+}
+
+.choiceOn:hover {
+  background: #a2d1e4;
+}
+
+/* The radio stays in the page for keyboards and screen readers. */
+.radio {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.choice:has(.radio:focus-visible) {
+  outline: 3px solid #a2d1e4;
+  outline-offset: 3px;
+}
+
+.otherRow {
+  display: grid;
+  gap: 6px;
+  max-width: 380px;
+  margin-bottom: 18px;
+  animation: pickerIn 260ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+.otherRow label {
+  font-size: 13px;
+  font-weight: 650;
+  color: #c7d6de;
+}
+
+.otherRow input {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #ffffff3d;
+  border-radius: 11px;
+  font-size: 15px;
+  color: #fff;
+  background: #0b1a2499;
+}
+
+.otherRow input::placeholder {
+  color: #8ea4b0;
+}
+
+.otherRow input:focus {
+  outline: 3px solid #a2d1e4;
+  outline-offset: 1px;
+  border-color: var(--sky);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 650;
+  color: #0b1a24;
+  background: var(--sky);
+  box-shadow:
+    0 3px 14px #81bfdb2e,
+    inset 0 1px 0 #ffffff4a;
+  transition: background-color 180ms ease-out;
+}
+
+.primary:hover {
+  background: #a2d1e4;
+}
+
+.secondary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e3eef3;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.secondary:hover {
+  color: var(--sky);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 3px solid #a2d1e4;
+  outline-offset: 3px;
+}
+
+/* --- preview --- */
+
+.card {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid #ffffff24;
+  border-radius: 18px;
+  background: #ffffff10;
+  backdrop-filter: blur(8px);
+  animation: pickerIn 320ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #e3eef3;
+}
+
+.note {
+  font-weight: 500;
+  color: #8ea4b0;
+}
+
+.words {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.words div {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ffffff1f;
+}
+
+.words dt {
+  font-size: 12px;
+  color: #8ea4b0;
+}
+
+.words dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.sample {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #0b1a2499;
+  font-size: 14px;
+}
+
+.sample div {
+  display: grid;
+  gap: 2px;
+}
+
+.sample span {
+  color: #c7d6de;
+  font-size: 13px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e8b04a;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #e8b04a;
+  background: #e8b04a22;
+}
+
+.otherNote {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #c7d6de;
+}
+
+.cardEmpty {
+  min-height: 280px;
+  align-content: center;
+  border-style: dashed;
+  background: transparent;
+}
+
+.emptyTitle {
+  font-size: 15px;
+  font-weight: 650;
+  color: #c7d6de;
+}
+
+.skeleton {
+  display: block;
+  height: 14px;
+  border-radius: 7px;
+  background: #ffffff14;
+}
+
+.skeleton:nth-of-type(2) {
+  width: 78%;
+}
+
+.skeleton:nth-of-type(3) {
+  width: 58%;
+}
+
+@keyframes pickerIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .otherRow {
+    animation: none;
+  }
+
+  .choice,
+  .primary {
+    transition: none;
+  }
+
+  .choice:active {
+    transform: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .panel {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 36px 28px;
+  }
+
+  .cardEmpty {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .wrap {
+    padding: 0 16px;
+  }
+
+  .panel {
+    padding: 28px 20px;
+  }
+}

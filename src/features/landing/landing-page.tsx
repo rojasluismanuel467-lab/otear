@@ -5,9 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
+  Blocks,
   Check,
-  Compass,
   HardHat,
+  Plus,
   Route,
   ShieldCheck,
   Sprout,
@@ -15,14 +16,14 @@ import {
 import styles from "./landing.module.css";
 import { DroneCursor } from "./drone-cursor";
 import { DroneGreeting } from "./drone-greeting";
-import { FlyingDrone } from "./flying-drone";
 import { LeadForm } from "./lead-form";
+import { SectorPicker } from "./sector-picker";
 
 const steps = [
   {
     tag: "Historia completa",
     title: "Deje de recibir PDFs sueltos.",
-    body: "Cada vuelo queda ligado a su sitio y a su zona (un lote, un tramo, un frente de obra, un sector), con fecha. Abre el de la semana pasada y lo compara con el de hoy, en el mismo panel.",
+    body: "Cada vuelo queda ligado a su sitio y a su zona (un lote, un tramo, un frente de obra, un sector… lo que su operación llame zona), con fecha. Abre el de la semana pasada y lo compara con el de hoy, en el mismo panel.",
   },
   {
     tag: "Antes de pagar",
@@ -64,6 +65,33 @@ const cases = [
     line: "Revise por sectores los cerramientos y accesos, compare un vuelo con el anterior y deje cada hallazgo con su evidencia y su responsable.",
     tags: ["Sectores", "Evidencia", "Tareas"],
     Icon: ShieldCheck,
+  },
+];
+
+const otherSectors = [
+  "Energía",
+  "Minería",
+  "Forestal",
+  "Puertos",
+  "Inspección de activos",
+  "El suyo",
+];
+
+const customSteps = [
+  {
+    tag: "Ya en la demo",
+    title: "Póngale las palabras de su sector.",
+    body: "Renombre «zona», «hallazgo» o «informe» (suertes, tramos, frentes, rondas), oculte y reordene módulos y use su color y su logo. Hay puntos de partida por sector; si el suyo no está, se empieza en blanco.",
+  },
+  {
+    tag: "Ya en la demo",
+    title: "Agregue los datos que su sector mide.",
+    body: "Cree campos propios (texto, número, lista o fecha) en vuelos, hallazgos, equipos y pagos: la densidad de siembra, el PK de una alcantarilla, el piso de una losa, el código de una cámara.",
+  },
+  {
+    tag: "Se construye con usted",
+    title: "Pida un componente que hoy no existe.",
+    body: "Un conteo, un inventario, una ronda de verificación o un panel propio de su sector. Lo diseñamos con su operación y se suma al mismo núcleo, sin rehacer lo demás. Es una propuesta que estamos validando, no un catálogo cerrado.",
   },
 ];
 
@@ -124,7 +152,6 @@ export function LandingPage() {
   return (
     <div className={styles.page}>
       <DroneCursor />
-      <FlyingDrone />
       <DroneGreeting
         slotSelector="[data-drone-slot]"
         interactive={heroInteractive}
@@ -132,16 +159,14 @@ export function LandingPage() {
       <header className={styles.topbar} data-cursor-theme="dark">
         <div className={styles.topbarInner}>
           <Link href="/" className={styles.brand} aria-label="Otear, inicio">
-            <span className={styles.brandMark}>
-              <Image
-                src="/brand/otear-logo.webp"
-                alt=""
-                width={960}
-                height={384}
-                priority
-                className={styles.brandLogo}
-              />
-            </span>
+            <Image
+              src="/brand/otear-logo.webp"
+              alt=""
+              width={960}
+              height={384}
+              priority
+              className={styles.brandLogo}
+            />
           </Link>
           <nav className={styles.topbarLinks} aria-label="Principal">
             <Link
@@ -168,21 +193,18 @@ export function LandingPage() {
       >
         <div className={styles.heroContours} aria-hidden />
         <div className={styles.heroInner}>
-          <div>
-            <span className={styles.eyebrow}>
-              <Compass size={14} aria-hidden /> Agricultura · Carreteras ·
-              Construcción · Vigilancia
-            </span>
+          <div className={styles.heroCopy}>
             <h1 className={styles.title}>
               Mire su operación desde arriba{" "}
               <span className={styles.titleAccent}>sin perder</span> el vuelo de
               la semana pasada.
             </h1>
             <p className={styles.subtitle}>
-              Otear reúne los vuelos de dron de su finca, vía, obra o predio en
-              un solo lugar. Compara cada zona en el tiempo, convierte lo que
-              vio en tareas e informes firmados, y verifica cuánto de lo
-              contratado se cubrió de verdad antes de pagar.
+              Otear reúne los vuelos de dron de su operación, sea una finca, una
+              vía, una obra, un predio o lo que usted supervise, en un solo
+              lugar. Compara cada zona en el tiempo, convierte lo que vio en
+              tareas e informes firmados, y verifica cuánto de lo contratado se
+              cubrió de verdad antes de pagar.
             </p>
             <div className={styles.ctaRow}>
               <Link
@@ -218,16 +240,18 @@ export function LandingPage() {
 
       <div className={styles.sectionDivider} aria-hidden />
 
+      <SectorPicker />
+
       <section className={styles.section} id="casos-de-uso">
         <header className={styles.sectionHead}>
-          <div className={styles.sectionLabel}>Casos de uso</div>
+          <div className={styles.sectionLabel}>Ejemplos de uso</div>
           <h2 className={styles.sectionTitle}>
-            Un mismo núcleo, <span className="accent">cuatro</span> maneras de
-            usarlo.
+            Un mismo núcleo, <span className="accent">cualquier</span> sector.
           </h2>
           <p className={styles.sectionSubtitle}>
-            El vocabulario cambia con su sector: lotes, tramos, frentes o
-            sectores. La demo trae un proyecto de ejemplo de cada uno.
+            Estos cuatro son ejemplos con proyecto de muestra en la demo, no los
+            límites del producto. El vocabulario cambia con su sector: lotes,
+            tramos, frentes, sectores o lo que usted use.
           </p>
         </header>
 
@@ -253,6 +277,82 @@ export function LandingPage() {
               </div>
             </article>
           ))}
+        </div>
+
+        <article className={`${styles.role} ${styles.caseOpen}`}>
+          <div className={`${styles.roleInner} ${styles.caseOpenInner}`}>
+            <div>
+              <div className={styles.caseHead}>
+                <span className={styles.caseIcon} aria-hidden>
+                  <Plus size={18} />
+                </span>
+                <span className={styles.roleName}>Su sector</span>
+              </div>
+              <h3 className={styles.caseTitle}>Lo que usted opere</h3>
+              <p className={styles.roleLine}>
+                Si hay un terreno, una instalación o un activo que se mira mejor
+                desde arriba y se compara en el tiempo, Otear se adapta. Aún no
+                tenemos piloto en estos sectores; por eso queremos oír el suyo.
+              </p>
+            </div>
+            <div className={styles.caseOpenSide}>
+              <div className={styles.roleTags}>
+                {otherSectors.map((name) => (
+                  <span key={name} className={styles.roleTag}>
+                    {name}
+                  </span>
+                ))}
+              </div>
+              <Link href="#contacto" className={styles.inlineLink}>
+                Cuéntenos cuál es el suyo <ArrowRight size={14} aria-hidden />
+              </Link>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section className={styles.section} id="a-su-medida">
+        <header className={styles.sectionHead}>
+          <div className={styles.sectionLabel}>
+            <Blocks size={14} aria-hidden /> A su medida
+          </div>
+          <h2 className={styles.sectionTitle}>
+            Cada sector tiene sus propias piezas.{" "}
+            <span className="accent">Cree las suyas</span>.
+          </h2>
+          <p className={styles.sectionSubtitle}>
+            El núcleo es el mismo: sitios, zonas, vuelos, comparación, hallazgos
+            e informes firmados. Lo propio de su sector se agrega encima.
+          </p>
+        </header>
+
+        <ol className={styles.stepper}>
+          {customSteps.map((step, index) => (
+            <li
+              key={step.title}
+              className={styles.step}
+              style={{ ["--i" as string]: index }}
+            >
+              <div className={styles.stepNumber}>
+                {String(index + 1).padStart(2, "0")}
+              </div>
+              <div className={styles.stepBody}>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </div>
+              <span className={styles.stepTag}>{step.tag}</span>
+            </li>
+          ))}
+        </ol>
+
+        <div className={styles.sectionActions}>
+          <Link href="/configuracion/" className={styles.inlineLink}>
+            Ver Configuración en la demo <ArrowRight size={14} aria-hidden />
+          </Link>
+          <Link href="#contacto" className={styles.inlineLink}>
+            Pedir un componente para mi sector{" "}
+            <ArrowRight size={14} aria-hidden />
+          </Link>
         </div>
       </section>
 
@@ -329,10 +429,10 @@ export function LandingPage() {
               <span className="accent">nada</span>.
             </h3>
             <p className={styles.demoStripText}>
-              Son datos sintéticos de cuatro proyectos de ejemplo: una hacienda,
-              una vía, una obra y un parque. Programe un vuelo, marque
-              hallazgos, compare en el tiempo y firme un informe. Todo queda en
-              su navegador.
+              Son datos sintéticos de cuatro proyectos de ejemplo (una hacienda,
+              una vía, una obra y un parque) para mostrar cómo se adapta a cada
+              sector. Programe un vuelo, marque hallazgos, compare en el tiempo
+              y firme un informe. Todo queda en su navegador.
             </p>
             <Link
               href="/programacion/"
@@ -347,7 +447,9 @@ export function LandingPage() {
               <span className={styles.demoStatLabel}>Proyectos de ejemplo</span>
               <span className={styles.demoStatValue}>
                 4 <span className={styles.demoStatValueAccent}>·</span>{" "}
-                <span className={styles.demoStatValueAccent}>4 sectores</span>
+                <span className={styles.demoStatValueAccent}>
+                  4 sectores de ejemplo
+                </span>
               </span>
             </div>
             <div className={styles.demoStatRow}>
@@ -378,9 +480,11 @@ export function LandingPage() {
           <div className={styles.contactIntro}>
             <h3 id="contacto-title">Hablemos sin compromiso.</h3>
             <p>
-              Estamos validando Otear en agricultura, carreteras, construcción y
-              vigilancia. Si lo que vio en la demo le hace sentido, nos sentamos
-              30 minutos a entender su operación y le mostramos cómo encajaría.
+              Estamos validando Otear empezando por agricultura, carreteras,
+              construcción y vigilancia, pero no es solo para ellos. Si su
+              sector no aparece, es justo la conversación que queremos tener:
+              nos sentamos 30 minutos a entender su operación y le mostramos
+              cómo encajaría y qué componentes haría falta crear.
             </p>
             <ul className={styles.contactBullets}>
               <li>
@@ -405,7 +509,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className={styles.footer}>
+      <footer className={styles.footer} data-cursor-theme="dark">
         <Image
           src="/brand/otear-logo.webp"
           alt=""

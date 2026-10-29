@@ -16,6 +16,21 @@ const DroneScene = dynamic(
 );
 
 const SESSION_KEY = "otear.landing.intro.played";
+const DOCK_MS = 1150;
+/** If the canvas is not ready by then (no WebGL, failed chunk), the page must not stay locked. */
+const FAILSAFE_MS = 8000;
+
+type Box = { top: number; left: number; width: number; height: number };
+
+function sameBox(a: Box | null, b: Box) {
+  return (
+    a !== null &&
+    a.top === b.top &&
+    a.left === b.left &&
+    a.width === b.width &&
+    a.height === b.height
+  );
+}
 
 type DroneGreetingProps = {
   /** CSS selector of the hero element whose rect the stage docks into. */
@@ -28,7 +43,7 @@ type DroneGreetingProps = {
 };
 
 const CAPTIONS: Array<{ text: string; delay: number; duration: number }> = [
-  { text: "Hola. Soy Oto, el dron de Otear.", delay: 400, duration: 2200 },
+  { text: "Hola. Soy Viper, el dron de Otear.", delay: 400, duration: 2200 },
   {
     text: "Reúno los vuelos de dron de su proyecto en un solo lugar.",
     delay: 2700,
@@ -50,7 +65,11 @@ export function DroneGreeting({
   // SSR hydration doesn't mismatch.
   const [introActive, setIntroActive] = useState(true);
   const [docked, setDocked] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
+  // Once the dock transition ends the stage stops being `fixed` and rides the
+  // page like any other element, so scrolling never goes through React.
+  const [settled, setSettled] = useState(false);
+  // Slot box in page coordinates (viewport rect + scroll offset).
+  const [box, setBox] = useState<Box | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [resetSignal, setResetSignal] = useState(0);
   // The three.js chunk is lazy-loaded, so for ~1s after mount the canvas has
@@ -58,15 +77,20 @@ export function DroneGreeting({
   // intro paused via playIntro=false) until the first render fires, so the
   // user never sees the dark overlay + caption + empty centre.
   const [canvasReady, setCanvasReady] = useState(false);
+  // Without WebGL the stage has nothing to show; the landing still works.
+  const [unavailable, setUnavailable] = useState(false);
+  const canvasReadyRef = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
 
   // Decide if the intro should play (first visit this session only).
   // Checking sessionStorage during render would break hydration under static
   // export; we check once post-mount and skip the intro on return visits.
   useEffect(() => {
-    let played = false;
+    // A link to a section (e.g. the invite inside the demo) must land there,
+    // not at the top behind a scroll lock, so an anchor also skips the intro.
+    let played = window.location.hash.length > 1;
     try {
-      played = sessionStorage.getItem(SESSION_KEY) === "1";
+      played = played || sessionStorage.getItem(SESSION_KEY) === "1";
     } catch {
       // sessionStorage blocked (private mode) → treat as first visit
     }
@@ -74,6 +98,7 @@ export function DroneGreeting({
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration-safe skip; both state writes batch in a single render
       setIntroActive(false);
       setDocked(true);
+      setSettled(true);
       return;
     }
     // First visit: lock scroll and start at the top so the dock-to animation
@@ -81,46 +106,93 @@ export function DroneGreeting({
     window.scrollTo(0, 0);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // The lock is released when the dock settles, which needs the canvas. If it
+    // never gets ready, release it here so the page is not stuck.
+    const failsafe = window.setTimeout(() => {
+      if (canvasReadyRef.current) return;
+      document.body.style.overflow = previousOverflow;
+      setIntroActive(false);
+      setDocked(true);
+      setSettled(true);
+    }, FAILSAFE_MS);
     return () => {
+      window.clearTimeout(failsafe);
       document.body.style.overflow = previousOverflow;
     };
   }, []);
 
-  // When intro finishes, release scroll immediately so the dock transition
-  // runs against the stable layout.
+  // Scroll stays locked through the dock transition (the stage is `fixed` and
+  // lands on a rect measured at scroll 0); once settled it is released and
+  // the stage switches to page-relative positioning at the same coordinates.
   useEffect(() => {
-    if (!introActive) {
-      document.body.style.overflow = "";
-    }
-  }, [introActive]);
+    if (!docked || settled) return;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const timer = window.setTimeout(
+      () => {
+        document.body.style.overflow = "";
+        setSettled(true);
+      },
+      reduced ? 0 : DOCK_MS + 80,
+    );
+    return () => window.clearTimeout(timer);
+  }, [docked, settled]);
 
-  // Track the slot element's rect so the stage can dock to it. We measure
-  // synchronously in a layout effect so returning visitors (docked from the
-  // start) never flash full-viewport before the first paint.
+  // Track the slot's box so the stage can dock to it. Measured synchronously
+  // in a layout effect so returning visitors (docked from the start) never
+  // flash full-viewport before the first paint. Scroll is not observed: the
+  // box is in page coordinates, so only size or layout changes re-measure.
   useLayoutEffect(() => {
     const slot = document.querySelector(slotSelector);
     if (!(slot instanceof HTMLElement)) return;
 
     let raf = 0;
-    const updateImmediate = () => {
-      setRect(slot.getBoundingClientRect());
+    const measure = () => {
+      const r = slot.getBoundingClientRect();
+      const next = {
+        top: Math.round(r.top + window.scrollY),
+        left: Math.round(r.left + window.scrollX),
+        width: Math.round(r.width),
+        height: Math.round(r.height),
+      };
+      setBox((current) => (sameBox(current, next) ? current : next));
     };
-    const updateRafed = () => {
+    const measureSoon = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        setRect(slot.getBoundingClientRect());
-      });
+      raf = requestAnimationFrame(measure);
     };
-    updateImmediate();
-    window.addEventListener("scroll", updateRafed, { passive: true });
-    window.addEventListener("resize", updateRafed);
-    const ro = new ResizeObserver(updateRafed);
+    measure();
+    window.addEventListener("resize", measureSoon);
+    // The slot can move without resizing (a font swap reflowing the headline
+    // changes the hero's height), so watch its section too.
+    const ro = new ResizeObserver(measureSoon);
     ro.observe(slot);
+    const section = slot.closest("section");
+    if (section) ro.observe(section);
+    document.fonts?.ready.then(measureSoon);
+    // The slot can also change place without changing size (the hero's columns swapping sides,
+    // for instance), which no observer above sees. Re-measure when the page finishes loading,
+    // shortly after mount, and whenever the stylesheets change (a hot update in development).
+    window.addEventListener("load", measureSoon);
+    window.addEventListener("pageshow", measureSoon);
+    const timers = [250, 1000, 2500].map((ms) =>
+      window.setTimeout(measureSoon, ms),
+    );
+    const styleObserver = new MutationObserver(measureSoon);
+    styleObserver.observe(document.head, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", updateRafed);
-      window.removeEventListener("resize", updateRafed);
+      window.removeEventListener("resize", measureSoon);
+      window.removeEventListener("load", measureSoon);
+      window.removeEventListener("pageshow", measureSoon);
+      timers.forEach((timer) => window.clearTimeout(timer));
+      styleObserver.disconnect();
       ro.disconnect();
     };
   }, [slotSelector]);
@@ -144,7 +216,18 @@ export function DroneGreeting({
     finishIntro();
   }
 
+  // No WebGL: release the scroll lock and drop the stage (the scene's own
+  // fallback text speaks of an assigned aircraft, which makes no sense here).
+  function handleUnavailable() {
+    document.body.style.overflow = "";
+    setIntroActive(false);
+    setDocked(true);
+    setSettled(true);
+    setUnavailable(true);
+  }
+
   function handleCanvasReady() {
+    canvasReadyRef.current = true;
     // Idempotent: fires once per DroneScene mount; a strict mode remount is
     // fine because setState with the same value is bailed out of by React.
     setCanvasReady(true);
@@ -152,7 +235,7 @@ export function DroneGreeting({
 
   // When returning (docked from mount) wait until rect is measured so the
   // first paint lands in the slot instead of covering the viewport.
-  if (docked && !rect) return null;
+  if (unavailable || (docked && !box)) return null;
 
   // The intro only runs once the canvas has painted its first frame, so the
   // user never sees the overlay with an empty centre during the dynamic chunk
@@ -161,12 +244,12 @@ export function DroneGreeting({
 
   // Style: fullscreen during intro, slot rect once docked.
   const stageStyle: React.CSSProperties =
-    docked && rect
+    docked && box
       ? {
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
+          top: box.top,
+          left: box.left,
+          width: box.width,
+          height: box.height,
         }
       : {
           top: 0,
@@ -188,6 +271,8 @@ export function DroneGreeting({
     <div
       ref={stageRef}
       className={`${styles.stage} ${docked ? styles.stageDocked : ""} ${
+        settled ? styles.stageSettled : ""
+      } ${
         overlayHidden ? styles.stageHidden : ""
       } ${stageInactive ? styles.stageInactive : ""}`}
       style={stageStyle}
@@ -203,6 +288,9 @@ export function DroneGreeting({
           onIntroEnd={handleIntroEnd}
           onInteract={() => setHasInteracted(true)}
           onReady={handleCanvasReady}
+          onUnavailable={handleUnavailable}
+          parallax={docked}
+          followPointer={docked}
         />
       </div>
 
@@ -238,7 +326,7 @@ export function DroneGreeting({
           <span
             className={`${styles.hint} ${hasInteracted ? "" : styles.hintVisible}`}
           >
-            <Hand size={12} aria-hidden /> Oto · arrástralo para girar
+            <Hand size={12} aria-hidden /> Viper · arrástralo para girar
           </span>
           <button
             type="button"

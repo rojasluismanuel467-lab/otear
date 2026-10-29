@@ -19,13 +19,14 @@ import {
   Map as MapIcon,
   Menu,
   MoveUpRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plane,
   Wrench,
   TrendingUp,
   RotateCcw,
   Search,
   Settings,
-  Sprout,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -39,6 +40,7 @@ import { ThemeApplier } from "@/features/config/theme-applier";
 import { useConfig } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
 import { formatDate } from "@/lib/format";
+import { useSidebarCollapsed } from "./use-sidebar-collapsed";
 
 const moduleIcons: Record<ModuleId, LucideIcon> = {
   programacion: CalendarDays,
@@ -68,6 +70,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setNotice,
   } = useDemo();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { collapsed, toggle: toggleSidebar } = useSidebarCollapsed();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
@@ -99,7 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       : undefined);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${collapsed ? "app-shell--collapsed" : ""}`}>
       <ThemeApplier />
       <a href="#main-content" className="skip-link">
         Saltar al contenido
@@ -111,7 +114,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-label="Cerrar navegación"
         />
       )}
-      <aside className={`app-sidebar ${mobileOpen ? "app-sidebar--open" : ""}`}>
+      <aside
+        id="app-sidebar"
+        className={`app-sidebar ${mobileOpen ? "app-sidebar--open" : ""}`}
+      >
         <Link
           href="/programacion"
           className="brand"
@@ -143,7 +149,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         {showVendor && <p className="vendor-note">Con tecnología de Otear</p>}
         <div className="workspace-label">
           <span>ESPACIO DE TRABAJO</span>
-          <span className="tiny-avatar">LR</span>
         </div>
         <div className="site-picker">
           <span className="site-picker-icon">
@@ -182,26 +187,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="sidebar-project-context">
-          <Sprout size={18} />
-          <div>
-            <strong>{site.sectorLabel}</strong>
-            <span>Tu operación, conectada.</span>
-          </div>
-        </div>
         <div className="sidebar-bottom">
-          <div className="demo-card">
-            <span className="demo-orbit" />
-            <strong>Explora a tu ritmo</strong>
-            <p>
-              Esta es tu demo. Los cambios se conservan al navegar y se
-              reinician al recargar.
-            </p>
-            <button onClick={resetDemo}>
-              <RotateCcw size={14} />
-              Reiniciar demostración
-            </button>
-          </div>
           <Link
             href="/configuracion"
             className={`help-link ${pathname.startsWith("/configuracion") ? "help-link--active" : ""}`}
@@ -216,7 +202,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button className="help-link" onClick={() => setHelpOpen(true)}>
             <CircleHelp size={17} />
             Guía de la demo
-            <ArrowUpRight size={14} />
+            <ArrowUpRight size={14} className="help-link-arrow" />
+          </button>
+          <button className="help-link" onClick={resetDemo}>
+            <RotateCcw size={17} />
+            Reiniciar demostración
           </button>
           <div className="profile-row">
             <span className="profile-avatar">LR</span>
@@ -236,6 +226,24 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={20} />
+            </button>
+            <button
+              className="sidebar-toggle icon-button"
+              aria-label={
+                collapsed ? "Mostrar menú lateral" : "Ocultar menú lateral"
+              }
+              aria-expanded={!collapsed}
+              aria-controls="app-sidebar"
+              title={
+                collapsed ? "Mostrar menú lateral" : "Ocultar menú lateral"
+              }
+              onClick={toggleSidebar}
+            >
+              {collapsed ? (
+                <PanelLeftOpen size={19} />
+              ) : (
+                <PanelLeftClose size={19} />
+              )}
             </button>
             <span>{site.sectorLabel}</span>
             <span className="breadcrumb-divider">/</span>
@@ -263,15 +271,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Bell size={19} />
               <i />
             </button>
-            <span className="topbar-avatar" aria-hidden="true">
-              LR
-            </span>
           </div>
         </header>
         {notificationsOpen && (
           <div className="notifications-panel surface">
             <div className="section-heading">
-              <h3>Por revisar</h3>
+              <h2>Por revisar</h2>
               <button
                 className="icon-button"
                 aria-label="Cerrar pendientes"
@@ -304,7 +309,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <i />
             Datos de ejemplo · escenario del 25 oct. 2026
           </span>
-          <span>Hecho para ver más allá.</span>
+          <span>
+            Hecho para ver más allá ·{" "}
+            <Link href="/#contacto">¿Lo quiere con sus datos? Hablemos</Link>
+          </span>
         </footer>
       </div>
       {notice && (
@@ -389,6 +397,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </li>
                     <li>Registra pagos de ejemplo y revisa documentos.</li>
                   </ol>
+                  <p>
+                    Los cambios que hagas se conservan al navegar y se reinician
+                    al recargar la página.
+                  </p>
                   <p>
                     Clima, coordenadas, documentos y registros son muestras. Las
                     fotos son ilustrativas y no corresponden al lugar del mapa.

@@ -17,6 +17,8 @@
    `html[data-cursor="on"]` because Turbopack rejects attribute-only
    selectors inside a CSS module (even in a :global block). */
 
+/* The cursor is a delta wing (hang glider) seen from above. Its nose is the
+   click point, so the box rotates around it. */
 .craft {
   position: absolute;
   top: 0;
@@ -24,125 +26,49 @@
   width: 44px;
   height: 44px;
   transform: translate3d(-999px, -999px, 0) rotate(0deg);
-  transform-origin: 50% 50%;
+  transform-origin: 9.27px 9.27px;
   will-change: transform;
-  color: #0b1a24;
 }
 
-/* Darker craft on light surfaces, invert on dark hero */
+/* Light surfaces: dark wing with a light edge. Dark hero: light wing with a dark edge. */
 .light {
-  color: #0b1a24;
+  --wing-fill: #0b1a24;
+  --wing-edge: #ffffff;
 }
 
 .dark {
-  color: #e3eef3;
+  --wing-fill: #e3eef3;
+  --wing-edge: #0b1a24;
 }
 
-/* Idle: small quadcopter silhouette */
 .body {
-  transition:
-    opacity 180ms ease,
-    transform 220ms cubic-bezier(0.22, 0.9, 0.3, 1);
-}
-
-/* Ring reveals on interactive hover (target lock) */
-.ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  border: 1.5px solid currentColor;
-  opacity: 0;
-  transform: scale(0.55);
-  transition:
-    opacity 180ms ease,
-    transform 220ms cubic-bezier(0.22, 0.9, 0.3, 1);
-  pointer-events: none;
-}
-
-/* Corner ticks reinforce the "target" state */
-.ticks {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
+  filter: drop-shadow(0 1px 1.5px rgb(11 26 36 / 0.28));
   transition: opacity 180ms ease;
-  color: currentColor;
 }
 
-.tick {
-  position: absolute;
-  width: 6px;
-  height: 1.5px;
-  background: currentColor;
+.wing {
+  fill: var(--wing-fill);
+  stroke: var(--wing-edge);
+  stroke-width: 1.4;
 }
 
-.tickTL {
-  top: 0;
-  left: 0;
-  transform: rotate(-45deg) translateX(2px);
-}
-.tickTR {
-  top: 0;
-  right: 0;
-  transform: rotate(45deg) translateX(-2px);
-}
-.tickBL {
-  bottom: 0;
-  left: 0;
-  transform: rotate(45deg) translateX(2px);
-}
-.tickBR {
-  bottom: 0;
-  right: 0;
-  transform: rotate(-45deg) translateX(-2px);
+.rib {
+  stroke: var(--wing-edge);
+  stroke-width: 1;
+  opacity: 0.55;
 }
 
-/* On interactive hover and over text fields the drone fades out so the
-   native OS cursor (pointer / text) is visible — people understand the
-   mouse is still a mouse. The drone reappears over passive surfaces. */
+/* On interactive elements and over text fields the wing fades out so the
+   native OS cursor (pointer / text) is visible: people understand the mouse
+   is still a mouse. The wing reappears over passive surfaces. */
 .craft[data-state="hover"] .body,
-.craft[data-state="hover"] .ring,
-.craft[data-state="hover"] .ticks,
 .craft[data-state="active"] .body,
-.craft[data-state="active"] .ring,
-.craft[data-state="active"] .ticks,
-.craft[data-state="text"] .body,
-.craft[data-state="text"] .ring,
-.craft[data-state="text"] .ticks {
+.craft[data-state="text"] .body {
   opacity: 0;
-}
-
-/* Blinking rotor dots on the quadcopter arms */
-.rotor {
-  animation: rotor 1200ms linear infinite;
-  transform-origin: center;
-}
-
-.rotor:nth-child(2) {
-  animation-delay: -300ms;
-}
-.rotor:nth-child(3) {
-  animation-delay: -600ms;
-}
-.rotor:nth-child(4) {
-  animation-delay: -900ms;
-}
-
-@keyframes rotor {
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 1;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .body,
-  .ring,
-  .ticks,
-  .rotor {
+  .body {
     transition: none !important;
-    animation: none !important;
   }
 }

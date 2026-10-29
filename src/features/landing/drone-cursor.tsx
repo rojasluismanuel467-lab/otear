@@ -10,6 +10,9 @@ const INTERACTIVE_SELECTOR =
   'a, button, [role="button"], [data-cursor-interactive]';
 const TEXT_SELECTOR = "input, textarea, [contenteditable='true']";
 
+// The wing's nose sits at this point of its 44px box; it is the pointer's hotspot.
+const HOTSPOT = 9.27;
+
 export function DroneCursor() {
   const craftRef = useRef<HTMLDivElement | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -33,7 +36,7 @@ export function DroneCursor() {
     const previous = { x: target.x, y: target.y };
 
     let state: CursorState = "idle";
-    let currentRotation = 0;
+    let bank = 0;
     let raf = 0;
 
     const reduced = window.matchMedia(
@@ -41,28 +44,21 @@ export function DroneCursor() {
     ).matches;
 
     function render() {
-      const smoothing = reduced ? 1 : 0.22;
+      const smoothing = reduced ? 1 : 0.35;
       current.x += (target.x - current.x) * smoothing;
       current.y += (target.y - current.y) * smoothing;
 
+      // Like a pointer, the wing keeps its heading (nose up-left, the click point);
+      // it only banks a little with horizontal speed.
       const dx = current.x - previous.x;
-      const dy = current.y - previous.y;
-      const speed = Math.hypot(dx, dy);
-
-      if (speed > 0.4) {
-        // Point toward motion direction. Base art faces up, so offset 90°.
-        const desired = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-        let diff = desired - currentRotation;
-        while (diff > 180) diff -= 360;
-        while (diff < -180) diff += 360;
-        currentRotation += diff * (reduced ? 1 : 0.18);
-      }
+      const desiredBank = Math.max(-14, Math.min(14, dx * 1.6));
+      bank += (desiredBank - bank) * (reduced ? 1 : 0.14);
 
       previous.x = current.x;
       previous.y = current.y;
 
       if (craft) {
-        craft.style.transform = `translate3d(${current.x - 22}px, ${current.y - 22}px, 0) rotate(${currentRotation.toFixed(2)}deg)`;
+        craft.style.transform = `translate3d(${current.x - HOTSPOT}px, ${current.y - HOTSPOT}px, 0) rotate(${bank.toFixed(2)}deg)`;
       }
 
       raf = requestAnimationFrame(render);
@@ -150,38 +146,21 @@ export function DroneCursor() {
         className={`${styles.craft} ${theme === "dark" ? styles.dark : styles.light}`}
         data-state="idle"
       >
-        <span className={styles.ring} />
-        <span className={styles.ticks}>
-          <span className={`${styles.tick} ${styles.tickTL}`} />
-          <span className={`${styles.tick} ${styles.tickTR}`} />
-          <span className={`${styles.tick} ${styles.tickBL}`} />
-          <span className={`${styles.tick} ${styles.tickBR}`} />
-        </span>
         <svg
           className={styles.body}
           viewBox="0 0 44 44"
           width="44"
           height="44"
           fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          {/* Central body */}
-          <rect x="18" y="18" width="8" height="8" rx="1.5" />
-          {/* Arms (X configuration) */}
-          <line x1="22" y1="22" x2="10" y2="10" />
-          <line x1="22" y1="22" x2="34" y2="10" />
-          <line x1="22" y1="22" x2="10" y2="34" />
-          <line x1="22" y1="22" x2="34" y2="34" />
-          {/* Rotors (hollow circles) */}
-          <circle className={styles.rotor} cx="10" cy="10" r="4" />
-          <circle className={styles.rotor} cx="34" cy="10" r="4" />
-          <circle className={styles.rotor} cx="10" cy="34" r="4" />
-          <circle className={styles.rotor} cx="34" cy="34" r="4" />
-          {/* Forward antenna / camera indicator */}
-          <circle cx="22" cy="18" r="0.9" fill="currentColor" stroke="none" />
+          {/* Delta wing seen from above, nose toward the upper left like a pointer */}
+          <g transform="rotate(-45 22 22)">
+            <path className={styles.wing} d="M22 4 L36 33 L22 27 L8 33 Z" />
+            {/* Keel and cross spar */}
+            <path className={styles.rib} d="M22 4 V27 M13 22.6 H31" />
+          </g>
         </svg>
       </div>
     </div>
