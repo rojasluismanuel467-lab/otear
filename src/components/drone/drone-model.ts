@@ -21,9 +21,12 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 
 export type DroneKind = "compact" | "enterprise" | "sprayer" | "fixed-wing";
 
+/** The brand aircraft of the logo. It is not a fleet family: no catalog, parts or marks refer to it. */
+export type BrandKind = "viper";
+
 /** Either a generic procedural aircraft or an optimized glTF file. */
 export type DroneModelSpec =
-  { kind: DroneKind } | { glbUrl: string; yaw?: number };
+  { kind: DroneKind | BrandKind } | { glbUrl: string; yaw?: number };
 
 export function specKey(spec: DroneModelSpec) {
   return "kind" in spec ? `kind:${spec.kind}` : `glb:${spec.glbUrl}`;
@@ -445,15 +448,140 @@ function buildFixedWing(kit: Kit): Parts {
   return { group, propellers, extent: 1.95 };
 }
 
-const builders: Record<DroneKind, (kit: Kit) => Parts> = {
+/**
+ * "Viper", the glider of the Otear logo: slender pod, very long wing with upturned
+ * tips, V-tail on a thin boom, rear pusher propeller and a camera ball under the belly.
+ * Nose toward +z, like the other procedural aircraft. Illustrative, not a real product.
+ */
+function buildViper(kit: Kit): Parts {
+  const root = new Group();
+  const body = new Group();
+  // Centre the long aircraft (propeller at -z, nose at +z) on the origin.
+  body.position.z = 0.55;
+  root.add(body);
+  const propellers: Group[] = [];
+
+  const light = kit.material(0xcdd2d6, { roughness: 0.34 });
+  const navy = kit.material(0x15262f, { roughness: 0.5 });
+
+  // Pod: light upper half over a dark belly, as in the logo.
+  const belly = kit.mesh(new CapsuleGeometry(0.155, 1.5, 8, 24), navy);
+  belly.rotation.x = Math.PI / 2;
+  belly.scale.set(1, 1, 0.6);
+  belly.position.y = -0.05;
+  body.add(belly);
+  const pod = kit.mesh(new CapsuleGeometry(0.15, 1.5, 8, 24), light);
+  pod.rotation.x = Math.PI / 2;
+  pod.scale.set(1, 1, 0.72);
+  pod.position.y = 0.02;
+  body.add(pod);
+
+  // Wing: a shallow dihedral inboard, then a steep upturn outboard with some sweep.
+  const wingY = 0.13;
+  for (const side of [-1, 1]) {
+    const inner = new Group();
+    inner.position.set(side * 0.12, wingY, 0.2);
+    inner.rotation.z = side * 0.06;
+    const innerTop = kit.mesh(
+      new RoundedBoxGeometry(1.3, 0.045, 0.56, 3, 0.02),
+      light,
+    );
+    innerTop.position.x = side * 0.65;
+    const innerUnder = kit.mesh(new BoxGeometry(1.28, 0.03, 0.5), navy);
+    innerUnder.position.set(side * 0.65, -0.03, 0);
+    // Dark leading edge: gives the wing the outline it has in the logo.
+    const innerEdge = kit.mesh(new BoxGeometry(1.28, 0.052, 0.035), navy);
+    innerEdge.position.set(side * 0.65, 0, 0.265);
+    inner.add(innerTop, innerUnder, innerEdge);
+
+    const outer = new Group();
+    outer.position.x = side * 1.3;
+    outer.rotation.z = side * 0.3;
+    const outerTop = kit.mesh(
+      new RoundedBoxGeometry(1.15, 0.04, 0.38, 3, 0.02),
+      light,
+    );
+    outerTop.position.set(side * 0.575, 0, -0.1);
+    const outerUnder = kit.mesh(new BoxGeometry(1.13, 0.028, 0.32), navy);
+    outerUnder.position.set(side * 0.575, -0.028, -0.1);
+    const outerEdge = kit.mesh(new BoxGeometry(1.13, 0.046, 0.03), navy);
+    outerEdge.position.set(side * 0.575, 0, 0.075);
+    outer.add(outerTop, outerUnder, outerEdge);
+    inner.add(outer);
+    body.add(inner);
+  }
+
+  // Tail boom and V-tail
+  const boom = kit.mesh(new CylinderGeometry(0.06, 0.03, 0.95, 14), light);
+  boom.rotation.x = Math.PI / 2;
+  boom.position.set(0, 0.02, -1.3);
+  body.add(boom);
+  for (const side of [-1, 1]) {
+    const hinge = new Group();
+    hinge.position.set(0, 0.04, -1.55);
+    hinge.rotation.z = side * 0.75;
+    const surface = kit.mesh(
+      new RoundedBoxGeometry(0.66, 0.035, 0.34, 3, 0.015),
+      light,
+    );
+    surface.position.x = side * 0.33;
+    const edge = kit.mesh(new BoxGeometry(0.64, 0.02, 0.1), navy);
+    edge.position.set(side * 0.33, -0.02, -0.1);
+    hinge.add(surface, edge);
+    body.add(hinge);
+  }
+
+  // Camera ball on a short stalk under the belly
+  const stalk = kit.mesh(new CylinderGeometry(0.018, 0.018, 0.14, 10), navy);
+  stalk.position.set(0, -0.15, 0.25);
+  body.add(stalk);
+  const ball = kit.mesh(new SphereGeometry(0.095, 20, 16), navy);
+  ball.position.set(0, -0.25, 0.25);
+  body.add(ball);
+  const lens = kit.mesh(
+    new CylinderGeometry(0.045, 0.045, 0.04, 16),
+    kit.steel,
+  );
+  lens.rotation.x = Math.PI / 2;
+  lens.position.set(0, -0.25, 0.335);
+  body.add(lens);
+
+  // Pusher propeller: spins around the boom axis
+  const holder = new Group();
+  holder.position.set(0, 0.02, -1.8);
+  holder.rotation.x = Math.PI / 2;
+  const spinner = kit.mesh(new ConeGeometry(0.055, 0.16, 16), kit.motor);
+  spinner.rotation.x = -Math.PI / 2;
+  spinner.position.set(0, 0.02, -1.9);
+  body.add(spinner);
+  const propeller = new Group();
+  for (let blade = 0; blade < 2; blade += 1) {
+    const arm = kit.mesh(new CapsuleGeometry(0.025, 0.74, 4, 10), kit.prop);
+    arm.rotation.z = Math.PI / 2;
+    arm.rotation.y = blade * Math.PI;
+    arm.scale.set(1, 0.16, 1);
+    propeller.add(arm);
+  }
+  const blur = kit.mesh(new CircleGeometry(0.4, 32), kit.blur);
+  blur.rotation.x = -Math.PI / 2;
+  propeller.add(blur);
+  holder.add(propeller);
+  body.add(holder);
+  propellers.push(propeller);
+
+  return { group: root, propellers, extent: 2.9 };
+}
+
+const builders: Record<DroneKind | BrandKind, (kit: Kit) => Parts> = {
   compact: buildCompact,
   enterprise: buildEnterprise,
   sprayer: buildSprayer,
   "fixed-wing": buildFixedWing,
+  viper: buildViper,
 };
 
 /** Procedural, illustrative aircraft. None of them depicts a real product. */
-export function createDroneModel(kind: DroneKind): DroneModel {
+export function createDroneModel(kind: DroneKind | BrandKind): DroneModel {
   const kit = createKit();
   const parts = builders[kind](kit);
   return { ...parts, dispose: kit.dispose };

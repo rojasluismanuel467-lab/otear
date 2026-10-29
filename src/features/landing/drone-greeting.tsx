@@ -43,7 +43,7 @@ const CAPTIONS: Array<{ text: string; delay: number; duration: number }> = [
 
 export function DroneGreeting({
   slotSelector,
-  spec = { kind: "enterprise" },
+  spec = { kind: "viper" },
   interactive = false,
 }: DroneGreetingProps) {
   // Intro state defaults to true, but we read sessionStorage in an effect so
