@@ -2,7 +2,14 @@ import { preparationGroups } from "@/features/flights/planning/preparation-items
 import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
-import { polygonAreaHa } from "@/lib/geo";
+import {
+  convexHull,
+  coverageRoute,
+  lineLengthKm,
+  pointAlongLine,
+  pointInsideOutline,
+  polygonAreaHa,
+} from "@/lib/geo";
 import type {
   Aircraft,
   Capture,
@@ -19,9 +26,29 @@ import type {
   ServiceEvent,
   ServiceRequest,
   Site,
+  Zone,
 } from "./types";
 
 export const DEMO_DATE = "2026-10-25";
+/**
+ * Outlines were traced by hand over satellite imagery so each zone sits on a real field, road
+ * stretch, building plot or industrial block. The people, companies and works are still examples.
+ */
+const cropByZone: Record<string, string> = {
+  "zone-sr-3": "Caña · plantilla",
+  "zone-sr-4": "Caña · primera soca",
+  "zone-sr-5": "Caña · segunda soca",
+};
+
+function describeZone(site: Site, zone: Zone) {
+  if (site.sector === "roads") {
+    const km = lineLengthKm(zone.outline).toFixed(1).replace(".", ",");
+    return `Seguimiento de pavimento · ${km} km`;
+  }
+  const ha = polygonAreaHa(zone.outline).toFixed(1).replace(".", ",");
+  return `${cropByZone[zone.id] ?? "Zona"} · ${ha} ha`;
+}
+
 const baseSites: Site[] = [
   {
     id: "santa-rita",
@@ -30,72 +57,78 @@ const baseSites: Site[] = [
     sectorLabel: "Agricultura",
     location: "Guacarí, Valle del Cauca",
     zoneLabel: "Lotes",
-    center: [3.764, -76.333],
+    center: [3.77295, -76.31822],
     imageUrl: "/images/aerial-field.jpg",
     zones: [
       {
         id: "zone-sr-3",
         name: "Lote 3",
-        description: "Caña · 74,0 ha",
+        description: "",
         outline: [
-          [3.77, -76.341],
-          [3.773, -76.333],
-          [3.767, -76.329],
-          [3.764, -76.337],
+          [3.7759, -76.32035],
+          [3.77509, -76.31765],
+          [3.7712, -76.3187],
+          [3.77191, -76.32138],
         ],
       },
       {
         id: "zone-sr-4",
         name: "Lote 4",
-        description: "Caña · 83,9 ha",
+        description: "",
         outline: [
-          [3.764, -76.337],
-          [3.767, -76.329],
-          [3.76, -76.325],
-          [3.757, -76.333],
+          [3.77506, -76.31763],
+          [3.77464, -76.31624],
+          [3.77079, -76.31734],
+          [3.7712, -76.3187],
         ],
       },
       {
         id: "zone-sr-5",
         name: "Lote 5",
-        description: "Aguacate · 85,1 ha",
+        description: "",
         outline: [
-          [3.759, -76.344],
-          [3.764, -76.337],
-          [3.757, -76.333],
-          [3.752, -76.34],
+          [3.77464, -76.31624],
+          [3.7742, -76.31495],
+          [3.77041, -76.316],
+          [3.77079, -76.31734],
         ],
       },
     ],
   },
   {
     id: "via-la-habana",
-    name: "Vía Buga – La Habana",
+    name: "Troncal de Occidente · Guacarí–Buga",
     sector: "roads",
     sectorLabel: "Carreteras",
-    location: "Buga, Valle del Cauca",
+    location: "Guacarí – Buga, Valle del Cauca",
     zoneLabel: "Tramos",
-    center: [3.872, -76.258],
+    center: [3.80756, -76.30829],
     imageUrl: "/images/aerial-road.jpg",
     zones: [
       {
         id: "zone-vh-1",
-        name: "Tramo K0–K6",
-        description: "Seguimiento de pavimento · 1,4 km",
+        name: "Tramo sur",
+        description: "",
         outline: [
-          [3.876, -76.27],
-          [3.874, -76.264],
-          [3.872, -76.258],
+          [3.799, -76.31076],
+          [3.80114, -76.30979],
+          [3.80349, -76.30893],
+          [3.80542, -76.3084],
+          [3.80756, -76.30829],
         ],
       },
       {
         id: "zone-vh-2",
-        name: "Tramo K6–K12",
-        description: "Taludes y drenaje · 1,6 km",
+        name: "Tramo norte",
+        description: "",
         outline: [
-          [3.872, -76.258],
-          [3.868, -76.252],
-          [3.863, -76.247],
+          [3.80756, -76.30829],
+          [3.8097, -76.3085],
+          [3.81184, -76.30825],
+          [3.81399, -76.30797],
+          [3.81548, -76.3076],
+          [3.8172, -76.307],
+          [3.81912, -76.30646],
         ],
       },
     ],
@@ -107,7 +140,7 @@ const baseSites: Site[] = [
     sectorLabel: "Construcción",
     location: "Cali, Valle del Cauca",
     zoneLabel: "Frentes",
-    center: [3.41, -76.524],
+    center: [3.40872, -76.53076],
     imageUrl: "/images/aerial-road.jpg",
     zones: [
       {
@@ -115,10 +148,10 @@ const baseSites: Site[] = [
         name: "Frente norte",
         description: "Movimiento de tierras",
         outline: [
-          [3.414, -76.529],
-          [3.415, -76.521],
-          [3.41, -76.519],
-          [3.409, -76.527],
+          [3.40937, -76.53141],
+          [3.4092, -76.53001],
+          [3.40866, -76.53005],
+          [3.40881, -76.53143],
         ],
       },
       {
@@ -126,10 +159,10 @@ const baseSites: Site[] = [
         name: "Frente sur",
         description: "Avance de cimentación",
         outline: [
-          [3.409, -76.527],
-          [3.41, -76.519],
-          [3.405, -76.518],
-          [3.404, -76.525],
+          [3.40881, -76.53143],
+          [3.40866, -76.53005],
+          [3.40802, -76.53012],
+          [3.40823, -76.53146],
         ],
       },
     ],
@@ -141,7 +174,7 @@ const baseSites: Site[] = [
     sectorLabel: "Vigilancia",
     location: "Yumbo, Valle del Cauca",
     zoneLabel: "Sectores",
-    center: [3.538, -76.496],
+    center: [3.5404, -76.4983],
     imageUrl: "/images/aerial-road.jpg",
     zones: [
       {
@@ -149,10 +182,13 @@ const baseSites: Site[] = [
         name: "Sector occidental",
         description: "Cerramiento y accesos",
         outline: [
-          [3.544, -76.502],
-          [3.544, -76.497],
-          [3.537, -76.496],
-          [3.536, -76.502],
+          [3.54229, -76.49984],
+          [3.54161, -76.49686],
+          [3.53893, -76.49729],
+          [3.53834, -76.49973],
+          [3.53882, -76.50089],
+          [3.54032, -76.50048],
+          [3.54118, -76.50012],
         ],
       },
       {
@@ -160,10 +196,13 @@ const baseSites: Site[] = [
         name: "Sector oriental",
         description: "Perímetro y bodegas",
         outline: [
-          [3.544, -76.497],
-          [3.544, -76.491],
-          [3.537, -76.49],
-          [3.537, -76.496],
+          [3.54161, -76.49686],
+          [3.54233, -76.49619],
+          [3.54198, -76.49439],
+          [3.54075, -76.493],
+          [3.53834, -76.49312],
+          [3.53877, -76.49589],
+          [3.53893, -76.49729],
         ],
       },
     ],
@@ -177,6 +216,10 @@ const schedules: Record<string, Site["schedule"]> = {
 
 export const sites: Site[] = baseSites.map((site) => ({
   ...site,
+  zones: site.zones.map((zone) => ({
+    ...zone,
+    description: zone.description || describeZone(site, zone),
+  })),
   ...(schedules[site.id] ? { schedule: schedules[site.id] } : {}),
 }));
 
@@ -348,8 +391,38 @@ function historyFor(
   }));
 }
 
+/**
+ * Survey lines over the whole site (the hull of its zones), few enough to read on the map; on a
+ * road the aircraft follows the road itself.
+ */
+function routeFor(site: Site): [number, number][] {
+  if (site.sector === "roads") {
+    const line = site.zones.flatMap((zone, index) =>
+      index === 0 ? zone.outline : zone.outline.slice(1),
+    );
+    return line.filter(
+      (_, index) => index % 2 === 0 || index === line.length - 1,
+    );
+  }
+  const hull = convexHull(site.zones.flatMap((zone) => zone.outline));
+  return coverageRoute([hull], 4);
+}
+
+/** A point that always falls on the zone (or along the road), so markers never float off it. */
+function findingPosition(
+  site: Site,
+  zone: Zone,
+  u: number,
+  v: number,
+): [number, number] {
+  const point =
+    site.sector === "roads"
+      ? pointAlongLine(zone.outline, v)
+      : pointInsideOutline(zone.outline, u, v);
+  return [point[0], point[1]];
+}
+
 const baseFlights: Flight[] = sites.flatMap((site, index) => {
-  const [lat, lng] = site.center;
   const common = {
     siteId: site.id,
     pilot: "Camilo Torres",
@@ -358,14 +431,7 @@ const baseFlights: Flight[] = sites.flatMap((site, index) => {
     drone: "DJI Mavic 3 Enterprise",
     aircraftId: `aircraft-${site.id}-1`,
     zoneIds: site.zones.map((zone) => zone.id),
-    route: [
-      [lat + 0.006, lng - 0.007],
-      [lat + 0.006, lng + 0.004],
-      [lat + 0.002, lng - 0.007],
-      [lat + 0.002, lng + 0.004],
-      [lat - 0.002, lng - 0.007],
-      [lat - 0.002, lng + 0.004],
-    ] as [number, number][],
+    route: routeFor(site),
     checklist: [
       "Definir objetivo y recorrido",
       "Revisar equipo y baterías",
@@ -484,10 +550,12 @@ const currentFindings: Finding[] = sites.flatMap((site) =>
       "El operador señaló este punto en su entrega. Revisar la evidencia y confirmar la observación en sitio antes de tomar una decisión.",
     priority: (["high", "medium", "low"] as const)[index],
     status: "pending",
-    position: [
-      site.center[0] + 0.003 - index * 0.002,
-      site.center[1] - 0.003 + index * 0.003,
-    ],
+    position: findingPosition(
+      site,
+      site.zones[index % site.zones.length],
+      0.3 + index * 0.2,
+      0.35 + index * 0.15,
+    ),
     imageUrl: site.imageUrl,
     source: "Observación del operador · ejemplo",
     taskAssigned: false,
@@ -514,10 +582,14 @@ const historyFindings: Finding[] = sites.flatMap((site) =>
           (index + flightIndex) % 3
         ],
         status: (index === 2 ? "dismissed" : "confirmed") as Finding["status"],
-        position: [
-          site.center[0] + 0.003 - index * 0.002 + flightIndex * 0.0004,
-          site.center[1] - 0.003 + index * 0.003,
-        ] as [number, number],
+        position: findingPosition(
+          site,
+          site.zones[
+            index === 0 ? 0 : (index + flightIndex) % site.zones.length
+          ],
+          0.3 + index * 0.2 + flightIndex * 0.02,
+          0.35 + index * 0.15,
+        ),
         imageUrl: site.imageUrl,
         source: "Observación del operador · ejemplo",
         taskAssigned: index === 0,

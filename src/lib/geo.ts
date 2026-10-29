@@ -802,3 +802,93 @@ export function parseZones(
   if (!zones.length) return { error: "No encontré polígonos en el archivo." };
   return { zones };
 }
+
+/** Where a horizontal scan line at height fraction `v` (0 south, 1 north) crosses a polygon. */
+function scanSpan(ring: XY[], v: number): [number, number] | undefined {
+  const ys = ring.map((point) => point[1]);
+  const y = Math.min(...ys) + (Math.max(...ys) - Math.min(...ys)) * v;
+  const xs: number[] = [];
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if (yi > y !== yj > y) xs.push(xi + ((xj - xi) * (y - yi)) / (yj - yi));
+  }
+  if (xs.length < 2) return undefined;
+  return [Math.min(...xs), Math.max(...xs)];
+}
+
+/**
+ * A point inside a polygon: `v` is how far north (0–1) and `u` how far across (0–1) at that height.
+ * Used to place seed data so it always lands on the zone and never on the road beside it.
+ */
+export function pointInsideOutline(
+  outline: Position[],
+  u = 0.5,
+  v = 0.5,
+): Position {
+  const origin = originOf(outline);
+  const ring = project(outline, origin);
+  const vv = Math.min(0.98, Math.max(0.02, v));
+  const span = scanSpan(ring, vv);
+  if (!span) return origin;
+  const ys = ring.map((point) => point[1]);
+  const y = Math.min(...ys) + (Math.max(...ys) - Math.min(...ys)) * vv;
+  return unproject([[span[0] + (span[1] - span[0]) * u, y]], origin)[0];
+}
+
+/**
+ * Back-and-forth survey lines over each zone, west–east, `passes` per zone, inset from the edge.
+ * Alternates direction so the aircraft never flies back empty. Roads are followed along their line.
+ */
+export function coverageRoute(
+  outlines: Position[][],
+  passes = 3,
+  insetFraction = 0.08,
+): Position[] {
+  const route: Position[] = [];
+  let eastward = true;
+  outlines.forEach((outline) => {
+    const origin = originOf(outline);
+    const ring = project(outline, origin);
+    for (let pass = 0; pass < passes; pass += 1) {
+      const v = (pass + 0.5) / passes;
+      const span = scanSpan(ring, v);
+      if (!span) continue;
+      const inset = (span[1] - span[0]) * insetFraction;
+      const ys = ring.map((point) => point[1]);
+      const y = Math.min(...ys) + (Math.max(...ys) - Math.min(...ys)) * v;
+      const west: XY = [span[0] + inset, y];
+      const east: XY = [span[1] - inset, y];
+      route.push(...unproject(eastward ? [west, east] : [east, west], origin));
+      eastward = !eastward;
+    }
+  });
+  return route;
+}
+
+/** A point along a polyline, `fraction` (0–1) of its length from the start. */
+export function pointAlongLine(line: Position[], fraction: number): Position {
+  const origin = originOf(line);
+  const xy = project(line, origin);
+  const lengths = xy.slice(1).map((point, index) => {
+    return Math.hypot(point[0] - xy[index][0], point[1] - xy[index][1]);
+  });
+  const total = lengths.reduce((sum, length) => sum + length, 0);
+  let remaining = Math.min(1, Math.max(0, fraction)) * total;
+  for (let index = 0; index < lengths.length; index += 1) {
+    if (remaining <= lengths[index] || index === lengths.length - 1) {
+      const t = lengths[index] ? Math.min(1, remaining / lengths[index]) : 0;
+      return unproject(
+        [
+          [
+            xy[index][0] + (xy[index + 1][0] - xy[index][0]) * t,
+            xy[index][1] + (xy[index + 1][1] - xy[index][1]) * t,
+          ],
+        ],
+        origin,
+      )[0];
+    }
+    remaining -= lengths[index];
+  }
+  return line[0];
+}

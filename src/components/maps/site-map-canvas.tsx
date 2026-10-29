@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import { Crosshair, Layers2, MapPin, Plus, Undo2 } from "lucide-react";
 import type { SiteMapProps } from "./site-map";
+import { BasemapSwitch, useBasemap } from "./basemap-switch";
+import { createBasemap, overlayStyle } from "./basemaps";
 
 export default function MapCanvas({
   site,
@@ -17,6 +19,7 @@ export default function MapCanvas({
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const [tileError, setTileError] = useState(false);
+  const basemap = useBasemap();
 
   useEffect(() => {
     if (!container.current) return;
@@ -28,21 +31,16 @@ export default function MapCanvas({
     if (zonePoints.length) {
       instance.fitBounds(L.latLngBounds([...zonePoints, site.center]), {
         padding: [40, 40],
-        maxZoom: 16,
+        maxZoom: 18,
         animate: false,
       });
     }
     map.current = instance;
     L.control.zoom({ position: "bottomleft" }).addTo(instance);
-    const tiles = L.tileLayer(
-      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      },
-    ).addTo(instance);
-    tiles.on("tileerror", () => setTileError(true));
+    // Leaflet's default prefix carries a flag emoji unrelated to the product.
+    instance.attributionControl.setPrefix(
+      '<a href="https://leafletjs.com">Leaflet</a>',
+    );
     const resize = new ResizeObserver(() => instance.invalidateSize());
     resize.observe(container.current);
     return () => {
@@ -55,20 +53,34 @@ export default function MapCanvas({
   useEffect(() => {
     const instance = map.current;
     if (!instance) return;
+    setTileError(false);
+    const base = createBasemap(basemap, () => setTileError(true)).addTo(
+      instance,
+    );
+    return () => {
+      base.remove();
+    };
+  }, [site, basemap]);
+
+  useEffect(() => {
+    const instance = map.current;
+    if (!instance) return;
+    const style = overlayStyle(basemap);
     const layer = L.layerGroup().addTo(instance);
     site.zones.forEach((zone) => {
       const shape =
         site.sector === "roads"
           ? L.polyline(zone.outline, {
-              color: "#6a9fb8",
+              color: style.zone,
               weight: 14,
-              opacity: 0.3,
+              opacity: basemap === "satellite" ? 0.35 : 0.3,
             })
           : L.polygon(zone.outline, {
-              color: "#4a8fae",
-              weight: 1.5,
-              fillOpacity: 0.13,
-              dashArray: "5 5",
+              color: style.zone,
+              weight: basemap === "satellite" ? 2.5 : 1.5,
+              fillColor: style.zone,
+              fillOpacity: style.fillOpacity,
+              dashArray: basemap === "satellite" ? undefined : "5 5",
             });
       shape.addTo(layer).bindTooltip(zone.name, {
         permanent: true,
@@ -77,8 +89,15 @@ export default function MapCanvas({
       });
     });
     if (flight?.route.length) {
+      // A dark or white casing keeps the route readable over fields and over pale streets.
       L.polyline(flight.route, {
-        color: "#1c6f8d",
+        color: style.casing,
+        weight: 7,
+        opacity: 0.55,
+        interactive: false,
+      }).addTo(layer);
+      L.polyline(flight.route, {
+        color: style.route,
         weight: 3,
         dashArray: flight.status === "completed" ? undefined : "7 7",
         className: "flight-route-line",
@@ -115,7 +134,7 @@ export default function MapCanvas({
     return () => {
       layer.remove();
     };
-  }, [site, flight, findings, selectedFindingId, onFindingSelect]);
+  }, [site, flight, findings, selectedFindingId, onFindingSelect, basemap]);
 
   useEffect(() => {
     const instance = map.current;
@@ -140,17 +159,27 @@ export default function MapCanvas({
       <div
         ref={container}
         className="map-canvas"
+        data-basemap={basemap}
         aria-label={`Mapa interactivo de ${site.name}`}
       />
       <div className="map-top-label">
         <MapPin size={14} />
         <span>{site.location}</span>
       </div>
+      <BasemapSwitch value={basemap} />
       <button
         className="map-center-control"
         aria-label="Centrar mapa en el sitio"
         title="Centrar mapa"
-        onClick={() => map.current?.setView(site.center, 14)}
+        onClick={() => {
+          const points = site.zones.flatMap((zone) => zone.outline);
+          if (points.length)
+            map.current?.fitBounds(L.latLngBounds(points), {
+              padding: [40, 40],
+              maxZoom: 18,
+            });
+          else map.current?.setView(site.center, 14);
+        }}
       >
         <Crosshair size={18} />
       </button>

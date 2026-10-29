@@ -6,6 +6,8 @@ import { MousePointerClick, Scissors } from "lucide-react";
 import type { Position } from "@/features/demo/types";
 import type { ParcelMapProps } from "./parcel-map";
 import { zonePalette } from "./zone-palette";
+import { BasemapSwitch, useBasemap } from "./basemap-switch";
+import { createBasemap } from "./basemaps";
 
 function roundPosition(latlng: L.LatLng): Position {
   return [Number(latlng.lat.toFixed(6)), Number(latlng.lng.toFixed(6))];
@@ -36,6 +38,7 @@ export default function ParcelMapCanvas({
   const cutStartRef = useRef<Position | null>(null);
   const [cutStart, setCutStart] = useState<Position | null>(null);
   const [tileError, setTileError] = useState(false);
+  const basemap = useBasemap();
   const [sized, setSized] = useState(false);
 
   useEffect(() => {
@@ -50,15 +53,10 @@ export default function ParcelMapCanvas({
     }).setView(center, 14);
     map.current = instance;
     L.control.zoom({ position: "bottomleft" }).addTo(instance);
-    const tiles = L.tileLayer(
-      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      },
-    ).addTo(instance);
-    tiles.on("tileerror", () => setTileError(true));
+    // Leaflet's default prefix carries a flag emoji unrelated to the product.
+    instance.attributionControl.setPrefix(
+      '<a href="https://leafletjs.com">Leaflet</a>',
+    );
     const resize = new ResizeObserver(() => {
       instance.invalidateSize();
       setSized(true);
@@ -72,6 +70,19 @@ export default function ParcelMapCanvas({
     // The map is created once per mount; later props are applied by the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Base layer: satellite or street map.
+  useEffect(() => {
+    const instance = map.current;
+    if (!instance) return;
+    setTileError(false);
+    const base = createBasemap(basemap, () => setTileError(true)).addTo(
+      instance,
+    );
+    return () => {
+      base.remove();
+    };
+  }, [basemap]);
 
   // Fit to the outline when asked to.
   useEffect(() => {
@@ -92,12 +103,13 @@ export default function ParcelMapCanvas({
   useEffect(() => {
     const instance = map.current;
     if (!instance) return;
+    const edge = basemap === "satellite" ? "#ffffff" : "#0f3447";
     const layer = L.layerGroup().addTo(instance);
     history?.forEach((route) =>
       L.polyline(route, {
-        color: "#1c6f8d",
+        color: basemap === "satellite" ? "#ffd166" : "#1c6f8d",
         weight: 2,
-        opacity: 0.35,
+        opacity: basemap === "satellite" ? 0.6 : 0.35,
         dashArray: "4 6",
         interactive: false,
       }).addTo(layer),
@@ -137,12 +149,12 @@ export default function ParcelMapCanvas({
       const base =
         outlineKind === "line" || outline.length < 3
           ? L.polyline(outline, {
-              color: "#0f3447",
+              color: edge,
               weight: 3,
               interactive: false,
             })
           : L.polygon(outline, {
-              color: "#0f3447",
+              color: edge,
               weight: 3,
               fillOpacity: zones.length ? 0 : 0.08,
               interactive: false,
@@ -217,6 +229,7 @@ export default function ParcelMapCanvas({
     mode,
     cutStart,
     onSelectZone,
+    basemap,
   ]);
 
   // Click handling per mode.
@@ -262,6 +275,7 @@ export default function ParcelMapCanvas({
       <div
         ref={container}
         className="map-canvas"
+        data-basemap={basemap}
         aria-label={`Mapa interactivo de ${siteName}`}
       />
       {mode !== "view" && (
@@ -290,6 +304,7 @@ export default function ParcelMapCanvas({
           )}
         </div>
       )}
+      <BasemapSwitch value={basemap} />
       <span className="map-example-label">Contorno de ejemplo</span>
       {tileError && (
         <p className="map-offline-message" role="status">

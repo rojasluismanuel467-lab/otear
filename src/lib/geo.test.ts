@@ -5,9 +5,12 @@ import {
   centerlineFromRoutes,
   clusterCenters,
   convexHull,
+  coverageRoute,
   densify,
   distanceToLineM,
+  pointAlongLine,
   pointInPolygon,
+  pointInsideOutline,
   lineLengthKm,
   parseGeometry,
   parseZones,
@@ -288,4 +291,35 @@ test("parseZones reads every polygon with its name, from GeoJSON and KML", () =>
   assert.ok("error" in parseZones("{}", "x.geojson"));
   assert.ok("error" in parseZones("no", "x.geojson"));
   assert.ok("error" in parseZones("x", "x.shp"));
+});
+
+test("survey lines and interior points stay on the zone", () => {
+  const tilted: P[] = [
+    [3.7759, -76.32035],
+    [3.77509, -76.31765],
+    [3.7712, -76.3187],
+    [3.77191, -76.32138],
+  ];
+  for (const v of [0.1, 0.5, 0.9]) {
+    assert.ok(pointInPolygon(pointInsideOutline(tilted, 0.5, v), tilted));
+  }
+  const route = coverageRoute([tilted], 3);
+  assert.equal(route.length, 6);
+  route.forEach((point) => assert.ok(pointInPolygon(point, tilted)));
+  // The second pass starts where the first ended, so the aircraft never flies back empty.
+  assert.ok(
+    Math.abs(route[2][1] - route[1][1]) < Math.abs(route[2][1] - route[0][1]),
+  );
+});
+
+test("pointAlongLine walks the line by fraction of its length", () => {
+  const line: P[] = [
+    [3.8, -76.31],
+    [3.81, -76.31],
+    [3.81, -76.3],
+  ];
+  assert.deepEqual(pointAlongLine(line, 0), line[0]);
+  assert.deepEqual(pointAlongLine(line, 1), line[2]);
+  const middle = pointAlongLine(line, 0.5);
+  assert.ok(Math.abs(middle[0] - 3.81) < 0.0005);
 });

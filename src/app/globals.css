@@ -1915,3 +1915,36 @@ html[data-cursor="on"] [aria-disabled="true"] {
     animation: none;
   }
 }
+
+/* Satélite / Mapa */
+.map-basemap-switch {
+  position: absolute;
+  top: 59px;
+  right: 17px;
+  z-index: 500;
+  display: flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 9px;
+  background: #ffffffed;
+  box-shadow: 0 2px 8px #33442115;
+}
+.map-basemap-switch button {
+  min-height: 28px;
+  padding: 0 11px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4c6170;
+}
+.map-basemap-switch button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+.map-basemap-switch button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.map-canvas[data-basemap="satellite"] .leaflet-tile-pane {
+  filter: none;
+}
