@@ -2,9 +2,27 @@
 
 .page {
   min-height: 100vh;
-  background: var(--background);
+  background: url("/textures/contours-light.svg"), var(--background);
+  background-size:
+    1600px auto,
+    auto;
+  background-repeat: repeat, no-repeat;
+  background-attachment: fixed, fixed;
   color: var(--foreground);
   overflow-x: clip;
+}
+
+/* Opaque surfaces (cards, stepper, roles, contact, form) sit on top of the
+   topographic background; we tint them so the lines bleed through just
+   enough to read as the backdrop of the whole landing. */
+.stepper,
+.role,
+.form {
+  background-color: color-mix(in srgb, var(--surface) 93%, transparent);
+}
+
+.contact {
+  background-color: color-mix(in srgb, var(--surface) 94%, transparent);
 }
 
 /* --- topbar --- */

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Check, Sprout } from "lucide-react";
-import { DronePreview } from "@/components/drone/drone-preview";
 import styles from "./landing.module.css";
 import { DroneCursor } from "./drone-cursor";
+import { DroneGreeting } from "./drone-greeting";
 import { FlyingDrone } from "./flying-drone";
 import { LeadForm } from "./lead-form";
 
@@ -47,6 +47,7 @@ export function LandingPage() {
     <div className={styles.page}>
       <DroneCursor />
       <FlyingDrone />
+      <DroneGreeting slotSelector="[data-drone-slot]" />
       <header className={styles.topbar} data-cursor-theme="dark">
         <div className={styles.topbarInner}>
           <Link href="/" className={styles.brand} aria-label="Otear, inicio">
@@ -109,14 +110,14 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className={styles.droneWrap}>
-            <div className={styles.droneInner}>
-              <DronePreview tone="dark" spec={{ kind: "enterprise" }} />
-            </div>
-            <span className={styles.droneBadge}>
-              Vuele el dron con el mouse
-            </span>
-          </div>
+          {/* The real 3D stage renders via <DroneGreeting /> (below, at
+              page root) and docks into this slot after its scripted intro.
+              This placeholder reserves the space so the layout doesn't jump. */}
+          <div
+            className={styles.droneWrap}
+            data-drone-slot
+            aria-hidden="true"
+          />
         </div>
       </section>
 

@@ -7,6 +7,10 @@ import styles from "./flying-drone.module.css";
  * Scroll-driven drone that flies across the landing. Not a 3D canvas — a
  * single SVG anchored to viewport that lerps along a path of keyframes mapped
  * to overall scroll progress. Cheap, works everywhere, respects reduced motion.
+ *
+ * The visible flight-path trace was removed on the user's request so only
+ * the drone itself appears to fly; the topographic contours in the page
+ * background carry the altitude/trail reading now.
  */
 
 type Waypoint = {
@@ -64,30 +68,10 @@ function sample(progress: number) {
   return { x: last.x, y: last.y, label: last.label, theme: last.theme };
 }
 
-function buildPathD(width: number, height: number) {
-  if (!width || !height) return "";
-  const points = WAYPOINTS.map((w) => ({
-    x: w.x * width,
-    y: w.y * height,
-  }));
-  if (points.length === 0) return "";
-  let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
-  for (let i = 1; i < points.length; i += 1) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const cx = (prev.x + curr.x) / 2;
-    const cy = (prev.y + curr.y) / 2;
-    d += ` Q ${prev.x.toFixed(1)} ${prev.y.toFixed(1)} ${cx.toFixed(1)} ${cy.toFixed(1)}`;
-    d += ` T ${curr.x.toFixed(1)} ${curr.y.toFixed(1)}`;
-  }
-  return d;
-}
-
 export function FlyingDrone() {
   const craftRef = useRef<HTMLDivElement | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [label, setLabel] = useState<string | undefined>(WAYPOINTS[0].label);
-  const [pathD, setPathD] = useState("");
 
   useEffect(() => {
     const mql = window.matchMedia("(pointer: coarse)");
@@ -103,7 +87,6 @@ export function FlyingDrone() {
     let currentX = 0;
     let currentY = 0;
     let currentRot = 0;
-    let lastRecomputedAt = 0;
     let paused = false;
 
     function compute() {
@@ -141,13 +124,6 @@ export function FlyingDrone() {
       if (s.label !== label) {
         setLabel(s.label);
       }
-
-      // Recompute path only every ~400ms (resize safety) rather than per frame
-      if (performance.now() - lastRecomputedAt > 400) {
-        lastRecomputedAt = performance.now();
-        const next = buildPathD(vw, vh);
-        if (next !== pathD) setPathD(next);
-      }
     }
 
     function loop() {
@@ -166,16 +142,12 @@ export function FlyingDrone() {
       cancelAnimationFrame(frame);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-    // theme/label/pathD are intentionally omitted — the loop reads via refs/setters
+    // theme/label are intentionally omitted — the loop reads via refs/setters
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className={styles.layer} aria-hidden="true">
-      <svg className={styles.trace} preserveAspectRatio="none">
-        {pathD && <path className={styles.tracePath} d={pathD} />}
-      </svg>
-
       <div
         ref={craftRef}
         className={`${styles.craft} ${theme === "dark" ? styles.craftDark : ""}`}

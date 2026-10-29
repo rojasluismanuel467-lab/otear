@@ -27,6 +27,7 @@ const DEFAULT_VIEW = { yaw: -0.65, pitch: 0.32 };
 const PITCH_LIMITS = { min: -0.5, max: 1.15 };
 const IDLE_DELAY_MS = 2800;
 const KEY_STEP = 0.2;
+const INTRO_DURATION_MS = 6500;
 
 type DroneSceneProps = {
   /** Increment to animate the model back to its default orientation. */
@@ -36,7 +37,19 @@ type DroneSceneProps = {
   onUnavailable?: () => void;
   /** "dark" renders on a transparent stage meant to sit over a dark surface. */
   tone?: "light" | "dark";
+  /** When true, play a scripted entry flight for ~6.5s before interactive mode. */
+  playIntro?: boolean;
+  /** Fired once when the scripted intro has finished. */
+  onIntroEnd?: () => void;
 };
+
+function easeOutCubic(t: number) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -66,6 +79,8 @@ export function DroneScene({
   onInteract,
   onUnavailable,
   tone = "light",
+  playIntro = false,
+  onIntroEnd,
 }: DroneSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<{ yaw: number; pitch: number } | null>(null);
@@ -74,12 +89,14 @@ export function DroneScene({
   const swapRef = useRef<(next: DroneModelSpec) => void>(() => {});
   const onInteractRef = useRef(onInteract);
   const onUnavailableRef = useRef(onUnavailable);
+  const onIntroEndRef = useRef(onIntroEnd);
   const [isUnavailable, setIsUnavailable] = useState(false);
 
   useEffect(() => {
     onInteractRef.current = onInteract;
     onUnavailableRef.current = onUnavailable;
-  }, [onInteract, onUnavailable]);
+    onIntroEndRef.current = onIntroEnd;
+  }, [onInteract, onUnavailable, onIntroEnd]);
 
   useEffect(() => {
     specRef.current = spec;
@@ -159,6 +176,17 @@ export function DroneScene({
     let frame = 0;
     let previousTime = performance.now();
 
+    // Scripted entry flight: when `playIntro` is on, the first ~6.5s of the
+    // scene are driven by this timeline instead of the usual idle/orbit logic.
+    const introActive = playIntro;
+    const introStart = performance.now();
+    let introDone = !playIntro;
+    if (playIntro) {
+      // Hold at opening pose so the first frame doesn't show the default view
+      view.yaw = 0;
+      view.pitch = 0.55;
+    }
+
     const markInteraction = () => {
       lastInteraction = performance.now();
       targetRef.current = null;
@@ -210,39 +238,110 @@ export function DroneScene({
       const delta = Math.min((time - previousTime) / 1000, 0.05);
       previousTime = time;
 
-      if (targetRef.current) {
-        const ease = 1 - Math.exp(-delta * 7);
-        view.yaw += (targetRef.current.yaw - view.yaw) * ease;
-        view.pitch += (targetRef.current.pitch - view.pitch) * ease;
-        velocity.yaw = velocity.pitch = 0;
-        if (
-          Math.abs(targetRef.current.yaw - view.yaw) < 0.002 &&
-          Math.abs(targetRef.current.pitch - view.pitch) < 0.002
-        ) {
-          targetRef.current = null;
+      // --- Intro script -----------------------------------------------------
+      // Four phases: approach from above, hover, nod to greet, settle to
+      // default pose. Overrides targets/velocity during the sequence.
+      let introOverride = false;
+      if (introActive && !introDone) {
+        const elapsed = time - introStart;
+        const total = reducedMotion ? 1200 : INTRO_DURATION_MS;
+        const t = clamp(elapsed / total, 0, 1);
+        introOverride = true;
+
+        // Phase splits (fractions of total intro duration)
+        const approachUntil = 0.18;
+        const hoverUntil = 0.5;
+        const greetUntil = 0.72;
+
+        if (t <= approachUntil) {
+          const k = easeOutCubic(t / approachUntil);
+          drone.group.position.y = 4.2 - 4.2 * k;
+          drone.group.rotation.y = -Math.PI * 2 * (1 - k);
+          drone.group.rotation.x = 0;
+          view.yaw = 0;
+          view.pitch = 0.55 - 0.15 * k;
+          const scale = 0.3 + 0.72 * k;
+          drone.group.scale.setScalar(scale);
+        } else if (t <= hoverUntil) {
+          const k = easeInOutCubic(
+            (t - approachUntil) / (hoverUntil - approachUntil),
+          );
+          const seconds = time / 1000;
+          drone.group.position.y = Math.sin(seconds * 1.4) * 0.08;
+          drone.group.rotation.y = -Math.PI * 0.6 * (1 - k);
+          drone.group.rotation.x = 0;
+          view.yaw = 0 + (-0.4 - 0) * k;
+          view.pitch = 0.4 + (0.3 - 0.4) * k;
+          drone.group.scale.setScalar(1.02);
+        } else if (t <= greetUntil) {
+          const k = (t - hoverUntil) / (greetUntil - hoverUntil);
+          // Two-cycle nod — tilt forward and back twice
+          drone.group.rotation.x = Math.sin(k * Math.PI * 2) * 0.3;
+          drone.group.rotation.y = 0;
+          const seconds = time / 1000;
+          drone.group.position.y = Math.sin(seconds * 1.4) * 0.05;
+          view.yaw = -0.4;
+          view.pitch = 0.3;
+          drone.group.scale.setScalar(1.02);
+        } else {
+          const k = easeInOutCubic((t - greetUntil) / (1 - greetUntil));
+          drone.group.rotation.x = 0.3 * Math.sin(Math.PI * 2) * (1 - k); // settle
+          drone.group.rotation.y = 0;
+          const seconds = time / 1000;
+          drone.group.position.y = Math.sin(seconds * 1.6) * 0.045;
+          view.yaw = -0.4 + (DEFAULT_VIEW.yaw - -0.4) * k;
+          view.pitch = 0.3 + (DEFAULT_VIEW.pitch - 0.3) * k;
+          drone.group.scale.setScalar(1.02 + (1 - 1.02) * k);
         }
-      } else if (!dragging) {
-        view.yaw += velocity.yaw * delta;
-        view.pitch = clamp(
-          view.pitch + velocity.pitch * delta,
-          PITCH_LIMITS.min,
-          PITCH_LIMITS.max,
-        );
-        const damping = Math.exp(-delta * 3.2);
-        velocity.yaw *= damping;
-        velocity.pitch *= damping;
-        const idle = time - lastInteraction > IDLE_DELAY_MS;
-        if (idle && !reducedMotion) view.yaw += delta * 0.28;
+
+        if (t >= 1) {
+          introDone = true;
+          lastInteraction = time; // suppress idle spin for a moment
+          velocity.yaw = velocity.pitch = 0;
+          targetRef.current = null;
+          onIntroEndRef.current?.();
+        }
+      }
+
+      if (!introOverride) {
+        if (targetRef.current) {
+          const ease = 1 - Math.exp(-delta * 7);
+          view.yaw += (targetRef.current.yaw - view.yaw) * ease;
+          view.pitch += (targetRef.current.pitch - view.pitch) * ease;
+          velocity.yaw = velocity.pitch = 0;
+          if (
+            Math.abs(targetRef.current.yaw - view.yaw) < 0.002 &&
+            Math.abs(targetRef.current.pitch - view.pitch) < 0.002
+          ) {
+            targetRef.current = null;
+          }
+        } else if (!dragging) {
+          view.yaw += velocity.yaw * delta;
+          view.pitch = clamp(
+            view.pitch + velocity.pitch * delta,
+            PITCH_LIMITS.min,
+            PITCH_LIMITS.max,
+          );
+          const damping = Math.exp(-delta * 3.2);
+          velocity.yaw *= damping;
+          velocity.pitch *= damping;
+          const idle = time - lastInteraction > IDLE_DELAY_MS;
+          if (idle && !reducedMotion) view.yaw += delta * 0.28;
+        }
       }
 
       const swap = reducedMotion ? 1 : clamp((time - swapStart) / 480, 0, 1);
-      drone.group.scale.setScalar(0.78 + 0.22 * (1 - Math.pow(1 - swap, 3)));
+      if (!introOverride) {
+        drone.group.scale.setScalar(0.78 + 0.22 * (1 - Math.pow(1 - swap, 3)));
+      }
       pivot.rotation.set(view.pitch, view.yaw, 0, "YXZ");
       if (!reducedMotion) {
-        const seconds = time / 1000;
-        drone.group.position.y = Math.sin(seconds * 1.6) * 0.045;
+        if (!introOverride) {
+          const seconds = time / 1000;
+          drone.group.position.y = Math.sin(seconds * 1.6) * 0.045;
+        }
         shadow.scale.setScalar(
-          (drone.extent / 1.7) * (1 - Math.sin(seconds * 1.6) * 0.04),
+          (drone.extent / 1.7) * (1 - Math.sin((time / 1000) * 1.6) * 0.04),
         );
         drone.propellers.forEach((propeller, index) => {
           propeller.rotation.y += delta * (index % 2 ? -26 : 26);
@@ -357,6 +456,9 @@ export function DroneScene({
       renderer.dispose();
       canvas.remove();
     };
+    // playIntro is intentionally captured at mount: it is a one-shot entry
+    // flight, not something to re-trigger when the prop toggles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tone]);
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {

@@ -14,35 +14,6 @@
   }
 }
 
-/* Flight trace: a dashed line that follows the drone's wake. */
-.trace {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.tracePath {
-  fill: none;
-  stroke: var(--sky);
-  stroke-width: 1;
-  stroke-dasharray: 2 6;
-  opacity: 0.35;
-  stroke-linecap: round;
-  animation: traceCrawl 6s linear infinite;
-}
-
-@keyframes traceCrawl {
-  from {
-    stroke-dashoffset: 0;
-  }
-  to {
-    stroke-dashoffset: -40;
-  }
-}
-
 /* The drone silhouette */
 .craft {
   position: absolute;
