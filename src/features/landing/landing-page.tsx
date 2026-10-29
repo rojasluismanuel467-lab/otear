@@ -1,14 +1,44 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  Check,
-  History,
-  Scale,
-  ShieldCheck,
-  Sprout,
-} from "lucide-react";
+import { ArrowRight, Check, Sprout } from "lucide-react";
+import { DronePreview } from "@/components/drone/drone-preview";
 import styles from "./landing.module.css";
 import { LeadForm } from "./lead-form";
+
+const steps = [
+  {
+    tag: "Historia completa",
+    title: "Deje de recibir PDFs sueltos.",
+    body: "Cada vuelo queda ligado a su suerte, con fecha y zona. Abre el de la semana pasada y lo compara con el de hoy. Ve dónde avanza el cañal y dónde se estancó, en el mismo panel.",
+  },
+  {
+    tag: "Antes de pagar",
+    title: "Verifique hectáreas, no promesas.",
+    body: "Compara hectáreas pedidas, cubiertas por el operador y facturadas. Si le cobraron de más, lo ve antes de aprobar el pago. Sin hojas de cálculo paralelas, sin discusiones a ciegas.",
+  },
+  {
+    tag: "Trazabilidad real",
+    title: "Un informe que no se puede cambiar sin dejar rastro.",
+    body: "Informes firmados con huella digital. Si alguien edita una cifra, la firma se marca inválida y queda registro. Útil para auditoría de certificación o para junta directiva.",
+  },
+];
+
+const roles = [
+  {
+    name: "Jefe agrícola",
+    line: "Ve qué suerte necesita atención esta semana y reparte tareas a su cuadrilla sin recorrer todo el ingenio.",
+    tags: ["Tareas", "Mapa", "NDVI"],
+  },
+  {
+    name: "Gerente del ingenio",
+    line: "Sabe cuánto pagó por vuelos, cuánto cubrieron y qué decisiones salieron de ahí. Informes listos para junta.",
+    tags: ["Pagos", "Informes"],
+  },
+  {
+    name: "Operador de dron",
+    line: "Recibe el pedido con el polígono exacto, entrega el vuelo y le aprueban la factura por hectárea cubierta real.",
+    tags: ["Pedido", "Entrega", "Factura"],
+  },
+];
 
 export function LandingPage() {
   return (
@@ -20,32 +50,36 @@ export function LandingPage() {
             Otear
           </Link>
           <nav className={styles.topbarLinks} aria-label="Principal">
-            <Link href="#contacto" className={styles.linkBtn}>
-              Pídanos una llamada
+            <Link
+              href="#contacto"
+              className={`${styles.linkBtn} ${styles.ghost}`}
+            >
+              Hablemos
             </Link>
             <Link
               href="/programacion/"
               className={`${styles.linkBtn} ${styles.primary}`}
             >
-              Ver la demo
+              Abrir la demo
             </Link>
           </nav>
         </div>
       </header>
 
       <section className={styles.hero}>
+        <div className={styles.heroContours} aria-hidden />
         <div className={styles.heroInner}>
           <div>
             <span className={styles.eyebrow}>
               <Sprout size={14} aria-hidden /> Para ingenios azucareros
             </span>
             <h1 className={styles.title}>
-              Vea cómo va su cañal{" "}
-              <span className={styles.titleAccent}>sin perder</span> los
-              informes del último vuelo.
+              Mire su cañal desde arriba{" "}
+              <span className={styles.titleAccent}>sin perder</span> el vuelo de
+              la semana pasada.
             </h1>
             <p className={styles.subtitle}>
-              Otear reúne los vuelos de dron de su ingenio en un solo lugar.
+              Otear reúne los vuelos de dron de su ingenio en un solo taller.
               Compara cada suerte en el tiempo, convierte lo que vio en tareas e
               informes firmados, y verifica cuántas hectáreas de verdad le
               cubrieron antes de pagar.
@@ -55,79 +89,70 @@ export function LandingPage() {
                 href="/programacion/"
                 className={`${styles.linkBtn} ${styles.primary}`}
               >
-                Ver la demo <ArrowRight size={16} aria-hidden />
+                Abrir la demo <ArrowRight size={16} aria-hidden />
               </Link>
               <Link
                 href="#contacto"
                 className={`${styles.linkBtn} ${styles.ghost}`}
               >
-                Pídanos una llamada
+                Hablemos sin compromiso
               </Link>
             </div>
+            <div className={styles.heroMeta}>
+              <span>Sin registro</span>
+              <span>Datos sintéticos</span>
+              <span>Funciona offline</span>
+            </div>
           </div>
-          <div className={styles.heroImage}>
-            {/* Imagen ilustrativa; no es una captura real de ningún cliente. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/aerial-field.jpg"
-              alt="Vista aérea de un cañal dividido en suertes"
-            />
-            <span className={styles.heroBadge}>Demo con datos de ejemplo</span>
+
+          <div className={styles.droneWrap}>
+            <div className={styles.droneInner}>
+              <DronePreview tone="dark" spec={{ kind: "enterprise" }} />
+            </div>
+            <span className={styles.droneBadge}>
+              Vuele el dron con el mouse
+            </span>
           </div>
         </div>
       </section>
 
+      <div className={styles.sectionDivider} aria-hidden />
+
       <section className={styles.section} id="que-resuelve">
-        <div className={styles.sectionHead}>
+        <header className={styles.sectionHead}>
           <div className={styles.sectionLabel}>Qué resuelve</div>
-          <h2 className={styles.sectionTitle}>Deje de recibir PDFs sueltos.</h2>
+          <h2 className={styles.sectionTitle}>
+            Tres cosas que hoy duelen cuando pide un vuelo y mañana lo quiere
+            volver a mirar.
+          </h2>
           <p className={styles.sectionSubtitle}>
-            Tres cosas que hoy duelen cuando se contrata un vuelo y mañana se
-            necesita volver a mirarlo.
+            Esto es lo que Otear hace distinto. No es más PDFs ni más carpetas
+            compartidas.
           </p>
-        </div>
+        </header>
 
-        <div className={styles.cards}>
-          <article className={styles.card}>
-            <span className={styles.cardIcon}>
-              <History size={20} aria-hidden />
-            </span>
-            <h3 className={styles.cardTitle}>Compare en el tiempo</h3>
-            <p className={styles.cardText}>
-              Cada vuelo queda ligado a su suerte, con fecha y zona. Puede abrir
-              el de la semana pasada y compararlo con el de hoy, ver dónde
-              avanza y dónde se estancó.
-            </p>
-          </article>
-
-          <article className={styles.card}>
-            <span className={styles.cardIcon}>
-              <Scale size={20} aria-hidden />
-            </span>
-            <h3 className={styles.cardTitle}>Verifique antes de pagar</h3>
-            <p className={styles.cardText}>
-              Compara las hectáreas pedidas, las cubiertas por el operador y las
-              facturadas en un mismo panel. Si le cobraron de más, lo ve antes
-              de aprobar.
-            </p>
-          </article>
-
-          <article className={styles.card}>
-            <span className={styles.cardIcon}>
-              <ShieldCheck size={20} aria-hidden />
-            </span>
-            <h3 className={styles.cardTitle}>Trazabilidad real</h3>
-            <p className={styles.cardText}>
-              Informes firmados con huella digital. Si alguien cambia una cifra,
-              la firma se marca inválida y queda registro de quién lo hizo y
-              cuándo.
-            </p>
-          </article>
-        </div>
+        <ol className={styles.stepper}>
+          {steps.map((step, index) => (
+            <li
+              key={step.title}
+              className={styles.step}
+              style={{ ["--i" as string]: index }}
+            >
+              <div className={styles.stepNumber}>
+                {String(index + 1).padStart(2, "0")}
+              </div>
+              <div className={styles.stepBody}>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </div>
+              <span className={styles.stepTag}>{step.tag}</span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section className={styles.section} id="para-quien">
-        <div className={styles.sectionHead}>
+        <header className={styles.sectionHead}>
           <div className={styles.sectionLabel}>Para quién</div>
           <h2 className={styles.sectionTitle}>
             Pensado para quienes conviven con el cañal.
@@ -136,42 +161,37 @@ export function LandingPage() {
             Lenguaje de productor, no de software. El jefe de campo lo abre y
             entiende sin capacitación.
           </p>
-        </div>
+        </header>
 
-        <div className={styles.whoList}>
-          <div className={styles.whoItem}>
-            <div className={styles.whoRole}>Jefe agrícola</div>
-            <div className={styles.whoLine}>
-              Ve en una pantalla qué suerte necesita atención esta semana y
-              reparte tareas a su cuadrilla sin recorrer todo el ingenio.
-            </div>
-          </div>
-          <div className={styles.whoItem}>
-            <div className={styles.whoRole}>Gerente del ingenio</div>
-            <div className={styles.whoLine}>
-              Sabe cuánto pagó por vuelos, cuánto cubrieron y qué decisiones
-              salieron de ahí. Informes listos para junta directiva.
-            </div>
-          </div>
-          <div className={styles.whoItem}>
-            <div className={styles.whoRole}>Operador de dron</div>
-            <div className={styles.whoLine}>
-              Recibe el pedido con el polígono exacto, entrega el vuelo y le
-              aprueban la factura por hectárea cubierta real.
-            </div>
-          </div>
+        <div className={styles.rolesRail}>
+          {roles.map((role) => (
+            <article key={role.name} className={styles.role}>
+              <div className={styles.roleInner}>
+                <div className={styles.roleName}>{role.name}</div>
+                <p className={styles.roleLine}>{role.line}</p>
+                <div className={styles.roleTags}>
+                  {role.tags.map((tag) => (
+                    <span key={tag} className={styles.roleTag}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.demoBanner}>
-          <div className={styles.demoBannerInner}>
-            <h3>Entre a la demo. Sin registro, sin instalar nada.</h3>
-            <p>
-              Son datos de ejemplo de una hacienda de 320 ha. Puede programar un
-              vuelo, marcar hallazgos, comparar en el tiempo, verificar
-              hectáreas facturadas y firmar un informe. Todo queda guardado solo
-              en su navegador.
+      <section>
+        <div className={styles.demoStrip}>
+          <div className={styles.demoStripInner}>
+            <h3 className={styles.demoStripTitle}>
+              Entre a la demo. Sin registro, sin instalar nada.
+            </h3>
+            <p className={styles.demoStripText}>
+              Son datos sintéticos de una hacienda de ejemplo. Programe un
+              vuelo, marque hallazgos, compare en el tiempo y firme un informe.
+              Todo queda en su navegador.
             </p>
             <Link
               href="/programacion/"
@@ -180,17 +200,39 @@ export function LandingPage() {
               Abrir la demo <ArrowRight size={16} aria-hidden />
             </Link>
           </div>
-          <div className={styles.demoImage}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/aerial-road.jpg"
-              alt="Vista aérea de un camino entre suertes de caña"
-            />
+
+          <div className={styles.demoStats} aria-label="Qué incluye la demo">
+            <div className={styles.demoStatRow}>
+              <span className={styles.demoStatLabel}>Suertes de ejemplo</span>
+              <span className={styles.demoStatValue}>
+                14 <span className={styles.demoStatValueAccent}>·</span>{" "}
+                <span className={styles.demoStatValueAccent}>320 ha</span>
+              </span>
+            </div>
+            <div className={styles.demoStatRow}>
+              <span className={styles.demoStatLabel}>Vuelos registrados</span>
+              <span className={styles.demoStatValue}>
+                26 vuelos ·{" "}
+                <span className={styles.demoStatValueAccent}>2 operadores</span>
+              </span>
+            </div>
+            <div className={styles.demoStatRow}>
+              <span className={styles.demoStatLabel}>Módulos activos</span>
+              <span className={styles.demoStatValue}>
+                10 vistas interactivas
+              </span>
+            </div>
+            <div className={styles.demoStatRow}>
+              <span className={styles.demoStatLabel}>Firma digital</span>
+              <span className={styles.demoStatValue}>
+                SHA-256 <span className={styles.demoStatValueAccent}>real</span>
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className={styles.contactSection} id="contacto">
+      <section className={styles.contact} id="contacto">
         <div className={styles.contactInner}>
           <div className={styles.contactIntro}>
             <h3 id="contacto-title">Hablemos sin compromiso.</h3>
@@ -213,6 +255,10 @@ export function LandingPage() {
                 igual el resumen de la conversación.
               </li>
             </ul>
+            <div className={styles.contactMeta}>
+              O escríbanos directo a{" "}
+              <a href="mailto:hola@otear.app">hola@otear.app</a>.
+            </div>
           </div>
           <LeadForm />
         </div>
