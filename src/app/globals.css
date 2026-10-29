@@ -1436,12 +1436,21 @@ textarea {
 @media (max-width: 800px) {
   .app-sidebar {
     transform: translateX(calc(-100% - 16px));
-    transition: transform 180ms ease-out;
+    /* Cerrado queda oculto al terminar de deslizarse: el teclado no entra en un panel fuera de pantalla. */
+    visibility: hidden;
+    transition:
+      transform 180ms ease-out,
+      visibility 0s 180ms;
     width: 238px;
+    overscroll-behavior: contain;
     --sidebar-tint: rgb(249 251 252 / 0.94);
   }
   .app-sidebar--open {
     transform: translateX(0);
+    visibility: visible;
+    transition:
+      transform 180ms ease-out,
+      visibility 0s;
   }
   .sidebar-scrim {
     display: block;
@@ -1453,8 +1462,18 @@ textarea {
   .app-main {
     margin-left: 0;
   }
+  /* Icono con palabra: un icono solo se encuentra menos que uno con texto. */
   .mobile-menu-button {
-    display: inline-grid;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    padding: 0 10px 0 8px;
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .mobile-menu-button svg {
+    flex-shrink: 0;
   }
   .app-topbar {
     padding-inline: 10px;

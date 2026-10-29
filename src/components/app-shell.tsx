@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -75,6 +75,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // Con el cajón móvil abierto la página de atrás no debe moverse, y Escape lo cierra.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      root.style.overflow = previous;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mobileOpen]);
   const pending = documents.filter(
     (document) => document.status !== "reviewed",
   ).length;
@@ -218,10 +233,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="topbar-location">
             <button
               className="mobile-menu-button icon-button"
-              aria-label="Abrir navegación"
+              aria-label="Abrir menú de navegación"
+              aria-expanded={mobileOpen}
+              aria-controls="app-sidebar"
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={20} />
+              <span>Menú</span>
             </button>
             <button
               className="sidebar-toggle icon-button"

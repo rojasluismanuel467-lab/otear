@@ -51,9 +51,14 @@ Motivo: la demo es un sistema de trabajo con un objeto principal, listas, mapa y
 2. **Lista fija en Pagos, Documentos, Servicios e Informes** (clase compartida `.rail-sticky` en `globals.css`): la lista maestra se queda a la vista mientras se desplaza el detalle, como ya hacía Vuelos. El `.stage` de cada una pasó de `overflow: hidden` a `clip`, que recorta igual pero no rompe `position: sticky`. Por debajo de 900 px la lista se apila y deja de ser fija.
 3. **Pagos**: «Registrar pago» estaba a ~1 400 px del inicio del detalle. La barra de acciones queda fija al borde inferior mientras se revisa la factura (`overflow: clip` en `.stage`, para no romper `position: sticky`).
 
+4. **CSS unificado de lista y detalle** (`.master-detail`, `.master-rail`, `.master-rail-header` en `globals.css`): Pagos, Documentos, Servicios e Informes dejaron de repetir su propio `.stage` / `.rail` (anchos de 372 a 400 px). Ahora la lista mide 380 px (340 por debajo de 1200 px) y se apila por debajo de 900 px. Vuelos (`.layout`, tarjeta flotante) y Mapa (asistente) quedan fuera a propósito: son otro patrón.
+5. **Prueba de Informes en móvil (375 px)**, con estos fallos corregidos: la barra de pestañas se salía de la pantalla (la última pestaña quedaba cortada); el contenido del detalle tenía una columna de 377 px dentro de 346 y se recortaba su borde derecho; enlaces y botones de 18–42 px de alto (ahora 44); elegir un vuelo en la lista no mostraba nada porque el detalle queda ~600 px más abajo (ahora la vista salta al detalle). Misma causa de desborde corregida en Servicios (columna `1fr` que no podía encogerse y acciones del encabezado sin salto de línea).
+
+**Regla para pantallas nuevas con lista y detalle:** usar esas clases; en cualquier `grid` de una sola columna escribir `minmax(0, 1fr)`, no `1fr`, o un hijo ancho (tabla, texto largo) ensancha toda la página.
+
 **Pendiente (no aplicado)**
 
 - Barra de acción fija en Documentos y Servicios (hoy sus detalles caben casi en una pantalla: 759 y 1 025 px).
-- Las cuatro pantallas con lista y detalle repiten `.stage` / `.rail` en su propio CSS (392, 372, 396 y 372 px); unificarlas en `globals.css` pasa por el integrador.
+- Móvil: la lista apilada va primero y el detalle de Informes empieza ~830 px más abajo. Ahora hay salto al detalle al elegir un vuelo; falta decidir si en pantallas estrechas la lista debe plegarse (`<details>`) mostrando solo el vuelo elegido. Lo mismo vale para Pagos, Documentos y Servicios, que aún no saltan al detalle.
 - Densidad de tablas elegible y alineación numérica a la derecha: auditar `operators.ts` / tablas de Informes antes de tocarlas.
 - Probar con personas si «Atención», «Evolución», «Costos» e «Informe» son las etiquetas que esperan.
