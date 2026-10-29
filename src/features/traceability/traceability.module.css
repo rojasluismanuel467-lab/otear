@@ -74,8 +74,10 @@
   align-content: start;
 }
 .section h3 {
-  font-size: 15px;
+  font-size: var(--heading-sub);
   font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .auto {
   margin-left: 8px;
@@ -152,8 +154,10 @@
     color-mix(in srgb, var(--overlay) 40%, transparent);
 }
 .signPanel h4 {
-  font-size: 15px;
+  font-size: var(--heading-sub);
   font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .signFields {
   display: grid;

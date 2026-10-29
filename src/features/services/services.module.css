@@ -14,32 +14,6 @@
 .viewAs select {
   min-width: 220px;
 }
-.stage {
-  display: grid;
-  grid-template-columns: 372px minmax(0, 1fr);
-  border-radius: 28px;
-  overflow: hidden;
-  animation: stage-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.rail {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 22px 16px 20px 20px;
-  border-right: 1px solid var(--border);
-  min-height: 560px;
-}
-.railHeader h2 {
-  font-size: 20px;
-  line-height: 1.25;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.railHeader p {
-  margin-top: 4px;
-  font-size: 13px;
-  color: var(--muted);
-}
 .filters {
   display: flex;
 }
@@ -123,15 +97,16 @@
   gap: 18px;
 }
 .detailHeading h2 {
-  font-size: 24px;
+  font-size: var(--heading-object);
   line-height: 1.2;
-  letter-spacing: -0.025em;
+  letter-spacing: var(--heading-object-tracking);
+  font-weight: 700;
 }
 .detailHeading p {
   margin-top: 6px;
   font-size: 13px;
   color: var(--muted);
-  max-width: 62ch;
+  max-width: var(--measure-body);
 }
 .progress {
   list-style: none;
@@ -184,8 +159,10 @@
   line-height: 1.55;
 }
 .turnPanel h3 {
-  font-size: 14px;
-  font-weight: 750;
+  font-size: var(--heading-sub);
+  font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .actions {
   display: flex;
@@ -259,9 +236,10 @@
   gap: 12px;
 }
 .section h3 {
-  font-size: 14px;
-  font-weight: 750;
-  letter-spacing: -0.02em;
+  font-size: var(--heading-sub);
+  font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .tableWrap {
   overflow-x: auto;
@@ -292,7 +270,7 @@
   margin-top: 2px;
 }
 .best {
-  font-weight: 750;
+  font-weight: 700;
 }
 .delivery {
   display: grid;
@@ -374,22 +352,11 @@
   padding-top: 12px;
 }
 @media (max-width: 1200px) {
-  .stage {
-    grid-template-columns: 320px minmax(0, 1fr);
-  }
   .detail {
     padding: 26px 24px 28px;
   }
 }
 @media (max-width: 900px) {
-  .stage {
-    grid-template-columns: 1fr;
-  }
-  .rail {
-    min-height: 0;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-  }
   .detailHeading {
     flex-direction: column;
     gap: 12px;
@@ -407,7 +374,6 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .stage,
   .list li,
   .detail {
     animation: none;

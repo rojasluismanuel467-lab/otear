@@ -8,8 +8,10 @@
   align-items: baseline;
 }
 .heading h3 {
-  font-size: 16px;
+  font-size: var(--heading-sub);
   font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .heading span {
   font-size: 13px;

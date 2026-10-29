@@ -74,10 +74,10 @@
   animation: step-enter 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .stepHeader h2 {
-  font-size: 22px;
+  font-size: var(--heading-object);
   line-height: 1.2;
-  font-weight: 750;
-  letter-spacing: -0.025em;
+  font-weight: 700;
+  letter-spacing: var(--heading-object-tracking);
 }
 .stepHeader p {
   margin-top: 6px;
@@ -296,8 +296,10 @@
   gap: 12px;
 }
 .zoneHeading h3 {
-  font-size: 16px;
+  font-size: var(--heading-sub);
   font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .zoneHeading span {
   font-size: 13px;
@@ -395,9 +397,11 @@
   color: var(--accent-soft-foreground);
 }
 .proposal h3 {
-  font-size: 16px;
+  font-size: var(--heading-sub);
   font-weight: 700;
   color: var(--foreground);
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .proposal header p {
   margin-top: 3px;

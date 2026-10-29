@@ -31,3 +31,29 @@ Fecha: 26 de octubre de 2026. Motivo: algunas pantallas (Equipos, Evolución) ac
 ## Pendiente
 
 Aplicar el mismo criterio a Vuelos (ya usa cuatro pestañas), Informes y Pagos, y revisar con personas si «Papeles y costos» es la etiqueta que esperan.
+
+## Segunda ronda: patrones de pantalla en sistemas de este tipo (29 de octubre de 2026)
+
+Motivo: la demo es un sistema de trabajo con un objeto principal, listas, mapa y acciones que cierran un proceso (como un panel de operaciones o un ERP ligero). Se buscó cómo organizan esas pantallas los sistemas de diseño publicados. Las fuentes son páginas de sistemas de diseño y guías de terceros; no se pudieron abrir los artículos originales de NN/g sobre paneles ni sobre formularios, así que no se citan cifras suyas.
+
+**Qué dicen las fuentes**
+
+- **Elegir la plantilla por la tarea** ([SAP Fiori, «When to use which floorplan»](https://www.sap.com/design-system/fiori-design-web/v1-148/page-types/floorplans/when-to-use-which-floorplan)): lista para encontrar y actuar sobre muchos elementos, bandeja de trabajo cuando hay que decidir qué procesar primero, página de objeto para ver o editar uno solo, asistente de 3 a 8 pasos para tareas largas. En la bandeja de trabajo con pestañas, la barra de pestañas y la cabecera de la tabla quedan fijas al desplazar, y las acciones que **finalizan** el proceso van en una barra inferior, no en la cabecera ([Fiori, Worklist](https://www.sap.com/design-system/fiori-design-web/v1-142/page-types/floorplans/work-list/usage)).
+- **Maestro y detalle** ([SAP](https://www.sap.com/design-system/hcm/patterns/structure-and-layout/master-detail/usage), [Microsoft Azure DevOps](https://developer.microsoft.com/en-ca/azure-devops/components/master-detail), [Microsoft Windows](https://blogs.windows.com/windowsdeveloper/2017/05/01/master-master-detail-pattern/)): sirve cuando se cambia a menudo de elemento sin perder el contexto; el título del detalle repite el nombre del elemento elegido; por debajo de unos 720 px se apila y nada esencial puede depender de la lista oculta.
+- **Mapa + lista + detalle** ([Apple HIG, vistas divididas](https://glama.ai/mcp/servers/@tmaasen/apple-dev-mcp/blob/b82f0efe2115dc4539c83a2374a714a84aeb350a/content/universal/split-views.md), [Esri, mapas en paneles](https://gis.arboretum.harvard.edu/arcgis/help/en/dashboards/11.5/reference/create-web-maps-for-dashboards.htm)): navegación en un solo lado, selección siempre resaltada en la lista, un único título para toda la vista, pocas capas visibles y paneles que se pueden ocultar. El mapa y la lista dan la visión general; el detalle, la profundidad.
+- **Tablas** ([Visa](https://design.visa.com/components/table/usage/), [GitLab Pajamas](https://design.gitlab.com/components/table), [SAP](https://www.sap.com/design-system/btp/dna-design/floorplans/table/usage)): números y fechas alineados a la derecha, texto a la izquierda, encabezado igual que la celda; cabecera fija si hay desplazamiento vertical; columnas con ancho según el dato; densidad elegible. Las alturas de fila de 40/48/56 px salen de un blog, no de una norma.
+- **Ancho útil** ([Gobierno de Singapur](https://designsystem.tech.gov.sg/foundations/layout/responsive-grid), [Wix](https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-blocks/dashboard-pages/ux-guidelines-for-dashboard-pages-in-blocks)): barra lateral de ancho fijo (200–280 px) y contenido con tope (≈1200–1300 px) centrado; los 1440 y 1920 px cambian márgenes y columnas, no estiran el contenido.
+- **Formularios**: una columna y etiqueta encima del campo; campos relacionados (ciudad, departamento) pueden compartir fila ([resumen de NN/g en commpro](https://commpro.biz/news/do-your-web-forms-measure-up), [web.dev](https://web.dev/learn/forms/design-basics)). No se encontró fuente sobre dónde alinear el botón principal.
+
+**Qué se aplicó en la demo**
+
+1. **Informes**: ocho bloques apilados (2 855 px) pasaron a cuatro pestañas (Atención, Evolución, Costos, Informe) bajo el vuelo seleccionado, que sigue visible. La página pasó de 3 187 a 1 435 px. Cumple la regla 4 de arriba.
+2. **Lista fija en Pagos, Documentos, Servicios e Informes** (clase compartida `.rail-sticky` en `globals.css`): la lista maestra se queda a la vista mientras se desplaza el detalle, como ya hacía Vuelos. El `.stage` de cada una pasó de `overflow: hidden` a `clip`, que recorta igual pero no rompe `position: sticky`. Por debajo de 900 px la lista se apila y deja de ser fija.
+3. **Pagos**: «Registrar pago» estaba a ~1 400 px del inicio del detalle. La barra de acciones queda fija al borde inferior mientras se revisa la factura (`overflow: clip` en `.stage`, para no romper `position: sticky`).
+
+**Pendiente (no aplicado)**
+
+- Barra de acción fija en Documentos y Servicios (hoy sus detalles caben casi en una pantalla: 759 y 1 025 px).
+- Las cuatro pantallas con lista y detalle repiten `.stage` / `.rail` en su propio CSS (392, 372, 396 y 372 px); unificarlas en `globals.css` pasa por el integrador.
+- Densidad de tablas elegible y alineación numérica a la derecha: auditar `operators.ts` / tablas de Informes antes de tocarlas.
+- Probar con personas si «Atención», «Evolución», «Costos» e «Informe» son las etiquetas que esperan.

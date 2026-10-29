@@ -34,9 +34,10 @@
   gap: 12px;
 }
 .hangar h2 {
-  font-size: 18px;
+  font-size: var(--heading-section);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--heading-section-tracking);
+  line-height: 1.3;
 }
 .hangar header span {
   font-size: 12px;

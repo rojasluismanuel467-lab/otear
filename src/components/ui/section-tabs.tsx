@@ -21,11 +21,14 @@ export function SectionTabs({
   tabs,
   selectedKey,
   onSelectionChange,
+  containerClassName,
 }: {
   label: string;
   tabs: SectionTab[];
   selectedKey: string;
   onSelectionChange: (id: string) => void;
+  /** Lets a screen align the tab bar with its own content padding. */
+  containerClassName?: string;
 }) {
   return (
     <Tabs
@@ -33,7 +36,13 @@ export function SectionTabs({
       onSelectionChange={(key) => onSelectionChange(String(key))}
       className={styles.tabs}
     >
-      <Tabs.ListContainer className={styles.container}>
+      <Tabs.ListContainer
+        className={
+          containerClassName
+            ? `${styles.container} ${containerClassName}`
+            : styles.container
+        }
+      >
         <Tabs.List aria-label={label} className={styles.list}>
           {tabs.map((tab) => (
             <Tabs.Tab key={tab.id} id={tab.id}>

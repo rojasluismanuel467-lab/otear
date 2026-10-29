@@ -147,146 +147,148 @@ export function BillingView() {
         title={moduleTitle}
         description={`Lo contratado, sus soportes y el saldo por pagar en ${site.name}.`}
       />
-      <section className={`surface ${styles.stage}`}>
+      <section className="surface master-detail">
         <aside
-          className={`rail-panel ${styles.rail}`}
+          className="rail-panel master-rail"
           aria-labelledby="invoice-list-heading"
         >
-          <header className={styles.railHeader}>
-            <h2 id="invoice-list-heading">Facturas del operador</h2>
-            <p>Consulta el soporte antes de registrar un pago.</p>
-          </header>
-          <div
-            className={styles.ledger}
-            role="group"
-            aria-label="Resumen de todas las facturas del sitio"
-          >
+          <div className="rail-sticky">
+            <header className="master-rail-header">
+              <h2 id="invoice-list-heading">Facturas del operador</h2>
+              <p>Consulta el soporte antes de registrar un pago.</p>
+            </header>
             <div
-              className={styles.ledgerBar}
-              role="presentation"
-              style={{ "--paid": paidRatio } as React.CSSProperties}
-            />
-            <p>
-              <strong>{formatMoney(totals.total - totals.paid)}</strong> por
-              pagar
-            </p>
-            <small>
-              Pagado {formatMoney(totals.paid)} de {formatMoney(totals.total)} ·
-              COP. Los filtros no alteran estos totales.
-            </small>
-          </div>
-          <label className={styles.search}>
-            <Search size={18} aria-hidden="true" />
-            <span className={styles.srOnly}>
-              Buscar factura, vuelo u operador
-            </span>
-            <input
-              type="search"
-              value={query}
-              placeholder="Buscar factura, vuelo u operador"
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
-          <div
-            className="segmented-control"
-            role="group"
-            aria-label="Estado de las facturas"
-          >
-            {filters.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                aria-pressed={filter === item.value}
-                onClick={() => setFilter(item.value)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-          <p className={styles.count}>
-            {filteredInvoices.length} de {invoices.length} facturas
-          </p>
-          {filteredInvoices.length ? (
-            <ol
-              className={styles.invoiceList}
-              aria-label={`Facturas de ${site.name}`}
+              className={styles.ledger}
+              role="group"
+              aria-label="Resumen de todas las facturas del sitio"
             >
-              {filteredInvoices.map((invoice, index) => {
-                const status = invoiceStatus(invoice);
-                const isSelected = selectedInvoice?.id === invoice.id;
-                return (
-                  <li
-                    key={invoice.id}
-                    style={{ "--i": index } as React.CSSProperties}
-                  >
-                    <button
-                      type="button"
-                      className={styles.invoiceRow}
-                      aria-pressed={isSelected}
-                      onClick={() => setSelectedId(invoice.id)}
+              <div
+                className={styles.ledgerBar}
+                role="presentation"
+                style={{ "--paid": paidRatio } as React.CSSProperties}
+              />
+              <p>
+                <strong>{formatMoney(totals.total - totals.paid)}</strong> por
+                pagar
+              </p>
+              <small>
+                Pagado {formatMoney(totals.paid)} de {formatMoney(totals.total)}{" "}
+                · COP. Los filtros no alteran estos totales.
+              </small>
+            </div>
+            <label className={styles.search}>
+              <Search size={18} aria-hidden="true" />
+              <span className={styles.srOnly}>
+                Buscar factura, vuelo u operador
+              </span>
+              <input
+                type="search"
+                value={query}
+                placeholder="Buscar factura, vuelo u operador"
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
+            <div
+              className="segmented-control"
+              role="group"
+              aria-label="Estado de las facturas"
+            >
+              {filters.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  aria-pressed={filter === item.value}
+                  onClick={() => setFilter(item.value)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <p className={styles.count}>
+              {filteredInvoices.length} de {invoices.length} facturas
+            </p>
+            {filteredInvoices.length ? (
+              <ol
+                className={styles.invoiceList}
+                aria-label={`Facturas de ${site.name}`}
+              >
+                {filteredInvoices.map((invoice, index) => {
+                  const status = invoiceStatus(invoice);
+                  const isSelected = selectedInvoice?.id === invoice.id;
+                  return (
+                    <li
+                      key={invoice.id}
+                      style={{ "--i": index } as React.CSSProperties}
                     >
-                      <time className={styles.due} dateTime={invoice.dueDate}>
-                        <small>vence</small>
-                        <strong>
-                          {invoice.dueDate.slice(8, 10).replace(/^0/, "")}
-                        </strong>
-                        <span>
-                          {formatDate(invoice.dueDate, {
-                            month: "short",
-                          }).replace(".", "")}
-                        </span>
-                      </time>
-                      <span className={styles.rowBody}>
-                        <strong>{invoice.reference}</strong>
-                        <span>{invoice.description}</span>
-                        <small>{invoice.operator}</small>
-                        <span className={styles.rowFoot}>
-                          <StatusBadge tone={status.tone}>
-                            {status.label}
-                          </StatusBadge>
-                          <span className={styles.money}>
-                            {formatMoney(invoice.total - invoice.paid)}
+                      <button
+                        type="button"
+                        className={styles.invoiceRow}
+                        aria-pressed={isSelected}
+                        onClick={() => setSelectedId(invoice.id)}
+                      >
+                        <time className={styles.due} dateTime={invoice.dueDate}>
+                          <small>vence</small>
+                          <strong>
+                            {invoice.dueDate.slice(8, 10).replace(/^0/, "")}
+                          </strong>
+                          <span>
+                            {formatDate(invoice.dueDate, {
+                              month: "short",
+                            }).replace(".", "")}
+                          </span>
+                        </time>
+                        <span className={styles.rowBody}>
+                          <strong>{invoice.reference}</strong>
+                          <span>{invoice.description}</span>
+                          <small>{invoice.operator}</small>
+                          <span className={styles.rowFoot}>
+                            <StatusBadge tone={status.tone}>
+                              {status.label}
+                            </StatusBadge>
+                            <span className={styles.money}>
+                              {formatMoney(invoice.total - invoice.paid)}
+                            </span>
                           </span>
                         </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-          ) : (
-            <>
-              <EmptyState
-                title={
-                  invoices.length
-                    ? "No encontramos esa factura"
-                    : "Todavía no hay facturas"
-                }
-                description={
-                  invoices.length
-                    ? "Cambia la búsqueda o el estado para volver a ver los soportes."
-                    : "Este sitio no tiene facturas de ejemplo registradas."
-                }
-              />
-              {invoices.length > 0 && (
-                <div className={styles.emptyAction}>
-                  <Button
-                    variant="secondary"
-                    onPress={() => {
-                      setQuery("");
-                      setFilter("all");
-                    }}
-                  >
-                    Limpiar filtros
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-          <p className={`demo-note ${styles.sectionNote}`}>
-            Datos de ejemplo. Registrar un pago solo cambia esta sesión; no se
-            mueve dinero.
-          </p>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <>
+                <EmptyState
+                  title={
+                    invoices.length
+                      ? "No encontramos esa factura"
+                      : "Todavía no hay facturas"
+                  }
+                  description={
+                    invoices.length
+                      ? "Cambia la búsqueda o el estado para volver a ver los soportes."
+                      : "Este sitio no tiene facturas de ejemplo registradas."
+                  }
+                />
+                {invoices.length > 0 && (
+                  <div className={styles.emptyAction}>
+                    <Button
+                      variant="secondary"
+                      onPress={() => {
+                        setQuery("");
+                        setFilter("all");
+                      }}
+                    >
+                      Limpiar filtros
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+            <p className={`demo-note ${styles.sectionNote}`}>
+              Datos de ejemplo. Registrar un pago solo cambia esta sesión; no se
+              mueve dinero.
+            </p>
+          </div>
         </aside>
         {selectedInvoice ? (
           <div

@@ -16,9 +16,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: var(--heading-sub);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .missing {
   padding: 3px 10px;

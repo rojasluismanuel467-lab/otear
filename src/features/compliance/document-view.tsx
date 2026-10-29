@@ -231,125 +231,127 @@ export function DocumentView() {
         aria-label="Seleccionar archivo local de ejemplo"
         onChange={handleFile}
       />
-      <section className={`surface ${styles.stage}`}>
+      <section className="surface master-detail">
         <aside
-          className={`rail-panel ${styles.rail}`}
+          className="rail-panel master-rail"
           aria-label="Inventario documental"
         >
-          <header className={styles.railHeader}>
-            <h2>Soportes y documentación</h2>
-            <p>
-              {visible.length} de {documents.length} documentos
-            </p>
-          </header>
-          <label className={styles.search}>
-            <Search size={17} aria-hidden="true" />
-            <span className={styles.srOnly}>Buscar documentos</span>
-            <input
-              placeholder="Buscar documento, sujeto o referencia"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setDateDraft(null);
-              }}
-            />
-          </label>
-          <div className={styles.filterRow}>
-            <label>
-              <span>Tipo de sujeto</span>
-              <select
-                className="field-select"
-                value={category}
+          <div className="rail-sticky">
+            <header className="master-rail-header">
+              <h2>Soportes y documentación</h2>
+              <p>
+                {visible.length} de {documents.length} documentos
+              </p>
+            </header>
+            <label className={styles.search}>
+              <Search size={17} aria-hidden="true" />
+              <span className={styles.srOnly}>Buscar documentos</span>
+              <input
+                placeholder="Buscar documento, sujeto o referencia"
+                value={query}
                 onChange={(event) => {
-                  setCategory(event.target.value);
+                  setQuery(event.target.value);
                   setDateDraft(null);
                 }}
-              >
-                <option value="all">Todos los sujetos</option>
-                {Object.entries(categoryLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
-            <label>
-              <span>Estado</span>
-              <select
-                className="field-select"
-                value={status}
-                onChange={(event) => {
-                  setStatus(event.target.value);
-                  setDateDraft(null);
-                }}
-              >
-                <option value="all">Todos los estados</option>
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          {visible.length ? (
-            <ol className={styles.documentList} aria-label="Documentos">
-              {visible.map((document, index) => (
-                <li
-                  key={document.id}
-                  style={{ "--i": index } as React.CSSProperties}
+            <div className={styles.filterRow}>
+              <label>
+                <span>Tipo de sujeto</span>
+                <select
+                  className="field-select"
+                  value={category}
+                  onChange={(event) => {
+                    setCategory(event.target.value);
+                    setDateDraft(null);
+                  }}
                 >
-                  <button
-                    type="button"
-                    className={styles.documentRow}
-                    data-status={document.status}
-                    onClick={() => selectDocument(document)}
-                    aria-pressed={selected?.id === document.id}
+                  <option value="all">Todos los sujetos</option>
+                  {Object.entries(categoryLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Estado</span>
+                <select
+                  className="field-select"
+                  value={status}
+                  onChange={(event) => {
+                    setStatus(event.target.value);
+                    setDateDraft(null);
+                  }}
+                >
+                  <option value="all">Todos los estados</option>
+                  {Object.entries(statusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {visible.length ? (
+              <ol className={styles.documentList} aria-label="Documentos">
+                {visible.map((document, index) => (
+                  <li
+                    key={document.id}
+                    style={{ "--i": index } as React.CSSProperties}
                   >
-                    <span className={styles.fileIcon}>
-                      <FileText size={20} aria-hidden="true" />
-                    </span>
-                    <span className={styles.rowBody}>
-                      <strong>{document.title}</strong>
-                      <span>{document.subject}</span>
-                      <small
-                        className={
-                          document.status === "expired" ? styles.expired : ""
-                        }
-                      >
-                        {categoryLabels[document.category]} ·{" "}
-                        {document.validUntil
-                          ? `hasta ${formatDate(document.validUntil)}`
-                          : "sin fecha declarada"}
-                      </small>
-                      <StatusBadge tone={tones[document.status]}>
-                        {statusLabels[document.status]}
-                      </StatusBadge>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <EmptyState
-              title="No encontramos esos documentos"
-              description="Prueba con otro sujeto, estado o texto de búsqueda."
-            />
-          )}
-          <div className={styles.railFooter}>
-            {(query || category !== "all" || status !== "all") && (
-              <button
-                onClick={() => {
-                  setQuery("");
-                  setCategory("all");
-                  setStatus("all");
-                  setDateDraft(null);
-                }}
-              >
-                Limpiar filtros
-              </button>
+                    <button
+                      type="button"
+                      className={styles.documentRow}
+                      data-status={document.status}
+                      onClick={() => selectDocument(document)}
+                      aria-pressed={selected?.id === document.id}
+                    >
+                      <span className={styles.fileIcon}>
+                        <FileText size={20} aria-hidden="true" />
+                      </span>
+                      <span className={styles.rowBody}>
+                        <strong>{document.title}</strong>
+                        <span>{document.subject}</span>
+                        <small
+                          className={
+                            document.status === "expired" ? styles.expired : ""
+                          }
+                        >
+                          {categoryLabels[document.category]} ·{" "}
+                          {document.validUntil
+                            ? `hasta ${formatDate(document.validUntil)}`
+                            : "sin fecha declarada"}
+                        </small>
+                        <StatusBadge tone={tones[document.status]}>
+                          {statusLabels[document.status]}
+                        </StatusBadge>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <EmptyState
+                title="No encontramos esos documentos"
+                description="Prueba con otro sujeto, estado o texto de búsqueda."
+              />
             )}
-            <span>Datos de ejemplo</span>
+            <div className={styles.railFooter}>
+              {(query || category !== "all" || status !== "all") && (
+                <button
+                  onClick={() => {
+                    setQuery("");
+                    setCategory("all");
+                    setStatus("all");
+                    setDateDraft(null);
+                  }}
+                >
+                  Limpiar filtros
+                </button>
+              )}
+              <span>Datos de ejemplo</span>
+            </div>
           </div>
         </aside>
         {selected ? (

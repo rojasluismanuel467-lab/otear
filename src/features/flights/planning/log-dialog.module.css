@@ -3,9 +3,11 @@
   gap: 16px;
 }
 .form h3 {
-  font-size: 15px;
+  font-size: var(--heading-sub);
   font-weight: 700;
   margin-top: 4px;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .note {
   font-size: 13px;

@@ -16,8 +16,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: var(--heading-sub);
   font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .chip {
   padding: 3px 10px;
@@ -85,7 +87,7 @@
 }
 .note {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--muted);
 }

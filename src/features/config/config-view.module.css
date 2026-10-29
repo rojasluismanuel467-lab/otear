@@ -314,9 +314,11 @@
   border-radius: 18px;
   background: var(--surface-secondary);
 }
-.core h3 {
-  font-size: 15px;
+.core h2 {
+  font-size: var(--heading-sub);
   font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .core ul {
   margin: 0;
@@ -350,7 +352,8 @@
 }
 
 .sectionTitle {
-  font-size: 17px;
+  font-size: var(--heading-section);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--heading-section-tracking);
+  line-height: 1.3;
 }

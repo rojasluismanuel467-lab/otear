@@ -98,9 +98,11 @@
     0 0 0 1px var(--border),
     var(--otear-shadow);
 }
-.form h4 {
-  font-size: 15px;
+.form h2 {
+  font-size: var(--heading-sub);
   font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .form label {
   display: grid;

@@ -9,8 +9,10 @@
   gap: 12px;
 }
 .itinerary h3 {
-  font-size: 16px;
+  font-size: var(--heading-sub);
   font-weight: 700;
+  letter-spacing: var(--heading-sub-tracking);
+  line-height: 1.35;
 }
 .itinerary header span {
   font-size: 13px;

@@ -343,9 +343,9 @@ export function CustomFieldsAdmin({
             create();
           }}
         >
-          <h4>
+          <h2>
             Nuevo campo para {targetLabels[target].singular.toLowerCase()}
-          </h4>
+          </h2>
           <label>
             <span>Título</span>
             <input

@@ -93,6 +93,7 @@ export function EvolutionView() {
       />
       {captures.length < 2 ? (
         <EmptyState
+          level={2}
           title="Todavía no hay una historia que mostrar"
           description="La evolución aparece cuando el sitio tiene al menos dos vuelos completados con datos medidos."
         />

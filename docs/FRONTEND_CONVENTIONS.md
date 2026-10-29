@@ -53,6 +53,14 @@ Preferir composición y props concretas. Evitar componentes con decenas de boole
 
 Reutilizar HeroUI y los tokens acordados antes de escribir controles equivalentes. Crear un wrapper únicamente cuando codifique una regla estable de Otear; evitar envolver todos los controles sin añadir comportamiento. La reutilización del frontend web no promete reutilización automática en aplicaciones nativas ni funcionamiento offline.
 
+## Encabezados
+
+Etiqueta por estructura, estilo por clase: el nivel (`h1`–`h4`) refleja la jerarquía del documento y el aspecto sale de los tokens `--heading-page|object|section|sub|group` (`globals.css`, escala en `DESIGN.md`). En CSS de módulo usar los tokens, no tamaños, pesos ni interletrados sueltos (encabezados siempre en 700; Instrument Sans no pasa de 700). Un `h1` por ruta, sin saltar niveles; los componentes reutilizables que llevan título (`EmptyState`) reciben el nivel por prop en vez de fijarlo. Un texto que no organiza contenido no es un encabezado. Al cambiar una vista, listar sus encabezados en el navegador (ver «Títulos y encabezados» en `docs/UX_GUIDELINES.md`).
+
+## Texto de lectura
+
+Todo párrafo recibe `max-width: var(--measure-body)` por defecto (`:where(p)` en `globals.css`); una línea de apoyo usa `--measure-lead`. Los tokens están en `ch` y con Instrument Sans 1ch ≈ 1,5 caracteres; no fijar anchos en `px` ni `ch` sueltos. El tamaño sale de `--text-lead|body|small`. Sin alturas fijas en bloques de texto ni `white-space: nowrap` en párrafos (WCAG 1.4.12). Al cambiar un párrafo, medir los caracteres por línea y probar a 375 px.
+
 ## Estados y verificación
 
 Toda vista con datos contempla carga, vacío, error y contenido; toda acción muestra su resultado y un camino de recuperación cuando falle. Una colección vacía, una búsqueda sin resultados y un fallo de carga son situaciones diferentes. Usar límites de ruta de Next.js cuando correspondan y estados locales para acciones locales.

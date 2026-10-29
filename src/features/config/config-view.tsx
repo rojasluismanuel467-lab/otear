@@ -371,7 +371,7 @@ export function ConfigView() {
     const open = allowed("vocabulary");
     return (
       <div className={styles.panel}>
-        <h3 className={styles.sectionTitle}>Vocabulario</h3>
+        <h2 className={styles.sectionTitle}>Vocabulario</h2>
         {!open && <Locked feature="vocabulary" />}
         <div className={styles.presetRow}>
           <label className={styles.field}>
@@ -515,7 +515,7 @@ export function ConfigView() {
     const order = config.order;
     return (
       <div className={styles.panel}>
-        <h3 className={styles.sectionTitle}>Módulos del menú</h3>
+        <h2 className={styles.sectionTitle}>Módulos del menú</h2>
         {!open && <Locked feature="modules" />}
         <ol className={styles.modules}>
           {order.map((id, index) => {
@@ -694,7 +694,7 @@ export function ConfigView() {
           </tbody>
         </table>
         <section className={styles.core} aria-label="Lo que no se personaliza">
-          <h3>Lo que siempre queda en el núcleo</h3>
+          <h2>Lo que siempre queda en el núcleo</h2>
           <ul>
             <li>
               Los cálculos (horas, ciclos, desgaste, avance) y su integridad.

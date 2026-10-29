@@ -82,6 +82,7 @@ export function FlightReviewView() {
         </div>
       ) : (
         <EmptyState
+          level={2}
           title="Aún no hay vuelos en este sitio"
           description="Los vuelos que prepares aparecerán aquí junto con su contexto."
         />

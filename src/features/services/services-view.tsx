@@ -98,96 +98,98 @@ export function ServicesView() {
           </>
         }
       />
-      <div className={`${styles.stage} surface rail-panel`}>
-        <aside className={`${styles.rail} rail-panel`} aria-label="Solicitudes">
-          <div className={styles.railHeader}>
-            <h2>Solicitudes</h2>
-            <p>
-              {turnCount > 0
-                ? `${turnCount} esperan una acción suya.`
-                : "Nada espera una acción suya."}
-            </p>
-          </div>
-          <div className={styles.filters}>
-            <div
-              className="segmented-control"
-              role="group"
-              aria-label="Filtrar solicitudes"
-            >
-              {filters.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  aria-pressed={filter === item.value}
-                  onClick={() => setFilter(item.value)}
-                >
-                  {item.label}
-                </button>
-              ))}
+      <div className="surface rail-panel master-detail">
+        <aside className="rail-panel master-rail" aria-label="Solicitudes">
+          <div className="rail-sticky">
+            <div className="master-rail-header">
+              <h2>Solicitudes</h2>
+              <p>
+                {turnCount > 0
+                  ? `${turnCount} esperan una acción suya.`
+                  : "Nada espera una acción suya."}
+              </p>
             </div>
-          </div>
-          {visible.length ? (
-            <ul className={styles.list}>
-              {visible.map((request, index) => (
-                <li
-                  key={request.id}
-                  style={{ "--i": index } as React.CSSProperties}
-                >
+            <div className={styles.filters}>
+              <div
+                className="segmented-control"
+                role="group"
+                aria-label="Filtrar solicitudes"
+              >
+                {filters.map((item) => (
                   <button
+                    key={item.value}
                     type="button"
-                    className={styles.row}
-                    aria-pressed={selected?.id === request.id}
-                    onClick={() => setSelectedId(request.id)}
+                    aria-pressed={filter === item.value}
+                    onClick={() => setFilter(item.value)}
                   >
-                    <span className={styles.rowTop}>
-                      <strong>{request.title}</strong>
-                      {myTurn(request) && (
-                        <span className={styles.turn}>Su turno</span>
-                      )}
-                    </span>
-                    <small>
-                      {kindLabels[request.kind]} ·{" "}
-                      {request.operatorId
-                        ? nameOf(request.operatorId)
-                        : `${request.invited.length} invitados`}{" "}
-                      · hasta {formatDate(request.windowEnd)}
-                    </small>
-                    <span>
-                      <StatusBadge
-                        tone={
-                          request.status === "disputed"
-                            ? "danger"
-                            : request.status === "delivered"
-                              ? "warning"
-                              : request.status === "invoiced" ||
-                                  request.status === "verified"
-                                ? "success"
-                                : request.status === "cancelled"
-                                  ? "neutral"
-                                  : "info"
-                        }
-                      >
-                        {statusLabels[request.status]}
-                      </StatusBadge>
-                    </span>
+                    {item.label}
                   </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState
-              title={
-                filter === "turn"
-                  ? "Nada por hacer ahora"
-                  : "Sin solicitudes aquí"
-              }
-              description={
-                filter === "turn"
-                  ? "Cuando alguien avance un servicio y le toque a usted, aparecerá aquí."
-                  : "Cambie el filtro para ver otras solicitudes."
-              }
-            />
-          )}
+                ))}
+              </div>
+            </div>
+            {visible.length ? (
+              <ul className={styles.list}>
+                {visible.map((request, index) => (
+                  <li
+                    key={request.id}
+                    style={{ "--i": index } as React.CSSProperties}
+                  >
+                    <button
+                      type="button"
+                      className={styles.row}
+                      aria-pressed={selected?.id === request.id}
+                      onClick={() => setSelectedId(request.id)}
+                    >
+                      <span className={styles.rowTop}>
+                        <strong>{request.title}</strong>
+                        {myTurn(request) && (
+                          <span className={styles.turn}>Su turno</span>
+                        )}
+                      </span>
+                      <small>
+                        {kindLabels[request.kind]} ·{" "}
+                        {request.operatorId
+                          ? nameOf(request.operatorId)
+                          : `${request.invited.length} invitados`}{" "}
+                        · hasta {formatDate(request.windowEnd)}
+                      </small>
+                      <span>
+                        <StatusBadge
+                          tone={
+                            request.status === "disputed"
+                              ? "danger"
+                              : request.status === "delivered"
+                                ? "warning"
+                                : request.status === "invoiced" ||
+                                    request.status === "verified"
+                                  ? "success"
+                                  : request.status === "cancelled"
+                                    ? "neutral"
+                                    : "info"
+                          }
+                        >
+                          {statusLabels[request.status]}
+                        </StatusBadge>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                title={
+                  filter === "turn"
+                    ? "Nada por hacer ahora"
+                    : "Sin solicitudes aquí"
+                }
+                description={
+                  filter === "turn"
+                    ? "Cuando alguien avance un servicio y le toque a usted, aparecerá aquí."
+                    : "Cambie el filtro para ver otras solicitudes."
+                }
+              />
+            )}
+          </div>
         </aside>
         {selected ? (
           <RequestDetail key={selected.id} request={selected} />

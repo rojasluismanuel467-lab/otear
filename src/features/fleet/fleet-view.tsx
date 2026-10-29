@@ -94,6 +94,7 @@ export function FleetView() {
       />
       {!rows.length ? (
         <EmptyState
+          level={2}
           title="Todavía no hay aeronaves"
           description="Agregue las aeronaves propias para llevar sus horas, baterías y mantenimiento."
         />

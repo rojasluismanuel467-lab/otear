@@ -3,9 +3,12 @@
   width: 100%;
 }
 .container {
+  /* El margen sale de una variable para que el tope de ancho lo descuente: con
+     `max-width: 100%` más margen, la barra se salía de la pantalla en móvil. */
+  --tabs-inset: 24px;
   width: fit-content;
-  max-width: 100%;
-  margin-inline: 24px;
+  max-width: calc(100% - 2 * var(--tabs-inset));
+  margin-inline: var(--tabs-inset);
   padding: 4px;
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -51,4 +54,18 @@
 }
 .panel > :first-child {
   border-top: 0;
+}
+
+/* Dedo en pantalla táctil: 44 px de alto, y relleno justo para que cuatro pestañas quepan. */
+@media (max-width: 900px) {
+  .list [role="tab"] {
+    height: 44px;
+  }
+}
+@media (max-width: 480px) {
+  .list [role="tab"] {
+    gap: 6px;
+    padding-inline: 10px;
+    font-size: 13px;
+  }
 }
