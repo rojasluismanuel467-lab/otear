@@ -1041,12 +1041,14 @@ textarea {
   font-size: 12px;
 }
 .map-loading span {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid #d5dbe0;
-  border-top-color: #5b7384;
-  animation: rotate 1s linear infinite;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #1c6f8d;
+  animation: none;
 }
 @keyframes workspace-enter {
   from {
@@ -1429,17 +1431,129 @@ html [data-slot="modal-dialog"].modal__dialog--xs {
   }
 }
 
-/* Custom drone cursor: hide the OS cursor when the landing enables it. */
+/* Custom drone cursor: hide the OS cursor over passive surfaces; restore
+   the native pointer / text / default over anything selectable so the
+   affordance remains clear. */
 html[data-cursor="on"] {
   cursor: none;
 }
 html[data-cursor="on"] * {
   cursor: inherit;
 }
+html[data-cursor="on"] a,
+html[data-cursor="on"] button,
+html[data-cursor="on"] [role="button"],
+html[data-cursor="on"] [role="link"],
+html[data-cursor="on"] [role="tab"],
+html[data-cursor="on"] [role="menuitem"],
+html[data-cursor="on"] [role="option"],
+html[data-cursor="on"] summary,
+html[data-cursor="on"] label,
+html[data-cursor="on"] [data-cursor-interactive] {
+  cursor: pointer;
+}
 html[data-cursor="on"] input,
-html[data-cursor="on"] textarea {
+html[data-cursor="on"] textarea,
+html[data-cursor="on"] [contenteditable="true"] {
   cursor: text;
 }
 html[data-cursor="on"] select {
   cursor: pointer;
+}
+html[data-cursor="on"] button:disabled,
+html[data-cursor="on"] [aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* Propeller spinner: a single blade (horizontal, tapered) rotating around
+   a central hub. Replaces the generic circular spinner platform-wide. Use
+   via the .propeller-spinner class or inject into existing loading boxes
+   (see .map-loading span). Color honours `color` on the element. */
+.propeller-spinner,
+.map-loading span {
+  display: inline-block;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  color: var(--accent);
+}
+
+.propeller-spinner::before,
+.map-loading span::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    currentColor 25%,
+    currentColor 75%,
+    transparent 100%
+  );
+  transform-origin: center;
+  animation: propeller-spin 420ms linear infinite;
+}
+
+.propeller-spinner::after,
+.map-loading span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.propeller-spinner--sm,
+.propeller-spinner--sm::before,
+.propeller-spinner--sm::after {
+  --_sz: 24px;
+}
+.propeller-spinner--sm {
+  width: 24px;
+  height: 24px;
+}
+.propeller-spinner--sm::after {
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+}
+
+.propeller-spinner--lg {
+  width: 56px;
+  height: 56px;
+}
+.propeller-spinner--lg::before {
+  height: 4px;
+  margin-top: -2px;
+}
+.propeller-spinner--lg::after {
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+}
+
+@keyframes propeller-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .propeller-spinner::before,
+  .map-loading span::before {
+    animation: none;
+  }
 }

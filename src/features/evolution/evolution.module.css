@@ -61,6 +61,7 @@
 .sceneLoading {
   display: grid;
   place-items: center;
+  gap: 12px;
   color: var(--muted);
   font-size: 14px;
 }

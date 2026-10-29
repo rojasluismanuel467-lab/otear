@@ -96,35 +96,18 @@
   transform: rotate(-45deg) translateX(-2px);
 }
 
-/* States set on the craft via data-state */
-.craft[data-state="hover"] .ring {
-  opacity: 0.7;
-  transform: scale(1);
-}
-.craft[data-state="hover"] .ticks {
-  opacity: 1;
-}
-.craft[data-state="hover"] .body {
-  transform: scale(0.78);
-  opacity: 0.9;
-}
-
-.craft[data-state="active"] .ring {
-  opacity: 1;
-  transform: scale(0.85);
-  border-color: #ff6b4a;
-  color: #ff6b4a;
-}
-.craft[data-state="active"] .ticks {
-  opacity: 1;
-}
-.craft[data-state="active"] .body {
-  transform: scale(0.72);
-}
-
+/* On interactive hover and over text fields the drone fades out so the
+   native OS cursor (pointer / text) is visible — people understand the
+   mouse is still a mouse. The drone reappears over passive surfaces. */
+.craft[data-state="hover"] .body,
+.craft[data-state="hover"] .ring,
+.craft[data-state="hover"] .ticks,
+.craft[data-state="active"] .body,
+.craft[data-state="active"] .ring,
+.craft[data-state="active"] .ticks,
+.craft[data-state="text"] .body,
 .craft[data-state="text"] .ring,
-.craft[data-state="text"] .ticks,
-.craft[data-state="text"] .body {
+.craft[data-state="text"] .ticks {
   opacity: 0;
 }
 

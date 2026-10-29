@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { CircleCheck, Info, TriangleAlert } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PropellerSpinner } from "@/components/ui/propeller-spinner";
 import { StageDrawer } from "@/components/ui/stage-drawer";
 import { ParcelMap } from "@/components/maps/parcel-map";
 import { zonePalette } from "@/components/maps/zone-palette";
@@ -38,7 +39,10 @@ const BuildingScene = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className={styles.sceneLoading}>Preparando el modelo…</div>
+      <div className={styles.sceneLoading}>
+        <PropellerSpinner label="Cargando" />
+        <span>Preparando el modelo…</span>
+      </div>
     ),
   },
 );

@@ -171,6 +171,7 @@
 .loading {
   display: grid;
   place-items: center;
+  gap: 12px;
   min-height: 420px;
   color: var(--muted);
   font-size: 14px;

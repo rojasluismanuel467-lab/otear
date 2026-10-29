@@ -13,6 +13,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { PartSheet } from "./part-sheet";
+import { PropellerSpinner } from "@/components/ui/propeller-spinner";
 import { StageDrawer } from "@/components/ui/stage-drawer";
 import { partHistory } from "./parts-history";
 import { UsagePanel } from "./usage-panel";
@@ -63,7 +64,12 @@ const ConditionScene = dynamic(
     ),
   {
     ssr: false,
-    loading: () => <div className={styles.loading}>Preparando el modelo…</div>,
+    loading: () => (
+      <div className={styles.loading}>
+        <PropellerSpinner label="Cargando" />
+        <span>Preparando el modelo…</span>
+      </div>
+    ),
   },
 );
 
