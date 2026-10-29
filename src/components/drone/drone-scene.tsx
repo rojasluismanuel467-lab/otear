@@ -182,9 +182,14 @@ export function DroneScene({
     const introStart = performance.now();
     let introDone = !playIntro;
     if (playIntro) {
-      // Hold at opening pose so the first frame doesn't show the default view
+      // Hold at the intro's camera pose so the first frame doesn't flash
+      // the default hangar view before the keyframes kick in.
       view.yaw = 0;
-      view.pitch = 0.55;
+      view.pitch = 0.12;
+      // Hide the drone off-screen at mount so no frame shows it at (0,0,0)
+      // before the first keyframe computes its real position.
+      drone.group.position.set(-3.6, 0.4, 0);
+      drone.group.scale.setScalar(0.6);
     }
 
     const markInteraction = () => {
@@ -239,8 +244,9 @@ export function DroneScene({
       previousTime = time;
 
       // --- Intro script -----------------------------------------------------
-      // Four phases: approach from above, hover, nod to greet, settle to
-      // default pose. Overrides targets/velocity during the sequence.
+      // Oto's entry: fly in from the left side of the overlay, sweep across
+      // to the right, swing back to the centre, nod to greet, and settle to
+      // the hangar pose. Camera stays near front-on so motion is readable.
       let introOverride = false;
       if (introActive && !introDone) {
         const elapsed = time - introStart;
@@ -248,57 +254,86 @@ export function DroneScene({
         const t = clamp(elapsed / total, 0, 1);
         introOverride = true;
 
-        // Phase splits (fractions of total intro duration)
-        const approachUntil = 0.18;
-        const hoverUntil = 0.5;
-        const greetUntil = 0.72;
+        const enterUntil = 0.18;
+        const sweepUntil = 0.4;
+        const arriveUntil = 0.55;
+        const greetUntil = 0.78;
 
-        if (t <= approachUntil) {
-          const k = easeOutCubic(t / approachUntil);
-          drone.group.position.y = 4.2 - 4.2 * k;
-          drone.group.rotation.y = -Math.PI * 2 * (1 - k);
-          drone.group.rotation.x = 0;
-          view.yaw = 0;
-          view.pitch = 0.55 - 0.15 * k;
-          const scale = 0.3 + 0.72 * k;
-          drone.group.scale.setScalar(scale);
-        } else if (t <= hoverUntil) {
+        const camYaw = 0;
+        const camPitch = 0.12;
+        const seconds = time / 1000;
+
+        let px = 0;
+        let py = 0;
+        let rotX = 0;
+        let rotZ = 0;
+        let scale = 1;
+
+        if (t <= enterUntil) {
+          // Fly in from the left, slightly descending, banking right.
+          const k = easeOutCubic(t / enterUntil);
+          px = -3.6 + 2.4 * k; // -3.6 → -1.2 (off-screen → visible left)
+          py = 0.4 - 0.4 * k;
+          scale = 0.6 + 0.35 * k;
+          rotZ = -0.35 * (1 - k * 0.3); // banked right (negative roll)
+          view.yaw = camYaw;
+          view.pitch = camPitch;
+        } else if (t <= sweepUntil) {
+          // Sweep across the screen to the right side.
           const k = easeInOutCubic(
-            (t - approachUntil) / (hoverUntil - approachUntil),
+            (t - enterUntil) / (sweepUntil - enterUntil),
           );
-          const seconds = time / 1000;
-          drone.group.position.y = Math.sin(seconds * 1.4) * 0.08;
-          drone.group.rotation.y = -Math.PI * 0.6 * (1 - k);
-          drone.group.rotation.x = 0;
-          view.yaw = 0 + (-0.4 - 0) * k;
-          view.pitch = 0.4 + (0.3 - 0.4) * k;
-          drone.group.scale.setScalar(1.02);
+          px = -1.2 + 2.4 * k; // -1.2 → +1.2 (crosses centre)
+          py = Math.sin(seconds * 2) * 0.1;
+          scale = 0.95;
+          rotZ = -0.25 + 0.55 * k; // transitions bank right → bank left
+          view.yaw = camYaw;
+          view.pitch = camPitch;
+        } else if (t <= arriveUntil) {
+          // Return from the right side and settle at the centre.
+          const k = easeInOutCubic(
+            (t - sweepUntil) / (arriveUntil - sweepUntil),
+          );
+          px = 1.2 - 1.2 * k; // +1.2 → 0
+          py = Math.sin(seconds * 1.6) * 0.08;
+          scale = 0.95 + 0.1 * k;
+          rotZ = 0.3 * (1 - k); // bank fades back to level
+          view.yaw = camYaw;
+          view.pitch = camPitch;
         } else if (t <= greetUntil) {
-          const k = (t - hoverUntil) / (greetUntil - hoverUntil);
-          // Two-cycle nod — tilt forward and back twice
-          drone.group.rotation.x = Math.sin(k * Math.PI * 2) * 0.3;
-          drone.group.rotation.y = 0;
-          const seconds = time / 1000;
-          drone.group.position.y = Math.sin(seconds * 1.4) * 0.05;
-          view.yaw = -0.4;
-          view.pitch = 0.3;
-          drone.group.scale.setScalar(1.02);
+          // Hover centred and nod twice as a greeting.
+          const k = (t - arriveUntil) / (greetUntil - arriveUntil);
+          px = 0;
+          py = Math.sin(seconds * 1.4) * 0.06;
+          rotX = Math.sin(k * Math.PI * 2) * 0.3;
+          rotZ = 0;
+          scale = 1.05;
+          view.yaw = camYaw;
+          view.pitch = camPitch;
         } else {
+          // Blend pose and camera to the default hangar view.
           const k = easeInOutCubic((t - greetUntil) / (1 - greetUntil));
-          drone.group.rotation.x = 0.3 * Math.sin(Math.PI * 2) * (1 - k); // settle
-          drone.group.rotation.y = 0;
-          const seconds = time / 1000;
-          drone.group.position.y = Math.sin(seconds * 1.6) * 0.045;
-          view.yaw = -0.4 + (DEFAULT_VIEW.yaw - -0.4) * k;
-          view.pitch = 0.3 + (DEFAULT_VIEW.pitch - 0.3) * k;
-          drone.group.scale.setScalar(1.02 + (1 - 1.02) * k);
+          px = 0;
+          py = Math.sin(seconds * 1.6) * 0.045;
+          rotX = 0;
+          rotZ = 0;
+          scale = 1.05 + (1 - 1.05) * k;
+          view.yaw = camYaw + (DEFAULT_VIEW.yaw - camYaw) * k;
+          view.pitch = camPitch + (DEFAULT_VIEW.pitch - camPitch) * k;
         }
+
+        drone.group.position.set(px, py, 0);
+        drone.group.rotation.set(rotX, 0, rotZ);
+        drone.group.scale.setScalar(scale);
 
         if (t >= 1) {
           introDone = true;
           lastInteraction = time; // suppress idle spin for a moment
           velocity.yaw = velocity.pitch = 0;
           targetRef.current = null;
+          drone.group.position.set(0, 0, 0);
+          drone.group.rotation.set(0, 0, 0);
+          drone.group.scale.setScalar(1);
           onIntroEndRef.current?.();
         }
       }
