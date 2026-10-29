@@ -48,6 +48,11 @@ export function DroneGreeting({
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [resetSignal, setResetSignal] = useState(0);
+  // The three.js chunk is lazy-loaded, so for ~1s after mount the canvas has
+  // no WebGL surface. We hide the whole overlay (and keep the DroneScene's
+  // intro paused via playIntro=false) until the first render fires, so the
+  // user never sees the dark overlay + caption + empty centre.
+  const [canvasReady, setCanvasReady] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
 
   // Decide if the intro should play (first visit this session only).
@@ -134,9 +139,20 @@ export function DroneGreeting({
     finishIntro();
   }
 
+  function handleCanvasReady() {
+    // Idempotent: fires once per DroneScene mount; a strict mode remount is
+    // fine because setState with the same value is bailed out of by React.
+    setCanvasReady(true);
+  }
+
   // When returning (docked from mount) wait until rect is measured so the
   // first paint lands in the slot instead of covering the viewport.
   if (docked && !rect) return null;
+
+  // The intro only runs once the canvas has painted its first frame, so the
+  // user never sees the overlay with an empty centre during the dynamic chunk
+  // load.
+  const introReady = introActive && canvasReady;
 
   // Style: fullscreen during intro, slot rect once docked.
   const stageStyle: React.CSSProperties =
@@ -154,10 +170,18 @@ export function DroneGreeting({
           height: "100vh",
         };
 
+  // Hide the whole overlay (background + topographic texture + captions +
+  // skip) until the canvas has rendered its first frame. The DroneScene is
+  // still rendered — that's how the chunk loads and the first render fires —
+  // just invisible. Returning visitors (docked from mount) skip this gate.
+  const overlayHidden = introActive && !canvasReady;
+
   return (
     <div
       ref={stageRef}
-      className={`${styles.stage} ${docked ? styles.stageDocked : ""}`}
+      className={`${styles.stage} ${docked ? styles.stageDocked : ""} ${
+        overlayHidden ? styles.stageHidden : ""
+      }`}
       style={stageStyle}
       data-cursor-theme="dark"
       aria-live="polite"
@@ -167,13 +191,14 @@ export function DroneGreeting({
           spec={spec}
           tone="dark"
           resetSignal={resetSignal}
-          playIntro={introActive}
+          playIntro={introReady}
           onIntroEnd={handleIntroEnd}
           onInteract={() => setHasInteracted(true)}
+          onReady={handleCanvasReady}
         />
       </div>
 
-      {introActive && (
+      {introReady && (
         <>
           <button
             type="button"

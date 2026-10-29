@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ACESFilmicToneMapping,
   CanvasTexture,
@@ -37,10 +37,14 @@ type DroneSceneProps = {
   onUnavailable?: () => void;
   /** "dark" renders on a transparent stage meant to sit over a dark surface. */
   tone?: "light" | "dark";
-  /** When true, play a scripted entry flight for ~6.5s before interactive mode. */
+  /** When true, play a scripted entry flight for ~6.5s before interactive mode.
+   * Reactive: can flip from false → true after mount; the intro starts on the
+   * next frame. */
   playIntro?: boolean;
   /** Fired once when the scripted intro has finished. */
   onIntroEnd?: () => void;
+  /** Fired after the first renderer.render(). Caller can gate overlay UI on it. */
+  onReady?: () => void;
 };
 
 function easeOutCubic(t: number) {
@@ -81,6 +85,7 @@ export function DroneScene({
   tone = "light",
   playIntro = false,
   onIntroEnd,
+  onReady,
 }: DroneSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<{ yaw: number; pitch: number } | null>(null);
@@ -90,13 +95,30 @@ export function DroneScene({
   const onInteractRef = useRef(onInteract);
   const onUnavailableRef = useRef(onUnavailable);
   const onIntroEndRef = useRef(onIntroEnd);
+  const onReadyRef = useRef(onReady);
+  // playIntro is read every frame via this ref so a false → true flip after
+  // mount starts the intro script without rebuilding the renderer.
+  const playIntroRef = useRef(playIntro);
+  // These refs survive React Strict Mode's dev double-mount so the intro
+  // timeline is one continuous animation across the mount → cleanup → mount.
+  const introStartedRef = useRef(false);
+  const introStartRef = useRef<number>(0);
+  const introDoneRef = useRef(false);
   const [isUnavailable, setIsUnavailable] = useState(false);
 
   useEffect(() => {
     onInteractRef.current = onInteract;
     onUnavailableRef.current = onUnavailable;
     onIntroEndRef.current = onIntroEnd;
-  }, [onInteract, onUnavailable, onIntroEnd]);
+    onReadyRef.current = onReady;
+  }, [onInteract, onUnavailable, onIntroEnd, onReady]);
+
+  // Sync playIntroRef in a layout effect so the render loop sees the new value
+  // on the frame immediately after React commits (before the browser paints
+  // the overlay fade-in).
+  useLayoutEffect(() => {
+    playIntroRef.current = playIntro;
+  }, [playIntro]);
 
   useEffect(() => {
     specRef.current = spec;
@@ -176,21 +198,20 @@ export function DroneScene({
     let frame = 0;
     let previousTime = performance.now();
 
-    // Scripted entry flight: when `playIntro` is on, the first ~6.5s of the
-    // scene are driven by this timeline instead of the usual idle/orbit logic.
-    const introActive = playIntro;
-    const introStart = performance.now();
-    let introDone = !playIntro;
-    if (playIntro) {
-      // Hold at the intro's camera pose so the first frame doesn't flash
-      // the default hangar view before the keyframes kick in.
+    // Scripted entry flight. Only park the drone off-screen if the parent has
+    // already asked for the intro and we haven't started it yet — that keeps
+    // the drone at (0, 0, 0) for the return-visit path where no intro plays.
+    if (
+      playIntroRef.current &&
+      !introStartedRef.current &&
+      !introDoneRef.current
+    ) {
       view.yaw = 0;
       view.pitch = 0.12;
-      // Hide the drone off-screen at mount so no frame shows it at (0,0,0)
-      // before the first keyframe computes its real position.
       drone.group.position.set(-3.6, 0.4, 0);
       drone.group.scale.setScalar(0.6);
     }
+    let didFireReady = false;
 
     const markInteraction = () => {
       lastInteraction = performance.now();
@@ -247,9 +268,27 @@ export function DroneScene({
       // Oto's entry: fly in from the left side of the overlay, sweep across
       // to the right, swing back to the centre, nod to greet, and settle to
       // the hangar pose. Camera stays near front-on so motion is readable.
+      //
+      // The intro starts on the first frame on which the parent has flipped
+      // `playIntro` on. We refuse to run until then so the parent can hold the
+      // overlay invisible while three.js finishes loading, keeping the fly-in
+      // phase from happening behind a dark overlay the user never sees.
       let introOverride = false;
-      if (introActive && !introDone) {
-        const elapsed = time - introStart;
+      if (
+        !introStartedRef.current &&
+        !introDoneRef.current &&
+        playIntroRef.current
+      ) {
+        introStartedRef.current = true;
+        introStartRef.current = time;
+        view.yaw = 0;
+        view.pitch = 0.12;
+        drone.group.position.set(-3.6, 0.4, 0);
+        drone.group.scale.setScalar(0.6);
+      }
+      const introActive = introStartedRef.current && !introDoneRef.current;
+      if (introActive) {
+        const elapsed = time - introStartRef.current;
         const total = reducedMotion ? 1200 : INTRO_DURATION_MS;
         const t = clamp(elapsed / total, 0, 1);
         introOverride = true;
@@ -327,7 +366,7 @@ export function DroneScene({
         drone.group.scale.setScalar(scale);
 
         if (t >= 1) {
-          introDone = true;
+          introDoneRef.current = true;
           lastInteraction = time; // suppress idle spin for a moment
           velocity.yaw = velocity.pitch = 0;
           targetRef.current = null;
@@ -383,6 +422,10 @@ export function DroneScene({
         });
       }
       renderer.render(scene, camera);
+      if (!didFireReady) {
+        didFireReady = true;
+        onReadyRef.current?.();
+      }
       if (visible) frame = requestAnimationFrame(render);
     };
 
@@ -491,9 +534,8 @@ export function DroneScene({
       renderer.dispose();
       canvas.remove();
     };
-    // playIntro is intentionally captured at mount: it is a one-shot entry
-    // flight, not something to re-trigger when the prop toggles.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // playIntro reaches the render loop through playIntroRef; the useEffect
+    // only rebuilds when `tone` changes (which affects the shadow texture).
   }, [tone]);
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
