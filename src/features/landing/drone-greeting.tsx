@@ -30,7 +30,7 @@ type DroneGreetingProps = {
 const CAPTIONS: Array<{ text: string; delay: number; duration: number }> = [
   { text: "Hola. Soy Oto, el dron de Otear.", delay: 400, duration: 2200 },
   {
-    text: "Reúno los vuelos de dron de su ingenio en un solo lugar.",
+    text: "Reúno los vuelos de dron de su proyecto en un solo lugar.",
     delay: 2700,
     duration: 2600,
   },

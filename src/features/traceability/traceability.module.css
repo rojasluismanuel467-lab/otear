@@ -191,9 +191,10 @@
   padding: 18px;
   border-radius: 16px;
   border: 1px dashed var(--border-strong);
-  font:
-    italic 28px Georgia,
-    serif;
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 32px;
   color: #0f3447;
   min-height: 70px;
 }

@@ -117,13 +117,13 @@ export function LeadForm() {
 
       <div className={styles.formGrid}>
         <div className={styles.formRow}>
-          <label htmlFor="lead-company">Empresa o ingenio</label>
+          <label htmlFor="lead-company">Empresa u organización</label>
           <input
             id="lead-company"
             name="company"
             type="text"
             autoComplete="organization"
-            placeholder="Ingenio Santa Rita"
+            placeholder="Nombre de su empresa"
           />
         </div>
         <div className={styles.formRow}>
@@ -133,7 +133,8 @@ export function LeadForm() {
               Seleccione
             </option>
             <option>Gerente / dueño</option>
-            <option>Jefe agrícola / de campo</option>
+            <option>Jefe de operación (campo, vía, obra o vigilancia)</option>
+            <option>Interventoría / supervisión</option>
             <option>Operador de dron</option>
             <option>Auditoría / certificación</option>
             <option>Otro</option>
@@ -150,7 +151,7 @@ export function LeadForm() {
             type="email"
             autoComplete="email"
             required
-            placeholder="hernando@ingenio.co"
+            placeholder="nombre@empresa.co"
           />
         </div>
         <div className={styles.formRow}>
@@ -170,7 +171,7 @@ export function LeadForm() {
         <textarea
           id="lead-message"
           name="message"
-          placeholder="Ej.: Quiero ver cómo le va a tres suertes antes de la próxima cosecha."
+          placeholder="Ej.: Quiero comparar mes a mes el avance de mi obra, mi vía o mis lotes."
         />
       </div>
 

@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Sprout } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Compass,
+  HardHat,
+  Route,
+  ShieldCheck,
+  Sprout,
+} from "lucide-react";
 import styles from "./landing.module.css";
 import { DroneCursor } from "./drone-cursor";
 import { DroneGreeting } from "./drone-greeting";
@@ -13,34 +21,65 @@ const steps = [
   {
     tag: "Historia completa",
     title: "Deje de recibir PDFs sueltos.",
-    body: "Cada vuelo queda ligado a su suerte, con fecha y zona. Abre el de la semana pasada y lo compara con el de hoy. Ve dónde avanza el cañal y dónde se estancó, en el mismo panel.",
+    body: "Cada vuelo queda ligado a su sitio y a su zona (un lote, un tramo, un frente de obra, un sector), con fecha. Abre el de la semana pasada y lo compara con el de hoy, en el mismo panel.",
   },
   {
     tag: "Antes de pagar",
-    title: "Verifique hectáreas, no promesas.",
-    body: "Compara hectáreas pedidas, cubiertas por el operador y facturadas. Si le cobraron de más, lo ve antes de aprobar el pago. Sin hojas de cálculo paralelas, sin discusiones a ciegas.",
+    title: "Verifique lo cubierto, no las promesas.",
+    body: "Compara lo pedido, lo cubierto por el operador y lo facturado, en hectáreas o por vuelo según el servicio. Si le cobraron de más, lo ve antes de aprobar el pago. Sin hojas de cálculo paralelas.",
   },
   {
     tag: "Trazabilidad real",
     title: "Un informe que no se puede cambiar sin dejar rastro.",
-    body: "Informes firmados con huella digital. Si alguien edita una cifra, la firma se marca inválida y queda registro. Útil para auditoría de certificación o para junta directiva.",
+    body: "Informes firmados con huella digital. Si alguien edita una cifra, la firma se marca inválida y queda registro. Útil para una auditoría, una interventoría o una junta directiva.",
+  },
+];
+
+const cases = [
+  {
+    sector: "Agricultura",
+    title: "Fincas e ingenios",
+    line: "Compare cada lote o suerte en el tiempo, vea dónde se estancó el cultivo y verifique las hectáreas cubiertas antes de pagar al operador.",
+    tags: ["Lotes", "Evolución", "Hectáreas"],
+    Icon: Sprout,
+  },
+  {
+    sector: "Carreteras",
+    title: "Interventoría y mantenimiento vial",
+    line: "Recorra la vía por tramos, deje constancia de cada vuelo y dé seguimiento a drenajes, taludes y deterioros hasta cerrar cada medida correctiva.",
+    tags: ["Tramos", "Hallazgos", "Informe"],
+    Icon: Route,
+  },
+  {
+    sector: "Construcción",
+    title: "Avance de obra",
+    line: "Compare el avance de cada frente con lo planeado, revise cada fecha con el mismo encuadre y guarde los levantamientos por fecha.",
+    tags: ["Frentes", "Plan y real", "Levantamientos"],
+    Icon: HardHat,
+  },
+  {
+    sector: "Vigilancia",
+    title: "Perímetros y predios",
+    line: "Revise por sectores los cerramientos y accesos, compare un vuelo con el anterior y deje cada hallazgo con su evidencia y su responsable.",
+    tags: ["Sectores", "Evidencia", "Tareas"],
+    Icon: ShieldCheck,
   },
 ];
 
 const roles = [
   {
-    name: "Jefe agrícola",
-    line: "Ve qué suerte necesita atención esta semana y reparte tareas a su cuadrilla sin recorrer todo el ingenio.",
-    tags: ["Tareas", "Mapa", "NDVI"],
+    name: "Jefe de operación",
+    line: "Ve qué zona necesita atención esta semana y reparte tareas a su cuadrilla sin recorrerlo todo en persona.",
+    tags: ["Tareas", "Mapa", "Evolución"],
   },
   {
-    name: "Gerente del ingenio",
-    line: "Sabe cuánto pagó por vuelos, cuánto cubrieron y qué decisiones salieron de ahí. Informes listos para junta.",
+    name: "Gerente o contratante",
+    line: "Sabe cuánto pagó por vuelos, cuánto cubrieron y qué decisiones salieron de ahí. Informes listos para junta o interventoría.",
     tags: ["Pagos", "Informes"],
   },
   {
     name: "Operador de dron",
-    line: "Recibe el pedido con el polígono exacto, entrega el vuelo y le aprueban la factura por hectárea cubierta real.",
+    line: "Recibe el pedido con la zona exacta, entrega el vuelo y le aprueban la factura por lo realmente cubierto.",
     tags: ["Pedido", "Entrega", "Factura"],
   },
 ];
@@ -122,18 +161,19 @@ export function LandingPage() {
         <div className={styles.heroInner}>
           <div>
             <span className={styles.eyebrow}>
-              <Sprout size={14} aria-hidden /> Para ingenios azucareros
+              <Compass size={14} aria-hidden /> Agricultura · Carreteras ·
+              Construcción · Vigilancia
             </span>
             <h1 className={styles.title}>
-              Mire su cañal desde arriba{" "}
+              Mire su operación desde arriba{" "}
               <span className={styles.titleAccent}>sin perder</span> el vuelo de
               la semana pasada.
             </h1>
             <p className={styles.subtitle}>
-              Otear reúne los vuelos de dron de su ingenio en un solo taller.
-              Compara cada suerte en el tiempo, convierte lo que vio en tareas e
-              informes firmados, y verifica cuántas hectáreas de verdad le
-              cubrieron antes de pagar.
+              Otear reúne los vuelos de dron de su finca, vía, obra o predio en
+              un solo lugar. Compara cada zona en el tiempo, convierte lo que
+              vio en tareas e informes firmados, y verifica cuánto de lo
+              contratado se cubrió de verdad antes de pagar.
             </p>
             <div className={styles.ctaRow}>
               <Link
@@ -168,6 +208,44 @@ export function LandingPage() {
       </section>
 
       <div className={styles.sectionDivider} aria-hidden />
+
+      <section className={styles.section} id="casos-de-uso">
+        <header className={styles.sectionHead}>
+          <div className={styles.sectionLabel}>Casos de uso</div>
+          <h2 className={styles.sectionTitle}>
+            Un mismo núcleo, <span className="accent">cuatro</span> maneras de
+            usarlo.
+          </h2>
+          <p className={styles.sectionSubtitle}>
+            El vocabulario cambia con su sector: lotes, tramos, frentes o
+            sectores. La demo trae un proyecto de ejemplo de cada uno.
+          </p>
+        </header>
+
+        <div className={styles.casesRail}>
+          {cases.map(({ sector, title, line, tags, Icon }) => (
+            <article key={sector} className={styles.role}>
+              <div className={styles.roleInner}>
+                <div className={styles.caseHead}>
+                  <span className={styles.caseIcon} aria-hidden>
+                    <Icon size={18} />
+                  </span>
+                  <span className={styles.roleName}>{sector}</span>
+                </div>
+                <h3 className={styles.caseTitle}>{title}</h3>
+                <p className={styles.roleLine}>{line}</p>
+                <div className={styles.roleTags}>
+                  {tags.map((tag) => (
+                    <span key={tag} className={styles.roleTag}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className={styles.section} id="que-resuelve">
         <header className={styles.sectionHead}>
@@ -206,10 +284,11 @@ export function LandingPage() {
         <header className={styles.sectionHead}>
           <div className={styles.sectionLabel}>Para quién</div>
           <h2 className={styles.sectionTitle}>
-            Pensado para quienes conviven con el cañal.
+            Pensado para quienes conviven con{" "}
+            <span className="accent">el terreno</span>.
           </h2>
           <p className={styles.sectionSubtitle}>
-            Lenguaje de productor, no de software. El jefe de campo lo abre y
+            Lenguaje de su sector, no de software. Quien supervisa lo abre y lo
             entiende sin capacitación.
           </p>
         </header>
@@ -237,12 +316,14 @@ export function LandingPage() {
         <div className={styles.demoStrip} data-cursor-theme="dark">
           <div className={styles.demoStripInner}>
             <h3 className={styles.demoStripTitle}>
-              Entre a la demo. Sin registro, sin instalar nada.
+              Entre a la demo. Sin registro, sin instalar{" "}
+              <span className="accent">nada</span>.
             </h3>
             <p className={styles.demoStripText}>
-              Son datos sintéticos de una hacienda de ejemplo. Programe un
-              vuelo, marque hallazgos, compare en el tiempo y firme un informe.
-              Todo queda en su navegador.
+              Son datos sintéticos de cuatro proyectos de ejemplo: una hacienda,
+              una vía, una obra y un parque. Programe un vuelo, marque
+              hallazgos, compare en el tiempo y firme un informe. Todo queda en
+              su navegador.
             </p>
             <Link
               href="/programacion/"
@@ -254,10 +335,10 @@ export function LandingPage() {
 
           <div className={styles.demoStats} aria-label="Qué incluye la demo">
             <div className={styles.demoStatRow}>
-              <span className={styles.demoStatLabel}>Suertes de ejemplo</span>
+              <span className={styles.demoStatLabel}>Proyectos de ejemplo</span>
               <span className={styles.demoStatValue}>
-                14 <span className={styles.demoStatValueAccent}>·</span>{" "}
-                <span className={styles.demoStatValueAccent}>320 ha</span>
+                4 <span className={styles.demoStatValueAccent}>·</span>{" "}
+                <span className={styles.demoStatValueAccent}>4 sectores</span>
               </span>
             </div>
             <div className={styles.demoStatRow}>
@@ -288,14 +369,14 @@ export function LandingPage() {
           <div className={styles.contactIntro}>
             <h3 id="contacto-title">Hablemos sin compromiso.</h3>
             <p>
-              Estamos validando Otear con ingenios del Valle. Si lo que vio en
-              la demo le hace sentido, nos sentamos 30 minutos a entender su
-              operación y le mostramos cómo encajaría.
+              Estamos validando Otear en agricultura, carreteras, construcción y
+              vigilancia. Si lo que vio en la demo le hace sentido, nos sentamos
+              30 minutos a entender su operación y le mostramos cómo encajaría.
             </p>
             <ul className={styles.contactBullets}>
               <li>
                 <Check size={16} aria-hidden /> Primera reunión gratis, por
-                videollamada o en su finca.
+                videollamada o en su sitio de trabajo.
               </li>
               <li>
                 <Check size={16} aria-hidden /> No le pedimos cambiar de
@@ -318,7 +399,7 @@ export function LandingPage() {
       <footer className={styles.footer}>
         <strong>Otear</strong> · Validación comercial — datos sintéticos.
         <br />
-        No conectamos aún con sistemas reales de ingenios ni de operadores.
+        No conectamos aún con sistemas reales de empresas ni de operadores.
         <div className={styles.footerLinks}>
           <Link href="/programacion/">Ver demo</Link>
           <a href="mailto:hola@otear.app">hola@otear.app</a>

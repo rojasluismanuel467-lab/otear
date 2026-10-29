@@ -2,7 +2,8 @@
 @import "@heroui/styles";
 
 @theme inline {
-  --font-sans: "Manrope Variable", sans-serif;
+  --font-sans: "Instrument Sans Variable", system-ui, sans-serif;
+  --font-accent: "EB Garamond Variable", Georgia, serif;
 }
 
 :root {
@@ -39,7 +40,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: "Manrope Variable", sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -108,7 +109,18 @@ textarea {
     inset 0 1px 0 #ffffff1a;
 }
 .modal__dialog {
-  font-family: "Manrope Variable", sans-serif;
+  font-family: var(--font-sans);
+}
+/* Voz expresiva: cursiva de imprenta para destacar una palabra o frase corta (titulares, saludo, firma).
+   Nunca en datos, etiquetas, estados, botones ni párrafos. Su altura de x es menor: se amplía y se fija el interlineado. */
+.accent {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.14em;
+  line-height: 1;
+  letter-spacing: 0;
+  font-synthesis: none;
 }
 /* react-aria espera las animaciones de fondo y contenedor y puede dejar el modal montado; la entrada se anima en el diálogo interior. */
 [data-slot="modal-backdrop"],

@@ -11,7 +11,7 @@ Hard scope limits:
 - Frontend-only validation demo with **synthetic** data. Do not build the Go backend, real ingestion/analysis/storage/sending, auth, or payments. Never present a simulation as real (the UI already says so, e.g. "Pago registrado solo en esta demo").
 - Multisector (agricultura, carreteras, construcción, vigilancia). The agro lote → vuelo → comparación → observación → informe flow is one scenario, not the core model.
 - `docs/context/matriz-dorfman-provisional.md` is provisional; the GPS-less photo policy and "G6" are unresolved — don't resolve them silently.
-- Recurrence, urgent requests, packages and advisory are proposals to validate, not features to build. No landing page exists yet.
+- Recurrence, urgent requests, packages and advisory are proposals to validate, not features to build. The landing (`features/landing/`) is multisector: it presents agricultura, carreteras, construcción and vigilancia as use cases (`cases` in `landing-page.tsx`), never as ingenio-only.
 
 ## Commands
 
@@ -64,7 +64,7 @@ Next.js 16.4.3 (App Router), React 19, TypeScript strict, Tailwind 4, HeroUI 3 (
 
 **Maps.** `components/maps/site-map.tsx` is the public wrapper; it loads `site-map-canvas.tsx` (Leaflet, imperative `useEffect` setup) through `next/dynamic` with `ssr: false`. Tiles come from OpenStreetMap, so the map is the one place the demo makes an external network request. Map imagery/weather/drone visuals are illustrative, not real captures.
 
-**Styling.** Tokens (`--accent`, `--background`, `--muted`, `--border`, `--otear-shadow`, etc.) are defined once in `src/app/globals.css`, which also holds the shared hand-written classes (`.button--primary`, `.status-badge--*`, `.nav-item--active`, keyframes, breakpoints at 1100/800px). Feature-specific layout goes in the feature's `*.module.css`. Reuse HeroUI and these tokens before adding variants; no extra animation library. Honor `prefers-reduced-motion`. Sample images are in `public/images/` and are illustrative.
+**Styling.** Fonts: Instrument Sans (`--font-sans`) for everything functional, EB Garamond italic (`--font-accent`, class `.accent`) only for short expressive phrases ≥18px; rules in `DESIGN.md` «Tipografía». Tokens (`--accent`, `--background`, `--muted`, `--border`, `--otear-shadow`, etc.) are defined once in `src/app/globals.css`, which also holds the shared hand-written classes (`.button--primary`, `.status-badge--*`, `.nav-item--active`, keyframes, breakpoints at 1100/800px). Feature-specific layout goes in the feature's `*.module.css`. Reuse HeroUI and these tokens before adding variants; no extra animation library. Honor `prefers-reduced-motion`. Sample images are in `public/images/` and are illustrative.
 
 ## Gotchas found while testing
 

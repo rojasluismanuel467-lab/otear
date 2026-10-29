@@ -19,8 +19,6 @@ type Waypoint = {
   /** viewport-relative position (0..1 of width/height) */
   x: number;
   y: number;
-  /** optional label shown as a callout while the drone is at this waypoint */
-  label?: string;
   /** section theme at this altitude; drives colour and shadow */
   theme?: "light" | "dark";
 };
@@ -30,14 +28,14 @@ type Waypoint = {
 // descends toward the demo strip, and lands near the contact form.
 const WAYPOINTS: Waypoint[] = [
   { at: 0.0, x: 1.08, y: 0.1, theme: "dark" },
-  { at: 0.05, x: 0.72, y: 0.3, theme: "dark", label: "Despega" },
-  { at: 0.14, x: 0.58, y: 0.55, theme: "dark", label: "Sobrevuela el cañal" },
+  { at: 0.05, x: 0.72, y: 0.3, theme: "dark" },
+  { at: 0.14, x: 0.58, y: 0.55, theme: "dark" },
   { at: 0.22, x: 0.85, y: 0.5, theme: "dark" },
-  { at: 0.32, x: 0.2, y: 0.4, theme: "light", label: "Deja de recibir PDFs" },
-  { at: 0.42, x: 0.75, y: 0.6, theme: "light", label: "Verifica hectáreas" },
-  { at: 0.5, x: 0.25, y: 0.45, theme: "light", label: "Firma el informe" },
-  { at: 0.6, x: 0.6, y: 0.55, theme: "light", label: "Reparte tareas" },
-  { at: 0.72, x: 0.85, y: 0.3, theme: "dark", label: "Aterriza" },
+  { at: 0.32, x: 0.2, y: 0.4, theme: "light" },
+  { at: 0.42, x: 0.75, y: 0.6, theme: "light" },
+  { at: 0.5, x: 0.25, y: 0.45, theme: "light" },
+  { at: 0.6, x: 0.6, y: 0.55, theme: "light" },
+  { at: 0.72, x: 0.85, y: 0.3, theme: "dark" },
   { at: 0.85, x: 0.3, y: 0.6, theme: "light" },
   { at: 1.0, x: 0.5, y: 0.75, theme: "light" },
 ];
@@ -59,19 +57,17 @@ function sample(progress: number) {
       return {
         x: lerp(a.x, b.x, eased),
         y: lerp(a.y, b.y, eased),
-        label: eased < 0.5 ? a.label : b.label,
         theme: eased < 0.5 ? a.theme : (b.theme ?? a.theme),
       };
     }
   }
   const last = WAYPOINTS[WAYPOINTS.length - 1];
-  return { x: last.x, y: last.y, label: last.label, theme: last.theme };
+  return { x: last.x, y: last.y, theme: last.theme };
 }
 
 export function FlyingDrone() {
   const craftRef = useRef<HTMLDivElement | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
-  const [label, setLabel] = useState<string | undefined>(WAYPOINTS[0].label);
 
   useEffect(() => {
     const mql = window.matchMedia("(pointer: coarse)");
@@ -121,9 +117,6 @@ export function FlyingDrone() {
       if (s.theme && s.theme !== theme) {
         setTheme(s.theme);
       }
-      if (s.label !== label) {
-        setLabel(s.label);
-      }
     }
 
     function loop() {
@@ -142,7 +135,7 @@ export function FlyingDrone() {
       cancelAnimationFrame(frame);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-    // theme/label are intentionally omitted — the loop reads via refs/setters
+    // theme is intentionally omitted — the loop reads via refs/setters
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -152,11 +145,6 @@ export function FlyingDrone() {
         ref={craftRef}
         className={`${styles.craft} ${theme === "dark" ? styles.craftDark : ""}`}
       >
-        <div
-          className={`${styles.callout} ${label ? styles.calloutVisible : ""} ${theme === "dark" ? "" : styles.calloutDark}`}
-        >
-          {label ?? ""}
-        </div>
         <div className={styles.craftInner}>
           <svg
             viewBox="0 0 64 64"
