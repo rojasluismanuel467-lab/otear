@@ -892,3 +892,18 @@ export function pointAlongLine(line: Position[], fraction: number): Position {
   }
   return line[0];
 }
+
+/** A point in meters east/north of a local origin, for planar work on small areas. */
+export type LocalXY = XY;
+
+/** [lat, lng] positions to local meters around `origin`; the inverse is `fromLocalMeters`. */
+export function toLocalMeters(points: Position[], origin: Position): LocalXY[] {
+  return project(points, origin);
+}
+
+export function fromLocalMeters(
+  points: LocalXY[],
+  origin: Position,
+): Position[] {
+  return unproject(points, origin);
+}

@@ -2,9 +2,8 @@ import { preparationGroups } from "@/features/flights/planning/preparation-items
 import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
+import { planMission } from "@/features/flights/mission-plan";
 import {
-  convexHull,
-  coverageRoute,
   lineLengthKm,
   pointAlongLine,
   pointInsideOutline,
@@ -39,6 +38,8 @@ const cropByZone: Record<string, string> = {
   "zone-sr-4": "Caña · primera soca",
   "zone-sr-5": "Caña · segunda soca",
 };
+
+const formatHa = (value: number) => value.toFixed(1).replace(".", ",");
 
 function describeZone(site: Site, zone: Zone) {
   if (site.sector === "roads") {
@@ -391,23 +392,6 @@ function historyFor(
   }));
 }
 
-/**
- * Survey lines over the whole site (the hull of its zones), few enough to read on the map; on a
- * road the aircraft follows the road itself.
- */
-function routeFor(site: Site): [number, number][] {
-  if (site.sector === "roads") {
-    const line = site.zones.flatMap((zone, index) =>
-      index === 0 ? zone.outline : zone.outline.slice(1),
-    );
-    return line.filter(
-      (_, index) => index % 2 === 0 || index === line.length - 1,
-    );
-  }
-  const hull = convexHull(site.zones.flatMap((zone) => zone.outline));
-  return coverageRoute([hull], 4);
-}
-
 /** A point that always falls on the zone (or along the road), so markers never float off it. */
 function findingPosition(
   site: Site,
@@ -422,7 +406,18 @@ function findingPosition(
   return [point[0], point[1]];
 }
 
-const baseFlights: Flight[] = sites.flatMap((site, index) => {
+/**
+ * Zones the follow-up flight of 29 October covers. In agriculture it leaves out the second lot, which
+ * is the one whose vigor keeps falling, so the next-flight assistant has something real to propose;
+ * the other sites already have everything the history flags on the agenda.
+ */
+function bookedZoneIds(site: Site) {
+  return site.zones
+    .filter((_, index) => site.sector !== "agriculture" || index !== 1)
+    .map((zone) => zone.id);
+}
+
+const flightDrafts: Flight[] = sites.flatMap((site, index) => {
   const common = {
     siteId: site.id,
     pilot: "Camilo Torres",
@@ -431,7 +426,7 @@ const baseFlights: Flight[] = sites.flatMap((site, index) => {
     drone: "DJI Mavic 3 Enterprise",
     aircraftId: `aircraft-${site.id}-1`,
     zoneIds: site.zones.map((zone) => zone.id),
-    route: routeFor(site),
+    route: [],
     checklist: [
       "Definir objetivo y recorrido",
       "Revisar equipo y baterías",
@@ -482,6 +477,7 @@ const baseFlights: Flight[] = sites.flatMap((site, index) => {
       id: `flight-${site.id}-02`,
       title: "Seguimiento programado",
       objective: "Comparar el estado de las zonas con el registro anterior.",
+      zoneIds: bookedZoneIds(site),
       date: "2026-10-29",
       time: "07:00",
       status: "scheduled",
@@ -494,25 +490,66 @@ const baseFlights: Flight[] = sites.flatMap((site, index) => {
 });
 
 /**
- * Hectares each operator reports having covered, for area-priced sites. The first flight of
- * the agriculture site covers a bit less than was ordered, so the area check has something to find.
+ * The first flight of the agriculture site ends early: the battery runs out with the last lines of
+ * the last lot still to fly (about 94 % of the area is reached), so the area check in Pagos has
+ * something to find, and the map shows where the gap is.
  */
-export const initialFlights: Flight[] = baseFlights.map((flight) => {
-  const site = sites.find((item) => item.id === flight.siteId);
+const EARLY_END_AT = 0.84;
+
+/**
+ * Every flight gets its route from the planner, so the route, the kilometres, the minutes, the
+ * photos and the hectares covered agree with each other (and with the camera and overlap the log
+ * says were used). Scheduled flights keep zero photos: nothing has been delivered.
+ */
+export const initialFlights: Flight[] = flightDrafts.map((draft) => {
+  const site = sites.find((item) => item.id === draft.siteId);
+  if (!site) return draft;
+  const early =
+    site.sector === "agriculture" &&
+    draft.status === "completed" &&
+    draft.id.endsWith("-01");
+  const overlap = draft.log?.overlapPct;
+  const plan = planMission({
+    sector: site.sector,
+    zones: site.zones.filter((zone) => draft.zoneIds.includes(zone.id)),
+    settings: {
+      ...(draft.log?.gsdCm !== undefined ? { gsdCm: draft.log.gsdCm } : {}),
+      ...(overlap !== undefined
+        ? { sideOverlap: overlap / 100, frontOverlap: overlap / 100 }
+        : {}),
+    },
+    ...(early ? { endEarlyAt: EARLY_END_AT } : {}),
+  });
+  const flight: Flight = {
+    ...draft,
+    route: plan.route,
+    distance: Math.round(plan.distanceKm * 10) / 10,
+    duration: Math.round(plan.durationMin),
+    photoCount: draft.status === "completed" ? plan.photoCount : 0,
+  };
   if (
-    !site ||
     site.sector !== "agriculture" ||
-    flight.status !== "completed" ||
-    !flight.log
+    !flight.log ||
+    !(draft.status === "completed")
   )
     return flight;
-  const ordered = site.zones
-    .filter((zone) => flight.zoneIds.includes(zone.id))
-    .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0);
-  const factor = flight.id.endsWith("-01") ? 0.94 : 0.99;
+  // The operator reports hectares: what the route reached, or a bit under for the complete ones.
+  const coveredHa = early
+    ? plan.coveredHa
+    : plan.orderedHa * (flight.id.endsWith("-01") ? 1 : 0.99);
+  const missing = plan.uncovered[0];
+  const missingZone = site.zones.find((zone) => zone.id === missing?.zoneId);
   return {
     ...flight,
-    log: { ...flight.log, coveredHa: Math.round(ordered * factor * 10) / 10 },
+    log: {
+      ...flight.log,
+      coveredHa: Math.round(coveredHa * 10) / 10,
+      ...(early && missing && missingZone
+        ? {
+            debrief: `Vuelo cerrado antes de terminar las últimas líneas de ${missingZone.name} por batería. Quedaron ${formatHa(missing.ha)} ha sin cubrir; reprogramar esas líneas.`,
+          }
+        : {}),
+    },
   };
 });
 
@@ -629,7 +666,18 @@ export const initialInvoices: Invoice[] = [
       total: 850000,
       paid: 400000,
       dueDate: "2026-10-30",
-      ...(site.sector === "agriculture" ? { billedHa: 243 } : {}),
+      // The contractor bills what was ordered, not what it reached.
+      ...(site.sector === "agriculture"
+        ? {
+            billedHa:
+              Math.round(
+                site.zones.reduce(
+                  (sum, zone) => sum + polygonAreaHa(zone.outline),
+                  0,
+                ) * 10,
+              ) / 10,
+          }
+        : {}),
     },
     {
       id: `invoice-${site.id}-02`,
@@ -1249,7 +1297,7 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
       kind: "monitoring",
       title: "Seguimiento programado del 29 de octubre",
       description: "Comparar el estado de las zonas con el registro anterior.",
-      zoneIds,
+      zoneIds: bookedZoneIds(site),
       requestedBy: manager,
       windowStart: "2026-10-27",
       windowEnd: "2026-10-31",
