@@ -10,12 +10,10 @@ import {
   Bell,
   ChartColumn,
   CalendarDays,
-  ChevronDown,
   CircleHelp,
   Handshake,
   CreditCard,
   FolderCheck,
-  Layers3,
   Map as MapIcon,
   Menu,
   MoveUpRight,
@@ -40,6 +38,7 @@ import { ThemeApplier } from "@/features/config/theme-applier";
 import { useConfig } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
 import { formatDate } from "@/lib/format";
+import { SiteSwitcher } from "./site-switcher";
 import { useSidebarCollapsed } from "./use-sidebar-collapsed";
 
 const moduleIcons: Record<ModuleId, LucideIcon> = {
@@ -59,8 +58,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const {
     site,
-    sites,
-    setSiteId,
     flights,
     findings,
     documents,
@@ -162,29 +159,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </Link>
         {showVendor && <p className="vendor-note">Con tecnología de Otear</p>}
-        <div className="workspace-label">
-          <span>ESPACIO DE TRABAJO</span>
-        </div>
-        <div className="site-picker">
-          <span className="site-picker-icon">
-            <Layers3 size={19} />
-          </span>
-          <div>
-            <label htmlFor="workspace-site">Proyecto activo</label>
-            <select
-              id="workspace-site"
-              value={site.id}
-              onChange={(event) => setSiteId(event.target.value)}
-            >
-              {sites.map((item) => (
-                <option value={item.id} key={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <ChevronDown size={14} aria-hidden="true" />
-        </div>
         <nav className="primary-navigation" aria-label="Navegación principal">
           {navigation.map(({ href, label, icon: Icon }) => (
             <Link
@@ -259,10 +233,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <PanelLeftClose size={19} />
               )}
             </button>
-            <span>{site.sectorLabel}</span>
-            <span className="breadcrumb-divider">/</span>
             <strong>{activeNav?.label ?? "Otear"}</strong>
           </div>
+          <SiteSwitcher />
           <div className="topbar-actions">
             <span className="demo-pill">
               <i />
@@ -401,8 +374,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Modal.Body>
                 <div className="help-content">
                   <p>
-                    Cambia de proyecto para explorar agricultura, carreteras,
-                    construcción y vigilancia con la misma base.
+                    Cambia de caso en la barra de arriba para explorar
+                    agricultura, carreteras, construcción y vigilancia con la
+                    misma base.
                   </p>
                   <ol>
                     <li>Prepara un vuelo y revisa su ruta.</li>
