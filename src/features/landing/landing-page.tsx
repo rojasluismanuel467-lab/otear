@@ -239,11 +239,8 @@ export function LandingPage() {
               </div>
             </article>
           ))}
-        </div>
-
-        <article className={`${styles.role} ${styles.caseOpen}`}>
-          <div className={`${styles.roleInner} ${styles.caseOpenInner}`}>
-            <div>
+          <article className={`${styles.role} ${styles.caseOpen}`}>
+            <div className={styles.roleInner}>
               <div className={styles.caseHead}>
                 <span className={styles.caseIcon} aria-hidden>
                   <Plus size={18} />
@@ -256,8 +253,6 @@ export function LandingPage() {
                 desde arriba y se compara en el tiempo, Otear se adapta. Aún no
                 tenemos piloto en estos sectores; por eso queremos oír el suyo.
               </p>
-            </div>
-            <div className={styles.caseOpenSide}>
               <div className={styles.roleTags}>
                 {otherSectors.map((name) => (
                   <span key={name} className={styles.roleTag}>
@@ -269,8 +264,8 @@ export function LandingPage() {
                 Cuéntenos cuál es el suyo <ArrowRight size={14} aria-hidden />
               </Link>
             </div>
-          </div>
-        </article>
+          </article>
+        </div>
       </section>
 
       <section className={styles.section} id="a-su-medida">

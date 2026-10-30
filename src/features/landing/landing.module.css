@@ -784,27 +784,17 @@
 /* --- "su sector" open card + inline links --- */
 
 .caseOpen {
-  margin-top: 16px;
-  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
-}
-
-.caseOpenInner {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 32px;
-  align-items: center;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 60%, var(--border));
 }
 
 .caseOpen .roleLine {
-  min-height: 0;
-  margin-bottom: 0;
-  max-width: var(--measure-body);
+  margin-bottom: 16px;
 }
 
-.caseOpenSide {
-  display: grid;
-  gap: 18px;
-  justify-items: start;
+/* El área táctil de 44 px entra en el relleno de la tarjeta para no estirar la fila. */
+.caseOpen .inlineLink {
+  align-self: flex-start;
+  margin-bottom: -14px;
 }
 
 .inlineLink {
@@ -1319,11 +1309,6 @@ a.channel:focus-visible {
 
   .rolesRail {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .caseOpenInner {
-    grid-template-columns: 1fr;
-    gap: 20px;
   }
 
   .step {
