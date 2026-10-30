@@ -1,5 +1,6 @@
 "use client";
 
+import { followUpLine } from "../follow-up";
 import { chainageLabel } from "@/features/sites/mapping/chainage";
 import { sourceLabel, isSuggested } from "@/features/agents/image-candidates";
 import { useState } from "react";
@@ -179,7 +180,7 @@ export function FlightReport({
   };
   const findingBlocks = included.map(
     (finding) =>
-      `${finding.title}\n   ${site.zoneLabel.replace(/s$/, "")}: ${zoneName(finding)} · prioridad ${priorityLabels[finding.priority]}\n   ${finding.description}\n   Fuente: ${sourceLabel(finding, words)}\n   Estado: ${statusLabel(finding.status, words)}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Tarea de verificación: ${finding.taskAssigned ? "propuesta y añadida a esta sesión" : "sin tarea"}\n   Coordenadas de ejemplo: ${coordinates(finding)}\n   Referencia de muestra: ${finding.id}`,
+      `${finding.title}\n   ${site.zoneLabel.replace(/s$/, "")}: ${zoneName(finding)} · prioridad ${priorityLabels[finding.priority]}\n   ${finding.description}\n   Fuente: ${sourceLabel(finding, words)}\n   Estado: ${statusLabel(finding.status, words)}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Medida correctiva: ${followUpLine(finding)}\n   Coordenadas de ejemplo: ${coordinates(finding)}\n   Referencia de muestra: ${finding.id}`,
   );
   // What the person signs is exactly what the report shows now.
   const signablePrefill = flightReportFields({
@@ -372,7 +373,7 @@ export function FlightReport({
               <small>
                 {sourceLabel(finding, words)} ·{" "}
                 {statusLabel(finding.status, words)}
-                {finding.taskAssigned ? " · Con tarea de verificación" : ""}
+                {finding.followUp ? ` · ${followUpLine(finding)}` : ""}
               </small>
               <small>
                 Frente a vuelos anteriores: {trendLabel(trend(finding))}

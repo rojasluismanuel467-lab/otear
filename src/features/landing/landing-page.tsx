@@ -34,7 +34,7 @@ const steps = [
   {
     tag: "Trazabilidad",
     title: "Un documento que no se cambia sin dejar rastro.",
-    body: "Los soportes del vuelo (la autorización del predio, la inspección del equipo, la charla de seguridad) se pueden firmar. Cada uno guarda una marca que cambia si alguien edita una cifra: la firma queda sin validez y se ve el registro. Es una firma electrónica simple de ejemplo, que no sustituye una firma con validez legal. El informe del vuelo hoy se descarga como borrador sin firma.",
+    body: "Los soportes del vuelo (la autorización del sitio, la inspección del equipo, la charla de seguridad) y el informe del vuelo se pueden firmar: el informe, por el operador y por quien lo revisa o interviene. Cada documento guarda una marca que cambia si alguien edita una cifra: la firma queda sin validez y el historial dice qué campo cambió. Es una firma electrónica simple de ejemplo, sin valor legal, y el informe sigue siendo un borrador de demostración.",
   },
 ];
 
@@ -67,7 +67,7 @@ const cases = [
   {
     sector: "Carreteras",
     title: "Interventoría y mantenimiento vial",
-    line: "Recorra la vía por tramos, deje constancia de cada vuelo, marque drenajes, taludes y deterioros y compárelos con la visita anterior. Seguirlos hasta cerrar cada medida correctiva es una propuesta: se construye con usted.",
+    line: "Recorra la vía por tramos, deje constancia de cada vuelo, marque drenajes, taludes y deterioros y compárelos con la visita anterior. Cada medida correctiva tiene responsable, plazo y se cierra con una nota de lo que se hizo; en la demo nada se avisa a nadie.",
     Icon: Route,
   },
   {
@@ -79,7 +79,7 @@ const cases = [
   {
     sector: "Minería",
     title: "Minas a cielo abierto",
-    line: "Mida el avance de cada banco frente al plan, vigile las crestas y los taludes en cada vuelo y deje constancia de cada novedad con su evidencia. Seguirla hasta que se atienda es una propuesta: se construye con usted.",
+    line: "Mida el avance de cada banco frente al plan, vigile las crestas y los taludes en cada vuelo y deje constancia de cada novedad con su evidencia. Cada novedad se sigue con responsable, plazo y cierre con nota hasta que se atienda; en la demo nada se avisa a nadie.",
     Icon: Pickaxe,
   },
   {
@@ -124,7 +124,7 @@ const roles = [
   },
   {
     name: "Gerente o contratante",
-    line: "Ve cuánto pagó por vuelos, cuánto dice el operador que cubrió y qué se cobró de más. El informe consolidado resume el historial de vuelos y hallazgos; que recoja también lo que usted decidió es una propuesta.",
+    line: "Ve cuánto pagó por vuelos, cuánto dice el operador que cubrió y qué se cobró de más. El informe consolidado resume los vuelos, los hallazgos y las medidas, y recoge lo que usted decidió: la solicitud, la cotización elegida y su motivo, y las hectáreas por operador. Es de un solo sitio a la vez.",
     tags: ["Pagos", "Informes"],
   },
 ];
@@ -142,6 +142,7 @@ const operatorColumns = [
     items: [
       "Registra el vuelo y entrega el resultado en Servicios; quien contrata lo verifica y después usted factura.",
       "Las hectáreas que usted declara haber cubierto son las que se comparan con su factura. Otear no las mide con las imágenes.",
+      "Si quien contrata pide un ajuste, usted responde: acepta el ajuste o sostiene lo entregado con una nota y sus soportes.",
     ],
   },
   {
@@ -155,9 +156,10 @@ const operatorColumns = [
 
 const today = [
   "Entrar a la demo sin registro, con vuelos, mapas, comparaciones, pagos y documentos de ejemplo.",
-  "Seguir un pedido de servicio de principio a fin: cotizaciones, asignación al operador, entrega y verificación de quien contrata.",
+  "Seguir un pedido de servicio de principio a fin: cotizaciones, asignación al operador, entrega, verificación de quien contrata y, si hay un desacuerdo, la respuesta del operador.",
+  "Dar seguimiento a cada hallazgo con responsable, plazo y cierre con nota, y ver las medidas vencidas.",
   "Ponerle a la demo las palabras, el color y el logo de su empresa.",
-  "Ver lado a lado lo pedido, lo declarado y lo facturado, y firmar los documentos de soporte del vuelo (firma de ejemplo).",
+  "Ver lado a lado lo pedido, lo declarado y lo facturado, y firmar los documentos de soporte y el informe del vuelo (firma de ejemplo).",
 ];
 
 const toDefine = [
@@ -168,9 +170,8 @@ const toDefine = [
 ];
 
 const proposals = [
-  "Seguir cada hallazgo hasta cerrarlo, con responsable, plazo y cierre.",
-  "Firmar el informe del vuelo, no solo sus soportes.",
-  "Que el informe recoja también lo que usted decidió.",
+  "Avisar a las personas responsables de una medida; hoy en la demo no se envía nada a nadie.",
+  "Una firma con valor legal: depende de la asesoría jurídica de cada operación.",
   "Medir lo cubierto con las imágenes, en vez de depender de lo que declara el operador.",
   "Piezas propias para su sector.",
 ];

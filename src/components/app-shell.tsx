@@ -398,7 +398,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                       facturado.
                     </li>
                     <li>
-                      <Link href="/informes" onClick={() => setHelpOpen(false)}>
+                      <Link
+                        href="/informes?tab=informe"
+                        onClick={() => setHelpOpen(false)}
+                      >
                         Informes
                       </Link>
                       : lo visto y lo decidido, en un resumen para la junta o la

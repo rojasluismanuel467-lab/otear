@@ -147,7 +147,7 @@ export function RequestDetail({
   /** Called after a step succeeds, so the list keeps this request selected. */
   onActed?: () => void;
 }) {
-  const { site, flights } = useDemo();
+  const { site, flights, selectFlight } = useDemo();
   const t = useTerm();
   const { actor, nameOf, act } = useServices();
   const [openAction, setOpenAction] = useState<workflow.ActionId | null>(null);
@@ -650,8 +650,12 @@ export function RequestDetail({
       {(request.flightId || request.invoiceId) && !assignedToOther && (
         <nav className={styles.links} aria-label="Registros relacionados">
           {request.flightId && (
-            <Link href="/vuelos">
-              Ver el vuelo <ArrowUpRight size={14} aria-hidden="true" />
+            <Link
+              href="/vuelos?tab=informe"
+              onClick={() => request.flightId && selectFlight(request.flightId)}
+            >
+              Ver el informe y el acta del vuelo{" "}
+              <ArrowUpRight size={14} aria-hidden="true" />
             </Link>
           )}
           {request.invoiceId && (
