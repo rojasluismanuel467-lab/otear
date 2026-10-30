@@ -12,10 +12,14 @@ import {
   outlineKindFor,
 } from "@/features/sites/mapping/mapping-model";
 import { textToHtml, printHtml } from "@/features/traceability/document-export";
+import { flightReportFields } from "@/features/traceability/flight-report-document";
+import { FlightReportSigning } from "@/features/traceability/flight-report-signing";
 import {
+  displayTitle,
   evidenceState,
   statusLabels as evidenceLabels,
 } from "@/features/traceability/integrity";
+import { flightStatusText } from "@/features/traceability/templates";
 import { compareWithHistory } from "@/features/reports/insights";
 import { downloadText, formatDate } from "@/lib/format";
 import { agree, type FindingWords } from "../finding-words";
@@ -173,6 +177,20 @@ export function FlightReport({
       kind === "line" ? chainageLabel(finding.position, site.zones) : undefined;
     return pk ? `${pk} (${raw})` : raw;
   };
+  const findingBlocks = included.map(
+    (finding) =>
+      `${finding.title}\n   ${site.zoneLabel.replace(/s$/, "")}: ${zoneName(finding)} · prioridad ${priorityLabels[finding.priority]}\n   ${finding.description}\n   Fuente: ${sourceLabel(finding, words)}\n   Estado: ${statusLabel(finding.status, words)}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Tarea de verificación: ${finding.taskAssigned ? "propuesta y añadida a esta sesión" : "sin tarea"}\n   Coordenadas de ejemplo: ${coordinates(finding)}\n   Referencia de muestra: ${finding.id}`,
+  );
+  // What the person signs is exactly what the report shows now.
+  const signablePrefill = flightReportFields({
+    brief,
+    logRows,
+    debrief: flight.log?.debrief,
+    findingsTitle: `${words.Plural} incluidos`,
+    findings: findingBlocks,
+    notes,
+    technical,
+  });
   const reportText = [
     "OTEAR — INFORME DEL VUELO (BORRADOR DE DEMOSTRACIÓN)",
     "Datos de ejemplo. No es un informe técnico de una operación real.",
@@ -180,7 +198,7 @@ export function FlightReport({
     `${site.name} · ${site.sectorLabel}`,
     `Vuelo: ${flight.title}`,
     `Fecha: ${formatDate(flight.date)} · ${flight.time}`,
-    `Estado: ${flight.status === "completed" ? "Completado en el escenario de ejemplo" : flight.status === "scheduled" ? "Programado; sin entrega documentada" : "Cancelado en el escenario de ejemplo"}`,
+    `Estado: ${flightStatusText(flight.status)}`,
     `Objetivo: ${flight.objective}`,
     `${site.zoneLabel}: ${zoneNames || "Sin zonas seleccionadas"}`,
     "",
@@ -197,16 +215,13 @@ export function FlightReport({
     ...(flightEvidences.length
       ? flightEvidences.map((entry) => {
           const state = evidenceState(entry);
-          return `- ${entry.title}: ${evidenceLabels[state.status]} · sello ${state.hash.slice(0, 12)}${state.missingRoles.length ? ` · falta ${state.missingRoles.join(", ")}` : ""}`;
+          return `- ${displayTitle(entry)}: ${evidenceLabels[state.status]} · sello ${state.hash.slice(0, 12)}${state.missingRoleLabels.length ? ` · falta ${state.missingRoleLabels.join(", ")}` : ""}`;
         })
       : ["- Sin documentos registrados para este vuelo."]),
     "",
     `${words.Plural.toUpperCase()} INCLUIDOS`,
     ...(included.length
-      ? included.map(
-          (finding, index) =>
-            `${index + 1}. ${finding.title}\n   ${site.zoneLabel.replace(/s$/, "")}: ${zoneName(finding)} · prioridad ${priorityLabels[finding.priority]}\n   ${finding.description}\n   Fuente: ${sourceLabel(finding, words)}\n   Estado: ${statusLabel(finding.status, words)}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Tarea de verificación: ${finding.taskAssigned ? "propuesta y añadida a esta sesión" : "sin tarea"}\n   Coordenadas de ejemplo: ${coordinates(finding)}\n   Referencia de muestra: ${finding.id}`,
-        )
+      ? findingBlocks.map((block, index) => `${index + 1}. ${block}`)
       : [`Sin ${words.plural} incluidos.`]),
     "",
     "NOTAS DE REVISIÓN",
@@ -275,7 +290,8 @@ export function FlightReport({
         </label>
         <p className="demo-note">
           Redacción manual. La descarga es un archivo .txt real, sin firma
-          técnica, envío ni generación de PDF.
+          técnica ni envío. Para dejar el informe con huella y firmas por rol
+          use «Firmar el informe del vuelo», más abajo.
         </p>
         <Button
           variant="primary"
@@ -296,6 +312,11 @@ export function FlightReport({
           <Printer size={17} aria-hidden="true" />
           Imprimir o guardar PDF
         </Button>
+        <FlightReportSigning
+          site={site}
+          flight={flight}
+          prefill={signablePrefill}
+        />
       </section>
       <section
         className={`surface ${styles.reportPreview}`}

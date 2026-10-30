@@ -1,17 +1,39 @@
 import type { Evidence, EvidenceSignature } from "../demo/types";
 import { sha256Hex } from "./sha256.ts";
-import { templates, type TemplateId } from "./templates.ts";
+import {
+  roleLabel,
+  sectorOf,
+  templateFor,
+  type TemplateDef,
+  type TemplateId,
+} from "./templates.ts";
 
 export type EvidenceStatus =
   "draft" | "partial" | "signed" | "altered" | "attached" | "requested";
 
+/** The template a document was made from, worded for the sector it was made for. */
+export function templateOf(evidence: Evidence): TemplateDef | undefined {
+  return evidence.templateId
+    ? templateFor(evidence.templateId as TemplateId, sectorOf(evidence.fields))
+    : undefined;
+}
+
+/** The title shown and fingerprinted: a templated document takes it from its template, in its sector's words. */
+export function displayTitle(evidence: Evidence): string {
+  return templateOf(evidence)?.title ?? evidence.title;
+}
+
+/** A stored role as it reads in this document («Propietario o administrador» is «Titular o administrador de la vía» on a road). */
+export function roleLabelOf(evidence: Evidence, role: string): string {
+  const template = templateOf(evidence);
+  return template ? roleLabel(template, role) : role;
+}
+
 /** Exact text that is fingerprinted: the rendered document, or the file hash. */
 export function contentOf(evidence: Evidence): string {
   if (evidence.kind === "attachment") return evidence.attachment?.hash ?? "";
-  const template = evidence.templateId
-    ? templates[evidence.templateId as TemplateId]
-    : undefined;
-  return `${evidence.title}\n${template ? template.render(evidence.fields) : ""}`;
+  const template = templateOf(evidence);
+  return `${displayTitle(evidence)}\n${template ? template.render(evidence.fields) : ""}`;
 }
 
 export function contentHash(evidence: Evidence): string {
@@ -19,9 +41,7 @@ export function contentHash(evidence: Evidence): string {
 }
 
 export function requiredRoles(evidence: Evidence): string[] {
-  const template = evidence.templateId
-    ? templates[evidence.templateId as TemplateId]
-    : undefined;
+  const template = templateOf(evidence);
   return template
     ? template.signers.filter((s) => s.required).map((s) => s.role)
     : [];
@@ -32,6 +52,9 @@ export interface EvidenceState {
   hash: string;
   validRoles: string[];
   missingRoles: string[];
+  /** The same roles as they read in this document, for screens and exports. */
+  validRoleLabels: string[];
+  missingRoleLabels: string[];
   /** Signatures made on a version of the content that no longer matches. */
   staleSignatures: EvidenceSignature[];
 }
@@ -44,6 +67,8 @@ export function evidenceState(evidence: Evidence): EvidenceState {
       hash,
       validRoles: [],
       missingRoles: [],
+      validRoleLabels: [],
+      missingRoleLabels: [],
       staleSignatures: [],
     };
   }
@@ -58,7 +83,15 @@ export function evidenceState(evidence: Evidence): EvidenceState {
   else if (!missingRoles.length && valid.length) status = "signed";
   else if (valid.length) status = "partial";
   else status = "draft";
-  return { status, hash, validRoles, missingRoles, staleSignatures: stale };
+  return {
+    status,
+    hash,
+    validRoles,
+    missingRoles,
+    validRoleLabels: validRoles.map((r) => roleLabelOf(evidence, r)),
+    missingRoleLabels: missingRoles.map((r) => roleLabelOf(evidence, r)),
+    staleSignatures: stale,
+  };
 }
 
 export const statusLabels: Record<EvidenceStatus, string> = {
@@ -87,11 +120,9 @@ export function withFields(
   const after = evidenceState(next);
   const events = [...evidence.events];
   if (after.hash !== before.hash) {
-    const template = evidence.templateId
-      ? templates[evidence.templateId as TemplateId]
-      : undefined;
+    const template = templateOf(next);
     const shown = (value: string | undefined) => {
-      const text = (value ?? "").trim();
+      const text = (value ?? "").trim().replace(/\s*\n\s*/g, " / ");
       if (!text) return "vacío";
       return `«${text.length > 60 ? `${text.slice(0, 57)}…` : text}»`;
     };
@@ -110,7 +141,7 @@ export function withFields(
     if (before.validRoles.length) {
       events.push({
         at: now,
-        text: `Las firmas anteriores (${before.validRoles.join(", ")}) quedaron sin validez porque el contenido cambió.`,
+        text: `Las firmas anteriores (${before.validRoleLabels.join(", ")}) quedaron sin validez porque el contenido cambió.`,
       });
     }
   }
@@ -139,10 +170,51 @@ export function withSignature(
       ...evidence.events,
       {
         at: now,
-        text: `Firmó ${signer.name} (${signer.role}) sobre la versión ${hash.slice(0, 12)}.`,
+        text: `Firmó ${signer.name} (${roleLabelOf(evidence, signer.role)}) sobre la versión ${hash.slice(0, 12)}.`,
       },
     ],
   };
+}
+
+const plain = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const idOf = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** True when two signers are, as far as the form can tell, the same person: same document number, or same name. */
+export function samePerson(
+  a: { name: string; documentId: string },
+  b: { name: string; documentId: string },
+): boolean {
+  const idA = idOf(a.documentId);
+  const idB = idOf(b.documentId);
+  if (idA.length >= 3 && idB.length >= 3) return idA === idB;
+  const nameA = plain(a.name);
+  return nameA.length >= 3 && nameA === plain(b.name);
+}
+
+/**
+ * Some documents need a different person for each role (the operator cannot also be the reviewer of
+ * their own report). Returns the reason a signature must be refused, or null when it can go ahead.
+ * The form cannot prove who someone is: it only stops the same name or document number from
+ * signing two roles.
+ */
+export function signingConflict(
+  evidence: Evidence,
+  role: string,
+  signer: { name: string; documentId: string },
+): string | null {
+  if (!templateOf(evidence)?.separateRoles) return null;
+  const other = evidence.signatures.find(
+    (signature) => signature.role !== role && samePerson(signature, signer),
+  );
+  if (!other) return null;
+  return `${signer.name.trim()} ya firmó como ${roleLabelOf(evidence, other.role)}. En este documento cada rol lo firma una persona distinta; pida a otra persona que firme como ${roleLabelOf(evidence, role)}.`;
 }
 
 export function newEvidence(
