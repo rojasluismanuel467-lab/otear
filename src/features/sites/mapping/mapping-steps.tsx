@@ -16,10 +16,13 @@ import {
   Undo2,
   Layers,
 } from "lucide-react";
+import Link from "next/link";
 import { zonePalette } from "@/components/maps/zone-palette";
 import type { Position, Site } from "@/features/demo/types";
+import type { ZoneInsight } from "@/features/reports/insights";
 import { parseLasHeader } from "@/lib/geo";
 import { AutoProposal } from "./auto-proposal";
+import { chainageRanges, rangeText } from "./chainage";
 import {
   defaultDeclared,
   describeDraft,
@@ -45,6 +48,9 @@ export function OverviewStep({
   selectedZoneId,
   onSelect,
   onStart,
+  stats,
+  findingWord,
+  evolutionTitle,
 }: {
   site: Site;
   kind: OutlineKind;
@@ -52,8 +58,17 @@ export function OverviewStep({
   selectedZoneId?: string;
   onSelect: (id: string) => void;
   onStart: () => void;
+  /** Findings of each zone, most first, to show where the news piles up. */
+  stats: ZoneInsight[];
+  /** The company's word for a finding, lowercase. */
+  findingWord: { singular: string; plural: string };
+  evolutionTitle: string;
 }) {
   const noun = site.zoneLabel.toLowerCase();
+  // Seeded roads carry no chainage: the stretches are counted from 0+000 so each one can be cited.
+  const ranges = kind === "line" ? chainageRanges(site.zones) : [];
+  const top = stats[0]?.findings ? stats[0] : undefined;
+  const hasTie = top !== undefined && stats[1]?.findings === top.findings;
   return (
     <>
       <header className={styles.stepHeader}>
@@ -66,37 +81,73 @@ export function OverviewStep({
       </header>
       {site.zones.length ? (
         <ol className={styles.zoneList} aria-label={site.zoneLabel}>
-          {site.zones.map((zone, index) => (
-            <li key={zone.id}>
-              <button
-                type="button"
-                className={styles.zoneRow}
-                aria-pressed={zone.id === selectedZoneId}
-                onClick={() => onSelect(zone.id)}
-              >
-                <i
-                  style={{
-                    background: zonePalette[index % zonePalette.length],
-                  }}
-                  aria-hidden="true"
-                />
-                <span>
-                  <strong>{zone.name}</strong>
-                  <small>{zone.description}</small>
-                </span>
-              </button>
-            </li>
-          ))}
+          {site.zones.map((zone, index) => {
+            const stat = stats.find((item) => item.zoneId === zone.id);
+            const detail =
+              zone.description ||
+              (ranges[index]
+                ? `${rangeText(ranges[index])} · ${formatMeasure(kind, ranges[index].lengthKm)}`
+                : "");
+            return (
+              <li key={zone.id}>
+                <button
+                  type="button"
+                  className={styles.zoneRow}
+                  aria-pressed={zone.id === selectedZoneId}
+                  onClick={() => onSelect(zone.id)}
+                >
+                  <i
+                    style={{
+                      background: zonePalette[index % zonePalette.length],
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <strong>{zone.name}</strong>
+                    {detail && <small>{detail}</small>}
+                    {stat && stat.findings > 0 && (
+                      <small className={styles.zoneNews}>
+                        {stat.findings}{" "}
+                        {stat.findings === 1
+                          ? findingWord.singular
+                          : findingWord.plural}{" "}
+                        en {stat.flightsWithFindings}{" "}
+                        {stat.flightsWithFindings === 1 ? "vuelo" : "vuelos"}
+                        {top && !hasTie && stat.zoneId === top.zoneId && (
+                          <b>Es donde más hay</b>
+                        )}
+                      </small>
+                    )}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ol>
       ) : null}
+      {kind === "line" && site.zones.length > 0 && (
+        <p className="demo-note">
+          Los PK cuentan los tramos desde 0+000, en el orden de la lista. Son de
+          ejemplo: no vienen de un contrato.
+        </p>
+      )}
       <div className={styles.callout}>
         <MapIcon size={20} aria-hidden="true" />
         <p>
-          Otear puede proponer el contorno de {site.name} a partir de sus
-          vuelos, de un mapa que ya tengan o de la escritura. Luego usted lo
-          reparte en {noun}.
+          Aquí se dibujan y miden los {noun}. Para ver cuál va peor y desde
+          cuándo, vaya a{" "}
+          <Link href="/evolucion" className={styles.inlineLink}>
+            {evolutionTitle}
+          </Link>
+          .
         </p>
       </div>
+      <p className={styles.hint}>
+        Otear puede proponer el contorno de {site.name} a partir de sus vuelos,
+        de un mapa que ya tengan o{" "}
+        {kind === "line" ? "del eje que dice el contrato" : "de la escritura"}.
+        Luego usted lo reparte en {noun}.
+      </p>
       <Button variant="primary" onPress={onStart}>
         <MapIcon size={17} aria-hidden="true" />
         {site.zones.length ? "Mapear de nuevo" : "Mapear este sitio"}
@@ -148,7 +199,7 @@ function sourceCopy(
     },
     draw: {
       title: "Dibujarlo yo",
-      text: "Marca los puntos sobre el mapa, uno por uno.",
+      text: "Marque los puntos sobre el mapa, uno por uno.",
     },
   };
 }
@@ -213,7 +264,7 @@ export function SourceStep({
     const file = files?.[0];
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) {
-      setLocalError("El archivo supera 5 MB. Prueba con uno más liviano.");
+      setLocalError("El archivo supera 5 MB. Pruebe con uno más liviano.");
       return;
     }
     setLocalError("");
@@ -224,7 +275,7 @@ export function SourceStep({
     const file = files?.[0];
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) {
-      setLocalError("El archivo supera 5 MB. Prueba con uno más liviano.");
+      setLocalError("El archivo supera 5 MB. Pruebe con uno más liviano.");
       return;
     }
     setLocalError("");
@@ -251,7 +302,7 @@ export function SourceStep({
     const value = Number(declared.replace(",", "."));
     if (!Number.isFinite(value) || value <= 0) {
       setLocalError(
-        `Escribe el ${kind === "line" ? "largo" : "área"} en ${unit}.`,
+        `Escriba el ${kind === "line" ? "largo" : "área"} en ${unit}.`,
       );
       return;
     }
@@ -433,7 +484,11 @@ export function SourceStep({
                         type="file"
                         accept=".pdf,.jpg,.jpeg,.png"
                         className={styles.hiddenInput}
-                        aria-label="Elegir la escritura o el plano"
+                        aria-label={
+                          kind === "line"
+                            ? "Elegir el inventario o el contrato"
+                            : "Elegir la escritura o el plano"
+                        }
                         onChange={(event) => {
                           setDeedName(event.target.files?.[0]?.name ?? "");
                           event.target.value = "";
@@ -445,7 +500,10 @@ export function SourceStep({
                           onPress={() => deedInput.current?.click()}
                         >
                           <ScrollText size={16} aria-hidden="true" />
-                          {deedName || "Adjuntar escritura (opcional)"}
+                          {deedName ||
+                            (kind === "line"
+                              ? "Adjuntar documento (opcional)"
+                              : "Adjuntar escritura (opcional)")}
                         </Button>
                         <Button variant="primary" onPress={handleDeed}>
                           Proponer contorno

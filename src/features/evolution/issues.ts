@@ -1,5 +1,7 @@
 import type { Finding, Position, Site } from "../demo/types";
+import { chainageRanges, rangeText } from "../sites/mapping/chainage.ts";
 import {
+  fallingSince,
   paceOf,
   phaseOf,
   plannedAt,
@@ -20,6 +22,8 @@ export interface Issue {
   position?: Position;
   facts: { label: string; value: string }[];
   advice?: string;
+  /** Dates of the flights that reported this same finding (a finding only). */
+  seenOn?: string[];
 }
 
 const number = (value: number, digits = 1) =>
@@ -84,10 +88,47 @@ export function issuesFor(input: {
     return zone ? centerOfZone(zone.outline) : undefined;
   };
   const issues: Issue[] = [];
+  // Seeded roads carry no chainage: the stretches are counted from 0+000, as in Mapa.
+  const ranges: Record<string, string> =
+    site.sector === "roads"
+      ? Object.fromEntries(
+          chainageRanges(site.zones).map((range) => [
+            range.zoneId,
+            rangeText(range),
+          ]),
+        )
+      : {};
   const change = (id: string) =>
     reference && reference !== current && reference.values[id] !== undefined
       ? current.values[id] - reference.values[id]
       : undefined;
+  // «Frente al 18 de jul (0,50): +0,12». The sign alone reads as «mejoró»: when the zone is
+  // falling now, the text says that the comparison is against a lower start.
+  const versus = (
+    id: string,
+    format: (value: number) => string,
+    rising: "better" | "worse",
+    falling?: boolean,
+  ) => {
+    const diff = change(id);
+    if (diff === undefined) return [];
+    const better = rising === "better" ? diff > 0 : diff < 0;
+    const note =
+      diff === 0
+        ? ""
+        : falling && better
+          ? " (sigue por encima de entonces, pero viene bajando)"
+          : better
+            ? " (mejor que entonces)"
+            : " (peor que entonces)";
+    return [
+      {
+        label: `Frente al ${date(reference.date)} (${format(reference.values[id])})`,
+        value: `${diff >= 0 ? "+" : "−"}${format(Math.abs(diff))}${note}`,
+      },
+    ];
+  };
+  const pointsFmt = (value: number) => `${number(value, 0)} puntos`;
 
   if (
     site.sector === "construction" ||
@@ -172,13 +213,9 @@ export function issuesFor(input: {
         facts: [
           { label: "Ahora", value: `${number(now, 0)} %` },
           { label: "Dos vuelos antes", value: `${number(before, 0)} %` },
-          ...(change(id) !== undefined
-            ? [
-                {
-                  label: `Desde el ${date(reference.date)}`,
-                  value: `${change(id)! >= 0 ? "+" : "−"}${number(Math.abs(change(id)!), 0)} puntos`,
-                },
-              ]
+          ...versus(id, pointsFmt, "better"),
+          ...(site.sector === "roads" && ranges[id]
+            ? [{ label: "Dónde", value: ranges[id] }]
             : []),
         ],
         advice:
@@ -189,28 +226,32 @@ export function issuesFor(input: {
     }
   } else if (site.sector === "agriculture") {
     for (const id of sustainedDeclines(upTo, zoneIds)) {
+      const start = fallingSince(upTo, id, index);
+      const run = start ? upTo.slice(upTo.indexOf(start)) : upTo.slice(-3);
+      const others = zoneIds
+        .filter((other) => other !== id && current.values[other] !== undefined)
+        .map((other) => `${name(other)} ${fixed(current.values[other])}`);
       issues.push({
         id: `decline-${id}`,
         kind: "decline",
         tone: "danger",
         title: `${name(id)} baja de vigor`,
-        summary: `Cae en dos vuelos seguidos: ${fixed(upTo[upTo.length - 3].values[id])} → ${fixed(upTo[upTo.length - 2].values[id])} → ${fixed(current.values[id])}.`,
+        summary: `Viene bajando desde el ${date((start ?? run[0]).date)} (${fixed((start ?? run[0]).values[id])}): ${run.map((point) => fixed(point.values[id])).join(" → ")}.`,
         zoneId: id,
         position: spot(id),
         facts: [
-          { label: "Vigor ahora", value: fixed(current.values[id]) },
           {
-            label: "Hace dos vuelos",
-            value: fixed(upTo[upTo.length - 3].values[id]),
+            label: "Vigor ahora",
+            value: `${fixed(current.values[id])}, en una escala de 0 (poco verdor) a 1 (mucho)`,
           },
-          ...(change(id) !== undefined
-            ? [
-                {
-                  label: `Desde el ${date(reference.date)}`,
-                  value: `${change(id)! >= 0 ? "+" : "−"}${fixed(Math.abs(change(id)!))}`,
-                },
-              ]
+          {
+            label: "Empezó a bajar",
+            value: `${date((start ?? run[0]).date)}, con ${fixed((start ?? run[0]).values[id])}`,
+          },
+          ...(others.length
+            ? [{ label: "Los demás hoy", value: others.join(" · ") }]
             : []),
+          ...versus(id, fixed, "better", true),
         ],
         advice:
           "Conviene ir a campo: riego, plaga o nutrientes. Un solo dato del dron no distingue la causa.",
@@ -231,7 +272,12 @@ export function issuesFor(input: {
           summary: `Vigor de ${fixed(value)}, por debajo de 0,55.`,
           zoneId: id,
           position: spot(id),
-          facts: [{ label: "Vigor ahora", value: fixed(value) }],
+          facts: [
+            {
+              label: "Vigor ahora",
+              value: `${fixed(value)}, en una escala de 0 (poco verdor) a 1 (mucho)`,
+            },
+          ],
           advice: "Compare con los demás lotes y revise en campo.",
         });
       }
@@ -252,14 +298,7 @@ export function issuesFor(input: {
         position: spot(top),
         facts: [
           { label: "Novedades ahora", value: String(current.values[top]) },
-          ...(change(top) !== undefined
-            ? [
-                {
-                  label: `Desde el ${date(reference.date)}`,
-                  value: `${change(top)! >= 0 ? "+" : "−"}${Math.abs(change(top)!)}`,
-                },
-              ]
-            : []),
+          ...versus(top, (value) => number(value, 0), "worse"),
         ],
         advice: "Revise la ruta de vigilancia y la iluminación de esa zona.",
       });
@@ -269,6 +308,19 @@ export function issuesFor(input: {
   for (const finding of findings.filter(
     (item) => item.flightId === current.flightId && item.status !== "dismissed",
   )) {
+    // Every capture up to the one shown that reported the same finding in the same zone.
+    const seenOn = upTo
+      .filter((point) =>
+        findings.some(
+          (other) =>
+            other.flightId === point.flightId &&
+            other.zoneId === finding.zoneId &&
+            other.title === finding.title &&
+            other.status !== "dismissed" &&
+            !(other.suggestion && other.status === "pending"),
+        ),
+      )
+      .map((point) => point.date);
     issues.push({
       id: `finding-${finding.id}`,
       kind: "finding",
@@ -277,8 +329,27 @@ export function issuesFor(input: {
       summary: finding.description,
       zoneId: finding.zoneId,
       position: finding.position,
+      seenOn,
       facts: [
-        { label: "Zona", value: name(finding.zoneId) },
+        {
+          label: "Zona",
+          value: ranges[finding.zoneId]
+            ? `${name(finding.zoneId)} · ${ranges[finding.zoneId]}`
+            : name(finding.zoneId),
+        },
+        ...(seenOn.length > 1
+          ? [
+              {
+                label: "Visto en",
+                value: `${seenOn.map(date).join(", ")} · sigue abierto`,
+              },
+            ]
+          : [
+              {
+                label: "Visto en",
+                value: `${date(current.date)} · primera vez`,
+              },
+            ]),
         {
           label: "Prioridad",
           value: { high: "Alta", medium: "Media", low: "Baja" }[

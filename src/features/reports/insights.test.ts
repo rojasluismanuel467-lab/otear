@@ -244,3 +244,59 @@ test("a finding repeated from earlier flights is persistent", () => {
   assert.equal(compareWithHistory(findings[0], findings, flights).trend, "new");
   assert.equal(compareWithHistory(findings[3], findings, flights).trend, "new");
 });
+
+test("unreviewed suggestions from the image assistant stay out of every count", () => {
+  const flights = [flight("a", "2026-01-01")];
+  const suggested = finding("s", "a", "z1", {
+    status: "pending",
+    priority: "high",
+    suggestion: {
+      agent: "image",
+      confidence: "low",
+      evidence: [],
+      limits: "",
+      photoSpan: [0, 1],
+    },
+  });
+  const result = computeInsights({
+    ...base,
+    flights,
+    findings: [finding("own", "a", "z1"), suggested],
+  });
+  assert.equal(result.totals.findings, 1);
+  assert.equal(result.totals.pending, 0);
+  assert.equal(result.totals.suggestionsPending, 1);
+  assert.equal(result.byZone[0].findings, 1);
+  assert.ok(!result.attention.some((item) => item.id === "high-pending"));
+});
+
+test("cost per hectare divides the invoices by the area of the flights that were invoiced", () => {
+  const result = computeInsights({
+    ...base,
+    flights: [
+      flight("a", "2026-01-01", { zoneIds: ["z1"] }),
+      flight("b", "2026-02-01", { zoneIds: ["z2"] }),
+    ],
+    findings: [],
+    invoices: [
+      {
+        id: "i",
+        siteId: "s",
+        flightId: "a",
+        reference: "FV-1",
+        description: "",
+        operator: "",
+        total: 100000,
+        paid: 0,
+        dueDate: "",
+      },
+    ],
+  });
+  // Flight b has no invoice: its 20 ha do not enter the denominator.
+  assert.equal(result.cost.perUnit, 10000);
+  assert.deepEqual(result.cost.perUnitBasis, {
+    invoices: 1,
+    flights: 1,
+    billed: 100000,
+  });
+});

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { PageHeading } from "@/components/ui/page-heading";
 import { ParcelMap } from "@/components/maps/parcel-map";
 import { useDemo } from "@/features/demo/demo-context";
-import { useModuleTitle } from "@/features/config/use-config";
+import { useModuleTitle, useTerm } from "@/features/config/use-config";
+import { findingsByZone, ownFindings } from "@/features/reports/insights";
 import type { Position } from "@/features/demo/types";
 import {
   convexHull,
@@ -50,7 +51,14 @@ const stepNumber: Record<Step, number> = {
 
 function SiteMapping() {
   const moduleTitle = useModuleTitle("mapa");
-  const { site, flights, replaceZones, setNotice } = useDemo();
+  const { site, flights, findings, replaceZones, setNotice } = useDemo();
+  const t = useTerm();
+  const evolutionTitle = useModuleTitle("evolucion");
+  const findingWord = {
+    singular: t("finding").toLowerCase(),
+    plural: t("finding", "plural").toLowerCase(),
+  };
+  const zoneStats = findingsByZone(site, ownFindings(findings), flights);
   const kind = outlineKindFor(site.sector);
   const routes = routesOf(flights);
   const [step, setStep] = useState<Step>("overview");
@@ -233,7 +241,7 @@ function SiteMapping() {
   function handleApply() {
     const result = replaceZones(site.id, toZones(site, zones));
     setNotice(
-      `Distribución guardada solo en esta sesión. ${result.flights} vuelos y ${result.findings} hallazgos quedaron asociados a ${site.zoneLabel.toLowerCase()}.`,
+      `Distribución guardada solo en esta sesión. ${result.flights} vuelos y ${result.findings} ${findingWord.plural} quedaron asociados a ${site.zoneLabel.toLowerCase()}.`,
     );
     goTo("overview");
   }
@@ -248,6 +256,20 @@ function SiteMapping() {
           : "view";
   const mapZones =
     step === "overview" ? site.zones : step === "distribute" ? zones : [];
+  // Where the news piles up: findings seen or confirmed, pinned on the map of the current zones.
+  const overviewMarkers =
+    step === "overview"
+      ? ownFindings(findings)
+          .filter((item) => item.status !== "dismissed")
+          .map((item) => ({
+            id: item.id,
+            position: item.position,
+            tone: { high: "danger", medium: "warning", low: "info" }[
+              item.priority
+            ] as "danger" | "warning" | "info",
+            label: item.title,
+          }))
+      : undefined;
   const overviewTotal = measureZones(kind, site.zones);
   const outlineMeasure = outlineValid ? measureOutline(kind, outline) : 0;
 
@@ -255,7 +277,7 @@ function SiteMapping() {
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description={`Parta de lo que ya existe y repártalo en ${site.zoneLabel.toLowerCase()}. Así los vuelos, hallazgos y costos hablan de lo mismo.`}
+        description={`Parta de lo que ya existe y repártalo en ${site.zoneLabel.toLowerCase()}. Así los vuelos, los ${findingWord.plural} y los costos hablan de lo mismo. Los contornos son de ejemplo; solo el mapa de fondo es una imagen real del lugar.`}
       />
       <section className={`surface ${styles.stage}`}>
         <aside
@@ -284,6 +306,9 @@ function SiteMapping() {
                 total={overviewTotal}
                 selectedZoneId={selectedId}
                 onSelect={setSelectedId}
+                stats={zoneStats}
+                findingWord={findingWord}
+                evolutionTitle={evolutionTitle}
                 onStart={() => {
                   setSourceError("");
                   goTo("source");
@@ -300,7 +325,7 @@ function SiteMapping() {
                 onFile={handleFile}
                 onZones={handleZones}
                 onSample={() =>
-                  handleFile(sampleGeoJson(site), "predio-de-ejemplo.geojson")
+                  handleFile(sampleGeoJson(site), "contorno-de-ejemplo.geojson")
                 }
                 onLidar={handleLidar}
                 onDeed={handleDeed}
@@ -375,6 +400,11 @@ function SiteMapping() {
             history={
               step === "source" || step === "outline" ? routes : undefined
             }
+            markers={overviewMarkers}
+            onSelectMarker={(id) => {
+              const found = findings.find((item) => item.id === id);
+              if (found) setSelectedId(found.zoneId);
+            }}
             mode={mode}
             onOutlineChange={setOutline}
             onCut={handleCut}

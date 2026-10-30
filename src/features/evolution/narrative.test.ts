@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { narrate } from "./narrative.ts";
+import { comparisonSummary, narrate } from "./narrative.ts";
 import type { CapturePoint } from "./evolution.ts";
 import type { Site } from "../demo/types";
 
@@ -91,5 +91,44 @@ test("road narration names stalled stretches with their phase", () => {
         line.text.includes("Lote B casi no avanza") &&
         line.text.includes("subbase"),
     ),
+  );
+});
+
+test("comparison says better, worse or the same, and keeps a fall from hiding behind a plus sign", () => {
+  const site = {
+    sector: "agriculture",
+    zones: [{ id: "a" }, { id: "b" }, { id: "c" }],
+  } as unknown as Site;
+  const captures = [
+    point("2026-01-01", { a: 0.5, b: 0.7, c: 0.7 }),
+    point("2026-02-01", { a: 0.75, b: 0.7, c: 0.6 }),
+    point("2026-03-01", { a: 0.72, b: 0.71, c: 0.5 }),
+    point("2026-04-01", { a: 0.62, b: 0.7, c: 0.4 }),
+  ];
+  const lines = comparisonSummary({
+    site,
+    captures,
+    index: 3,
+    referenceIndex: 0,
+    zoneNames: { a: "Lote A", b: "Lote B", c: "Lote C" },
+    findings: [],
+  });
+  const first = lines[0].text;
+  assert.ok(first.includes("empeoró: Lote C (−0,30)"));
+  assert.ok(first.includes("Lote A (+0,12, pero viene bajando)"));
+  assert.ok(first.includes("sin cambio notable en Lote B"));
+  assert.equal(lines[0].tone, "warning");
+  assert.ok(lines.some((line) => line.text.includes("Qué tan fiable")));
+  // Comparing a capture with itself says nothing.
+  assert.deepEqual(
+    comparisonSummary({
+      site,
+      captures,
+      index: 3,
+      referenceIndex: 3,
+      zoneNames: {},
+      findings: [],
+    }),
+    [],
   );
 });
