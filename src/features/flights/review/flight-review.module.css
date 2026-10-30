@@ -502,21 +502,6 @@
   gap: 8px;
   margin: 20px 0;
 }
-.taskBox {
-  margin-top: 22px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-}
-.taskBox h4 {
-  font-size: var(--heading-group);
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.4;
-}
-.taskBox p {
-  color: var(--muted);
-  margin: 8px 0 14px;
-}
 .assistanceNote {
   display: flex;
   align-items: flex-start;

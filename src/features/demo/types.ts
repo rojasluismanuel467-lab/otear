@@ -99,9 +99,33 @@ export interface Finding {
   locationLabel?: string;
   imageUrl: string;
   source: string;
+  /**
+   * Whether a follow-up exists. Kept in step with `followUp` (it is true exactly when `followUp`
+   * is set); read `followUp` for the real state. Older code reads this flag.
+   */
   taskAssigned: boolean;
+  /** Corrective measure followed until it is closed; see features/flights/follow-up.ts. */
+  followUp?: FindingFollowUp;
   /** Set when an assistant, and not the operator, proposed this finding from the photos. */
   suggestion?: FindingSuggestion;
+}
+
+/**
+ * A corrective measure on a finding: who answers for it, by when, and how it ended. Nothing is
+ * notified to anyone in the demo; the record only lives in the session.
+ */
+export interface FindingFollowUp {
+  /** Person or company in charge of the correction (free text). */
+  owner: string;
+  /** Deadline, `YYYY-MM-DD`. Whether it is overdue is calculated against the demo's date. */
+  dueDate: string;
+  status: "open" | "inProgress" | "closed";
+  /** Date it was closed, `YYYY-MM-DD`. */
+  closedOn?: string;
+  /** What was done and with what evidence; required to close. */
+  closure?: string;
+  /** Every change, oldest first. */
+  history: { at: string; text: string }[];
 }
 
 /** What the image assistant says about a candidate finding; a person still decides. */

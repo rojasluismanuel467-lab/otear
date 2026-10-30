@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
@@ -11,6 +11,9 @@ import { SectionTabs } from "@/components/ui/section-tabs";
 import { useDemo } from "@/features/demo/demo-context";
 import { useModuleTitle, useTerm } from "@/features/config/use-config";
 import { FlightTimeline } from "@/features/flights/flight-timeline";
+import { FOLLOW_UP_TODAY } from "@/features/flights/follow-up";
+import { reportTabs } from "@/features/flights/tab-param";
+import { useTabParam } from "@/features/flights/use-tab-param";
 import { preparationTotal } from "@/features/flights/planning/preparation-items";
 import { chainageRanges, rangeText } from "@/features/sites/mapping/chainage";
 import {
@@ -37,6 +40,15 @@ function number(value: number, digits = 1) {
 }
 
 export function ReportsView() {
+  // The tab comes from the address, which needs a Suspense boundary above it.
+  return (
+    <Suspense fallback={null}>
+      <ReportsContent />
+    </Suspense>
+  );
+}
+
+function ReportsContent() {
   const moduleTitle = useModuleTitle("informes");
   const {
     site,
@@ -63,6 +75,7 @@ export function ReportsView() {
     attention: "Pendientes y alertas",
     costs: "Costos",
     services: "Servicios contratados y decisiones",
+    followUp: "Seguimiento de medidas correctivas",
   };
   const router = useRouter();
   const kind = outlineKindFor(site.sector);
@@ -83,7 +96,8 @@ export function ReportsView() {
   const insights = computeInsights(input);
   const dates = insights.completed.map((flight) => flight.date);
   const [selectedId, setSelectedId] = useState<string>();
-  const [tab, setTab] = useState("attention");
+  // `?tab=informe` opens the consolidated report straight away (from a flight or from the guide).
+  const [tab, setTab] = useTabParam(reportTabs, "attention");
   const [showAllAttention, setShowAllAttention] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -95,6 +109,7 @@ export function ReportsView() {
     attention: true,
     costs: true,
     services: true,
+    followUp: true,
   });
   const period = {
     from: from || dates[0] || "2026-01-01",
@@ -315,6 +330,51 @@ export function ReportsView() {
                             : `Ver los ${insights.attention.length - 6} restantes`}
                         </Button>
                       )}
+                    </section>
+
+                    <section
+                      className={styles.block}
+                      aria-labelledby="measures-title"
+                    >
+                      <h2 id="measures-title">Medidas correctivas</h2>
+                      <p className={styles.muted}>
+                        Cada {findingWord.singular} puede tener un responsable,
+                        un plazo y una nota de cierre. A{" "}
+                        {formatDate(FOLLOW_UP_TODAY)}, día de la demostración:
+                      </p>
+                      <ul className={styles.measureCounts}>
+                        <li>
+                          <strong>{insights.measures.open}</strong>{" "}
+                          {insights.measures.open === 1
+                            ? "abierta"
+                            : "abiertas"}
+                        </li>
+                        <li>
+                          <strong>{insights.measures.inProgress}</strong> en
+                          corrección
+                        </li>
+                        <li>
+                          <strong>{insights.measures.closed}</strong>{" "}
+                          {insights.measures.closed === 1
+                            ? "cerrada"
+                            : "cerradas"}
+                        </li>
+                        <li data-late={insights.measures.overdue > 0}>
+                          <strong>{insights.measures.overdue}</strong>{" "}
+                          {insights.measures.overdue === 1
+                            ? "vencida"
+                            : "vencidas"}
+                        </li>
+                      </ul>
+                      <p className={styles.muted}>
+                        Las vencidas son parte de las abiertas o en corrección
+                        cuyo plazo ya pasó.
+                        {insights.measures.withoutMeasure > 0 &&
+                          ` Hay ${insights.measures.withoutMeasure} sin responsable entre los que usted confirmó.`}{" "}
+                        <Link href="/vuelos?tab=hallazgos">
+                          Ver las medidas en Vuelos
+                        </Link>
+                      </p>
                     </section>
 
                     <section

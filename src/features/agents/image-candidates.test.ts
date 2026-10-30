@@ -12,6 +12,7 @@ import {
   suggestionStats,
   type Suggested,
 } from "./image-candidates.ts";
+import { findingWords } from "../flights/finding-words.ts";
 import { buildCaptures } from "../evolution/evolution.ts";
 import { operatorSummaries } from "../reports/operators.ts";
 import type { Finding, FindingSuggestion, Flight, Site } from "../demo/types";
@@ -81,6 +82,21 @@ test("source follows the suggestion through its review", () => {
     /descartada por una persona/,
   );
   assert.equal(sourceLabel(finding("b")), "Observación del operador · ejemplo");
+});
+
+test("the seeded operator line takes the company's word whichever sector's default it starts with", () => {
+  const words = findingWords("Hallazgo de campo", "Hallazgos de campo");
+  const roads = finding("r", {
+    source: "No conformidad del operador · ejemplo · imagen ilustrativa",
+  });
+  assert.equal(
+    sourceLabel(roads),
+    "No conformidad del operador · ejemplo · imagen ilustrativa",
+  );
+  assert.equal(
+    sourceLabel(roads, words),
+    "Hallazgo de campo del operador · ejemplo · imagen ilustrativa",
+  );
 });
 
 test("stats count only what a person reviewed", () => {

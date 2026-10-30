@@ -6,6 +6,13 @@ import type {
   Invoice,
   Site,
 } from "../demo/types";
+import {
+  FOLLOW_UP_TODAY,
+  dueText,
+  measureList,
+  summarizeFollowUps,
+  type FollowUpSummary,
+} from "../flights/follow-up.ts";
 import { evidenceState } from "../traceability/integrity.ts";
 import { itemsWithoutSupport } from "../traceability/requirements.ts";
 
@@ -23,6 +30,8 @@ export interface InsightInput {
   evidences?: Evidence[];
   /** The company's word for a finding (see `useTerm`), lowercase; defaults to «hallazgo(s)». */
   findingWord?: { singular: string; plural: string };
+  /** The day corrective measures are read against; the demo's day by default. */
+  today?: string;
 }
 
 export interface ZoneInsight {
@@ -64,6 +73,8 @@ export interface SiteInsights {
     /** Candidates from the image assistant still waiting for a person; they are not counted above. */
     suggestionsPending: number;
   };
+  /** Corrective measures by state; unreviewed suggestions and dismissed findings are out. */
+  measures: FollowUpSummary;
   byZone: ZoneInsight[];
   timeline: TimelinePoint[];
   attention: AttentionItem[];
@@ -208,6 +219,20 @@ export function computeInsights(input: InsightInput): SiteInsights {
       href: "/vuelos",
     });
   }
+  const today = input.today ?? FOLLOW_UP_TODAY;
+  const measures = summarizeFollowUps(findings, today);
+  if (measures.overdue) {
+    const [worst] = measureList(findings, today, "overdue");
+    attention.push({
+      id: "overdue-measures",
+      tone: "danger",
+      text:
+        `${measures.overdue} ${measures.overdue === 1 ? "medida correctiva vencida" : "medidas correctivas vencidas"}. ` +
+        `La más atrasada: ${worst.finding.title}${worst.finding.locationLabel ? ` (${worst.finding.locationLabel})` : ""}, ` +
+        `responsable ${worst.followUp.owner}, ${dueText(worst.followUp, today).toLowerCase()}.`,
+      href: "/vuelos?tab=hallazgos",
+    });
+  }
   for (const document of documents) {
     if (document.status === "expired") {
       attention.push({
@@ -317,6 +342,7 @@ export function computeInsights(input: InsightInput): SiteInsights {
       pending: pending.length,
       suggestionsPending,
     },
+    measures,
     byZone,
     timeline,
     attention,

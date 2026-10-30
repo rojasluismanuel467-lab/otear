@@ -3,6 +3,7 @@ import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
 import { planMission } from "@/features/flights/mission-plan";
+import { dayText } from "@/features/flights/follow-up";
 import {
   lineLengthKm,
   pointAlongLine,
@@ -19,6 +20,7 @@ import type {
   PartMark,
   Sector,
   Finding,
+  FindingFollowUp,
   FindingSuggestion,
   Flight,
   FlightDocument,
@@ -762,6 +764,199 @@ const findingNames = {
   ],
 };
 
+/** The company's word for a finding in each sector's own vocabulary; the screens may swap it for the one set in Configuración. */
+const operatorSourceWord: Record<Sector, string> = {
+  agriculture: "Hallazgo",
+  roads: "No conformidad",
+  construction: "Observación",
+  security: "Novedad",
+  mining: "Novedad de talud",
+};
+
+/**
+ * What each sector's seeded findings say, in that sector's own terms: what to check and where. The
+ * titles are in `findingNames`; the three texts of `current` follow them in the same order.
+ */
+const findingTexts: Record<
+  Sector,
+  { current: [string, string, string]; past: string }
+> = {
+  agriculture: {
+    current: [
+      "El operador marcó un tramo del lote con la cobertura menos pareja que la del resto. Revise la foto y recorra el lote para ver si hay fallas de siembra antes de decidir.",
+      "El operador marcó una zona con un color distinto al del cultivo vecino. Revise la foto y verifíquela en el lote antes de decidir.",
+      "Punto de seguimiento de la resiembra anterior. Compárelo con el vuelo previo y confirme en el lote si las plantas prendieron.",
+    ],
+    past: "Punto de un vuelo anterior, ya revisado por el responsable en el escenario de ejemplo.",
+  },
+  roads: {
+    current: [
+      "El operador marcó un punto de la calzada con deterioro (grietas o material suelto). Revise la foto, verifique en la vía y decida si exige la reparación al contratista.",
+      "El operador marcó una obra de drenaje (cuneta o alcantarilla) con posible obstrucción. Verifique en la vía si hay sedimento o agua represada antes de pedir su limpieza.",
+      "Punto de seguimiento de un talud. Compárelo con el recorrido anterior y verifique en la vía si hay cambios o material caído.",
+    ],
+    past: "Punto de un recorrido anterior, ya revisado por la interventoría en el escenario de ejemplo.",
+  },
+  construction: {
+    current: [
+      "El operador marcó material acopiado en el frente. Verifique en la obra si debe retirarse y quién responde por hacerlo.",
+      "El operador marcó un frente con un avance distinto al previsto (losa, estructura o acabado). Compárelo con el programa y verifíquelo en la obra.",
+      "Punto de seguimiento del avance de un frente. Compárelo con el vuelo anterior y confirme en la obra el estado del acabado.",
+    ],
+    past: "Punto de un vuelo anterior, ya revisado por la residencia de obra en el escenario de ejemplo.",
+  },
+  security: {
+    current: [
+      "El operador marcó un tramo del cerramiento con posible daño o abertura. Verifique en el perímetro y decida si se repara.",
+      "El operador marcó un acceso con algo fuera de lo normal (puerta abierta u obstáculo). Verifíquelo con el personal de la ronda.",
+      "Punto de seguimiento del perímetro. Compárelo con la ronda anterior y verifique en el sitio si hubo cambios.",
+    ],
+    past: "Punto de una ronda anterior, ya revisado por el supervisor en el escenario de ejemplo.",
+  },
+  mining: {
+    current: [
+      "El operador marcó una línea que podría ser una grieta junto a la cresta del talud. Verifíquela en el banco con el equipo geotécnico antes de operar cerca.",
+      "El operador marcó agua empozada en el piso del banco. Verifique en el banco el drenaje y el estado del piso.",
+      "Punto de seguimiento de la rampa de acceso. Compárelo con el vuelo anterior y verifique su estado en el sitio.",
+    ],
+    past: "Punto de un levantamiento anterior, ya revisado por el equipo geotécnico en el escenario de ejemplo.",
+  },
+};
+
+interface FollowUpSeed {
+  owner: string;
+  /** Day the measure was opened, and the deadline. */
+  opened: string;
+  due: string;
+  /** Day it went into correction; empty while it is only open. */
+  started?: string;
+  closedOn?: string;
+  closure?: string;
+}
+
+/** The people in charge of corrections in each sector's example (all invented). */
+const seedOwners: Record<Sector, [string, string]> = {
+  agriculture: [
+    "Jefe de campo (ejemplo)",
+    "Administrador de la hacienda (ejemplo)",
+  ],
+  roads: [
+    "Contratista de mantenimiento vial (ejemplo)",
+    "Residente de obra del concesionario (ejemplo)",
+  ],
+  construction: [
+    "Residente de obra (ejemplo)",
+    "Contratista de estructura (ejemplo)",
+  ],
+  security: [
+    "Supervisor de seguridad (ejemplo)",
+    "Jefe de mantenimiento del parque (ejemplo)",
+  ],
+  mining: ["Jefe de geotecnia (ejemplo)", "Superintendente de mina (ejemplo)"],
+};
+
+/** How the second kind of finding (drainage, access, front...) was closed, per sector. */
+const seedClosures: Record<Sector, [string, string]> = {
+  agriculture: [
+    "Se visitó la zona con el jefe de campo y se corrigió; verificada con foto del 11 de agosto (ejemplo).",
+    "Se corrigió la zona y se comprobó en el lote con foto del 8 de septiembre (ejemplo).",
+  ],
+  roads: [
+    "Se limpió la alcantarilla y se retiró el sedimento; la interventoría lo verificó en sitio con foto del 11 de agosto (ejemplo).",
+    "Se reparó la cuneta y se verificó en sitio con foto del 8 de septiembre (ejemplo).",
+  ],
+  construction: [
+    "El residente ajustó el frente al programa; la interventoría lo verificó con foto del 11 de agosto (ejemplo).",
+    "Se corrigió el frente y se comprobó en la obra con foto del 8 de septiembre (ejemplo).",
+  ],
+  security: [
+    "Se corrigió el acceso y el supervisor lo verificó en la ronda del 11 de agosto (ejemplo).",
+    "Se aseguró el acceso y se comprobó en la ronda del 8 de septiembre (ejemplo).",
+  ],
+  mining: [
+    "Se habilitó el drenaje del banco y geotecnia lo verificó con foto del 11 de agosto (ejemplo).",
+    "Se drenó el banco y geotecnia lo comprobó con foto del 8 de septiembre (ejemplo).",
+  ],
+};
+
+/**
+ * Corrective measures in the example, told from the demo's «today» (30 October 2026): one closed
+ * with its note, one in correction and already late, one open and on time. Roads, where the
+ * follow-up is the work itself, carry more, in every state. Keys are the finding id without the
+ * «finding-<site>-» prefix, with «_» in place of «-».
+ */
+function followUpSeeds(sector: Sector): Record<string, FollowUpSeed> {
+  const [a, b] = seedOwners[sector];
+  const [closedA, closedB] = seedClosures[sector];
+  const seeds: Record<string, FollowUpSeed> = {
+    h3_2: {
+      owner: a,
+      opened: "2026-07-20",
+      started: "2026-07-29",
+      due: "2026-08-14",
+      closedOn: "2026-08-11",
+      closure: closedA,
+    },
+    h5_2: {
+      owner: b,
+      opened: "2026-09-21",
+      started: "2026-10-02",
+      due: "2026-10-16",
+    },
+    "1": { owner: a, opened: "2026-10-26", due: "2026-11-06" },
+  };
+  if (sector === "roads") {
+    seeds.h4_2 = {
+      owner: a,
+      opened: "2026-08-24",
+      started: "2026-08-31",
+      due: "2026-09-12",
+      closedOn: "2026-09-08",
+      closure: closedB,
+    };
+    seeds.h6_1 = { owner: b, opened: "2026-10-12", due: "2026-10-27" };
+    seeds.h6_2 = {
+      owner: a,
+      opened: "2026-10-12",
+      started: "2026-10-20",
+      due: "2026-11-06",
+    };
+  }
+  return seeds;
+}
+
+function followUpFrom(seed: FollowUpSeed): FindingFollowUp {
+  const history = [
+    {
+      at: seed.opened,
+      text: `Se abrió la medida: responsable ${seed.owner}, plazo ${dayText(seed.due)}.`,
+    },
+  ];
+  if (seed.started) {
+    history.push({ at: seed.started, text: "Pasó a «en corrección»." });
+  }
+  if (seed.closedOn && seed.closure) {
+    history.push({ at: seed.closedOn, text: `Cerrada. ${seed.closure}` });
+  }
+  return {
+    owner: seed.owner,
+    dueDate: seed.due,
+    status: seed.closedOn ? "closed" : seed.started ? "inProgress" : "open",
+    ...(seed.closedOn && seed.closure
+      ? { closedOn: seed.closedOn, closure: seed.closure }
+      : {}),
+    history,
+  };
+}
+
+/** The follow-up the example gives a finding, and the flag that goes with it. */
+function seededFollowUp(site: Site, key: string) {
+  const seed = followUpSeeds(site.sector)[key];
+  return seed
+    ? { followUp: followUpFrom(seed), taskAssigned: true }
+    : { taskAssigned: false };
+}
+
 const currentFindings: Finding[] = sites.flatMap((site) =>
   [0, 1, 2].map((index) => {
     const zone = site.zones[index % site.zones.length];
@@ -774,7 +969,7 @@ const currentFindings: Finding[] = sites.flatMap((site) =>
       title: findingNames[site.sector][index],
       description: describeAt(
         location,
-        "El operador señaló este punto en su entrega. Revisar la evidencia y confirmar la observación en sitio antes de tomar una decisión.",
+        findingTexts[site.sector].current[index],
       ),
       priority: (["high", "medium", "low"] as const)[index],
       status: "pending" as const,
@@ -786,8 +981,11 @@ const currentFindings: Finding[] = sites.flatMap((site) =>
       ),
       ...location,
       imageUrl: site.imageUrl,
-      source: exampleSource(site, "Observación del operador · ejemplo"),
-      taskAssigned: false,
+      source: exampleSource(
+        site,
+        `${operatorSourceWord[site.sector]} del operador · ejemplo`,
+      ),
+      ...seededFollowUp(site, String(index + 1)),
     };
   }),
 );
@@ -809,10 +1007,7 @@ const historyFindings: Finding[] = sites.flatMap((site) =>
           // The first zone repeats on purpose: recurrence is what the insights surface.
           zoneId: zone.id,
           title: findingNames[site.sector][index],
-          description: describeAt(
-            location,
-            "Observación de un vuelo anterior, ya revisada por el responsable en el escenario de ejemplo.",
-          ),
+          description: describeAt(location, findingTexts[site.sector].past),
           priority: (["high", "medium", "low"] as const)[
             (index + flightIndex) % 3
           ],
@@ -827,8 +1022,11 @@ const historyFindings: Finding[] = sites.flatMap((site) =>
           ),
           ...location,
           imageUrl: site.imageUrl,
-          source: exampleSource(site, "Observación del operador · ejemplo"),
-          taskAssigned: index === 0,
+          source: exampleSource(
+            site,
+            `${operatorSourceWord[site.sector]} del operador · ejemplo`,
+          ),
+          ...seededFollowUp(site, `h${item.n}_${index + 1}`),
         };
       }),
   ),

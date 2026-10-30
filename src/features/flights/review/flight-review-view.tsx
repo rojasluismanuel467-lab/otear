@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button, Tabs } from "@heroui/react";
@@ -45,6 +45,11 @@ import {
 } from "@/features/agents/image-candidates";
 import { SuggestionDetail } from "@/features/agents/suggestion-detail";
 import { SuggestionSummary } from "@/features/agents/suggestion-summary";
+import { FOLLOW_UP_TODAY, followUpBadge } from "../follow-up";
+import { flightTabs } from "../tab-param";
+import { useTabParam } from "../use-tab-param";
+import { FollowUpPanel } from "./follow-up-panel";
+import { MeasureBoard } from "./measure-board";
 import { ReplayBar } from "../replay/replay-bar";
 import { useReplay } from "../replay/use-replay";
 import styles from "./flight-review.module.css";
@@ -80,6 +85,9 @@ export function FlightReviewView() {
   const moduleTitle = useModuleTitle("vuelos");
   const words = useFindingWords();
   const { site, flights, selectedFlightId, selectFlight } = useDemo();
+  // A finding chosen from the list of measures may belong to another flight: the id waits here
+  // while that flight's view is built, and it opens with the finding already selected.
+  const [focusFindingId, setFocusFindingId] = useState("");
   const flight =
     flights.find((item) => item.id === selectedFlightId) ?? flights[0];
   const orderedFlights = [...flights].sort((a, b) =>
@@ -107,13 +115,26 @@ export function FlightReviewView() {
               flights={orderedFlights}
               selectedId={flight.id}
               onSelect={(id) => {
+                setFocusFindingId("");
                 selectFlight(id);
                 revealDetail("flight-detail");
               }}
             />
           </aside>
           <div id="flight-detail" data-reveal-target className={styles.content}>
-            <FlightContent key={flight.id} flight={flight} />
+            <Suspense fallback={null}>
+              <FlightContent
+                key={flight.id}
+                flight={flight}
+                initialFindingId={focusFindingId}
+                onFocusFinding={(finding) => {
+                  setFocusFindingId(finding.id);
+                  if (finding.flightId !== flight.id) {
+                    selectFlight(finding.flightId);
+                  }
+                }}
+              />
+            </Suspense>
           </div>
         </div>
       ) : (
@@ -127,13 +148,21 @@ export function FlightReviewView() {
   );
 }
 
-function FlightContent({ flight }: { flight: Flight }) {
+function FlightContent({
+  flight,
+  initialFindingId,
+  onFocusFinding,
+}: {
+  flight: Flight;
+  initialFindingId: string;
+  onFocusFinding: (finding: Finding) => void;
+}) {
   const words = useFindingWords();
   const filterLabels = filterLabelsFor(words);
   const { site, flights, findings, updateFinding, updateFlight, setNotice } =
     useDemo();
-  const [activeTab, setActiveTab] = useState("summary");
-  const [selectedFindingId, setSelectedFindingId] = useState("");
+  const [activeTab, setActiveTab] = useTabParam(flightTabs, "summary");
+  const [selectedFindingId, setSelectedFindingId] = useState(initialFindingId);
   const [filter, setFilter] = useState<ReviewFilter>("all");
   const flightFindings = findings.filter(
     (finding) => finding.flightId === flight.id,
@@ -381,6 +410,15 @@ function FlightContent({ flight }: { flight: Flight }) {
                   Consultar programación
                   <ArrowRight size={15} aria-hidden="true" />
                 </Link>
+                {flight.status === "completed" && (
+                  <Link
+                    className={styles.textLink}
+                    href="/informes?tab=informe"
+                  >
+                    Informe consolidado de varios vuelos
+                    <ArrowRight size={15} aria-hidden="true" />
+                  </Link>
+                )}
               </div>
             </section>
           </div>
@@ -400,6 +438,22 @@ function FlightContent({ flight }: { flight: Flight }) {
         </Tabs.Panel>
 
         <Tabs.Panel id="findings" className={styles.panel}>
+          <MeasureBoard
+            site={site}
+            findings={findings}
+            flightDates={Object.fromEntries(
+              flights.map((item) => [item.id, item.date]),
+            )}
+            selectedId={selectedFinding?.id}
+            onOpen={(finding) => {
+              if (finding.flightId === flight.id) {
+                pickFinding(finding.id);
+                revealDetail("finding-detail");
+              } else {
+                onFocusFinding(finding);
+              }
+            }}
+          />
           {flightFindings.length === 0 ? (
             <EmptyState
               title={`Este vuelo no tiene ${words.plural}`}
@@ -485,6 +539,8 @@ function FlightContent({ flight }: { flight: Flight }) {
                               )?.name
                             }{" "}
                             · {statusText(finding, words)}
+                            {finding.followUp &&
+                              ` · Medida: ${followUpBadge(finding.followUp, FOLLOW_UP_TODAY).label.toLowerCase()}`}
                           </small>
                         </span>
                         {isSuggested(finding) ? (
@@ -508,6 +564,8 @@ function FlightContent({ flight }: { flight: Flight }) {
                 </section>
                 {selectedFinding && (
                   <section
+                    id="finding-detail"
+                    data-reveal-target
                     className={`surface ${styles.findingDetail}`}
                     aria-label={`Detalle ${agree(words, "del", "de la")} ${words.singular} ${agree(words, "seleccionado", "seleccionada")}`}
                   >
@@ -594,32 +652,10 @@ function FlightContent({ flight }: { flight: Flight }) {
                           </Button>
                         )}
                       </div>
-                      <div className={styles.taskBox}>
-                        <h4>Próximo paso</h4>
-                        <p>
-                          {selectedFinding.taskAssigned
-                            ? "Tarea de verificación añadida a esta sesión. No se notificó a ninguna persona."
-                            : "Puede registrar una tarea para pedir la verificación en sitio. En esta demo no se envía a nadie."}
-                        </p>
-                        <Button
-                          variant="outline"
-                          onPress={() => {
-                            updateFinding(selectedFinding.id, {
-                              taskAssigned: !selectedFinding.taskAssigned,
-                            });
-                            setNotice(
-                              selectedFinding.taskAssigned
-                                ? "Tarea retirada de esta sesión."
-                                : "Tarea añadida solo a esta demo. No se envió una asignación real.",
-                            );
-                          }}
-                        >
-                          <ClipboardCheck size={16} aria-hidden="true" />
-                          {selectedFinding.taskAssigned
-                            ? "Quitar la tarea de verificación"
-                            : "Añadir tarea de verificación"}
-                        </Button>
-                      </div>
+                      <FollowUpPanel
+                        key={selectedFinding.id}
+                        finding={selectedFinding}
+                      />
                     </div>
                   </section>
                 )}
