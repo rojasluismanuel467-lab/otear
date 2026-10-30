@@ -22,7 +22,6 @@ import {
   MeshStandardMaterial,
   type MeshStandardMaterialParameters,
   PlaneGeometry,
-  RingGeometry,
   Shape,
   SphereGeometry,
   SplineCurve,
@@ -147,6 +146,51 @@ function createKit() {
   };
 }
 
+/** Radial gradient for the blur of a spinning rotor: clear at the hub, a soft haze toward the tips. */
+function createBlurTexture(kit: Kit) {
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (context) {
+    const gradient = context.createRadialGradient(
+      size / 2,
+      size / 2,
+      size * 0.1,
+      size / 2,
+      size / 2,
+      size / 2,
+    );
+    gradient.addColorStop(0, "rgba(205,216,223,0)");
+    gradient.addColorStop(0.35, "rgba(205,216,223,0.07)");
+    gradient.addColorStop(0.82, "rgba(205,216,223,0.2)");
+    gradient.addColorStop(0.95, "rgba(225,233,238,0.26)");
+    gradient.addColorStop(1, "rgba(225,233,238,0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+  const texture = kit.texture(new CanvasTexture(canvas));
+  texture.colorSpace = SRGBColorSpace;
+  return texture;
+}
+
+/** A propeller blade with pale tips, so the eye follows its motion. */
+function createTippedBladeGeometry() {
+  const geometry = createBladeGeometry();
+  const position = geometry.getAttribute("position");
+  const colors: number[] = [];
+  const body = new Color(0x2b3236);
+  const tip = new Color(0xe9edf0);
+  for (let index = 0; index < position.count; index += 1) {
+    const along = clamp01((position.getX(index) - 0.3) / 0.1);
+    const color = body.clone().lerp(tip, along);
+    colors.push(color.r, color.g, color.b);
+  }
+  geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
+  return geometry;
+}
+
 /** Materials of the four generic families: painted shell, graphite plastic, rubber, glass, metal. */
 function createPaints(kit: Kit) {
   const paint = (color: number, options: MeshPhysicalMaterialParameters = {}) =>
@@ -173,6 +217,16 @@ function createPaints(kit: Kit) {
       clearcoatRoughness: 0.03,
     }),
     rubber: kit.material(0x14181a, { roughness: 0.92, metalness: 0 }),
+    // A spinning rotor reads as a soft disc that is densest toward the tips.
+    blurDisc: kit.track(
+      new MeshBasicMaterial({
+        map: createBlurTexture(kit),
+        transparent: true,
+        depthWrite: false,
+        side: DoubleSide,
+      }),
+    ),
+    blade: kit.material(0xffffff, { roughness: 0.42, vertexColors: true }),
     metal: kit.material(0x9aa3a9, { roughness: 0.3, metalness: 0.8 }),
     led: (color: number) =>
       kit.material(color, { emissive: color, emissiveIntensity: 1.5 }),
@@ -252,12 +306,12 @@ function addRotorUnit(
   const propeller = new Group();
   propeller.position.set(x, y + 0.012, z);
   if (mirror) propeller.scale.z = -1;
-  const blade = createBladeGeometry();
+  const blade = createTippedBladeGeometry();
   const scale = radius / 0.4;
   for (let index = 0; index < 2; index += 1) {
     const holder = new Group();
     holder.rotation.y = index * Math.PI;
-    const mesh = kit.mesh(blade, kit.prop);
+    const mesh = kit.mesh(blade, paints.blade);
     mesh.scale.setScalar(scale);
     holder.add(mesh);
     propeller.add(holder);
@@ -273,14 +327,10 @@ function addRotorUnit(
   );
   cone.position.y = 0.045;
   propeller.add(cone);
-  const blur = kit.mesh(new CircleGeometry(radius, 44), kit.blur);
+  const blur = kit.mesh(new CircleGeometry(radius, 56), paints.blurDisc);
   blur.rotation.x = -Math.PI / 2;
   blur.position.y = 0.006;
   propeller.add(blur);
-  const edge = kit.mesh(new RingGeometry(radius * 0.93, radius, 56), kit.blur);
-  edge.rotation.x = -Math.PI / 2;
-  edge.position.y = 0.007;
-  propeller.add(edge);
   parent.add(propeller);
   return propeller;
 }
@@ -362,63 +412,89 @@ function buildCompact(kit: Kit): Parts {
   const group = new Group();
   const propellers: Group[] = [];
 
-  // Body: painted shell over a graphite belly, with a raised deck.
+  // Body: a smooth pod, light shell over a graphite belly, like a folding survey drone.
+  const pod: [number, number][] = [
+    [-0.8, 0],
+    [-0.74, 0.14],
+    [-0.62, 0.3],
+    [-0.4, 0.43],
+    [-0.15, 0.49],
+    [0.1, 0.5],
+    [0.34, 0.47],
+    [0.55, 0.39],
+    [0.7, 0.24],
+    [0.78, 0.09],
+    [0.8, 0],
+  ];
+  const bellyHalf = 1.25;
   group.add(
-    kit.mesh(new RoundedBoxGeometry(1.0, 0.3, 1.46, 6, 0.14), paints.shell),
+    kit.mesh(
+      fuselageSkin(-bellyHalf, bellyHalf * 2, 28, pod, 0.46),
+      paints.graphite,
+    ),
+    kit.mesh(
+      fuselageSkin(bellyHalf, Math.PI * 2 - bellyHalf * 2, 40, pod, 0.46),
+      paints.shell,
+    ),
   );
-  const belly = kit.mesh(
-    new RoundedBoxGeometry(0.84, 0.12, 1.2, 4, 0.05),
-    paints.graphite,
-  );
-  belly.position.y = -0.17;
-  group.add(belly);
-  const deck = kit.mesh(
-    new RoundedBoxGeometry(0.7, 0.16, 1.0, 6, 0.08),
-    paints.shade,
-  );
-  deck.position.set(0, 0.19, -0.1);
+  // Raised deck with the battery cover, its seams and the brand stripe
+  const deck = kit.mesh(new SphereGeometry(1, 28, 14), paints.shade);
+  deck.scale.set(0.3, 0.08, 0.52);
+  deck.position.set(0, 0.18, -0.08);
   group.add(deck);
-  const stripe = kit.mesh(new BoxGeometry(0.09, 0.012, 0.66), paints.accent);
-  stripe.position.set(0, 0.277, -0.12);
+  const stripe = kit.mesh(new BoxGeometry(0.07, 0.012, 0.74), paints.accent);
+  stripe.position.set(0, 0.255, -0.08);
   group.add(stripe);
+  for (const side of [-1, 1]) {
+    const seam = kit.mesh(new BoxGeometry(0.006, 0.014, 0.84), paints.black);
+    seam.position.set(side * 0.2, 0.2, -0.08);
+    seam.rotation.z = side * 0.28;
+    group.add(seam);
+  }
   // Rear vents and the GPS dome
   for (let slit = 0; slit < 3; slit += 1) {
-    const vent = kit.mesh(new BoxGeometry(0.36, 0.012, 0.028), paints.black);
-    vent.position.set(0, 0.272, -0.5 - slit * 0.06);
+    const vent = kit.mesh(new BoxGeometry(0.3, 0.012, 0.026), paints.black);
+    vent.position.set(0, 0.17 - slit * 0.012, -0.5 - slit * 0.06);
+    vent.rotation.x = 0.35 + slit * 0.12;
     group.add(vent);
   }
-  const dome = kit.mesh(new SphereGeometry(0.11, 20, 12), paints.shell);
+  const dome = kit.mesh(new SphereGeometry(0.1, 20, 12), paints.shell);
   dome.scale.set(1, 0.5, 1);
-  dome.position.set(0, 0.268, 0.28);
+  dome.position.set(0, 0.215, 0.28);
   group.add(dome);
-  // Nose: sensor window with two vision lenses
-  const nose = kit.mesh(
-    new RoundedBoxGeometry(0.66, 0.16, 0.1, 4, 0.04),
-    paints.black,
-  );
-  nose.position.set(0, 0.02, 0.72);
-  group.add(nose);
+  // Nose: two vision lenses in a dark band, and a forward light
+  const band = kit.mesh(new SphereGeometry(1, 24, 12), paints.black);
+  band.scale.set(0.34, 0.07, 0.14);
+  band.position.set(0, 0.05, 0.63);
+  group.add(band);
   for (const side of [-1, 1]) {
-    const eye = kit.mesh(new CircleGeometry(0.052, 20), paints.glass);
-    eye.position.set(side * 0.21, 0.02, 0.774);
+    const eye = kit.mesh(new SphereGeometry(0.046, 16, 12), paints.glass);
+    eye.scale.z = 0.5;
+    eye.position.set(side * 0.19, 0.05, 0.725);
     group.add(eye);
-    const rim = kit.mesh(new TorusGeometry(0.052, 0.008, 8, 24), paints.metal);
-    rim.position.copy(eye.position);
+    const rim = kit.mesh(new TorusGeometry(0.05, 0.007, 8, 24), paints.metal);
+    rim.position.set(side * 0.19, 0.05, 0.725);
     group.add(rim);
   }
-  // Rear status strip and battery latches
+  // Belly: downward vision sensors and the rear status strip
+  for (const side of [-1, 1]) {
+    const sensor = kit.mesh(new CircleGeometry(0.035, 16), paints.glass);
+    sensor.rotation.x = Math.PI / 2;
+    sensor.position.set(side * 0.16, -0.2, 0.3);
+    group.add(sensor);
+  }
   const strip = kit.mesh(
-    new BoxGeometry(0.46, 0.018, 0.012),
+    new BoxGeometry(0.2, 0.016, 0.012),
     paints.led(0xb7f0c8),
   );
-  strip.position.set(0, 0.02, -0.735);
+  strip.position.set(0, 0.04, -0.7);
   group.add(strip);
   for (const side of [-1, 1]) {
-    const latch = kit.mesh(new BoxGeometry(0.012, 0.07, 0.18), paints.graphite);
-    latch.position.set(side * 0.5, 0.04, -0.1);
+    const latch = kit.mesh(new BoxGeometry(0.014, 0.07, 0.2), paints.graphite);
+    latch.position.set(side * 0.485, 0.03, -0.1);
     group.add(latch);
   }
-  addPayload(kit, paints, group, 0.8, -0.3);
+  addPayload(kit, paints, group, 0.66, -0.3);
 
   // Landing skids on splayed legs, with rubber feet and an upturned nose
   for (const side of [-1, 1]) {
@@ -520,10 +596,15 @@ function buildEnterprise(kit: Kit): Parts {
   group.add(bar);
   const panel = kit.mesh(
     new RoundedBoxGeometry(0.5, 0.02, 0.4, 3, 0.008),
-    paints.black,
+    paints.graphite,
   );
   panel.position.set(0, 0.392, -0.34);
   group.add(panel);
+  for (let slot = 0; slot < 7; slot += 1) {
+    const vent = kit.mesh(new BoxGeometry(0.36, 0.004, 0.014), paints.black);
+    vent.position.set(0, 0.403, -0.5 + slot * 0.052);
+    group.add(vent);
+  }
   // Batteries on the flanks, each with a handle
   for (const side of [-1, 1]) {
     const pack = kit.mesh(
@@ -681,20 +762,30 @@ function buildSprayer(kit: Kit): Parts {
   collar.position.set(0, 0.84, -0.2);
   group.add(collar);
 
-  // Front and rear radar, and a forward camera
+  // Front and rear radar panels, a pump housing, and a forward camera
   for (const z of [0.82, -0.82]) {
-    const radar = kit.mesh(
-      new CylinderGeometry(0.2, 0.2, 0.05, 28),
+    const housing = kit.mesh(
+      new RoundedBoxGeometry(0.44, 0.15, 0.07, 3, 0.03),
       paints.black,
     );
-    radar.rotation.x = Math.PI / 2;
-    radar.position.set(0, 0.0, z);
-    group.add(radar);
-    const face = kit.mesh(new CircleGeometry(0.16, 24), paints.glass);
-    face.position.set(0, 0, z + Math.sign(z) * 0.028);
-    if (z < 0) face.rotation.y = Math.PI;
+    housing.position.set(0, 0.02, z);
+    group.add(housing);
+    const face = kit.mesh(
+      new RoundedBoxGeometry(0.34, 0.09, 0.012, 2, 0.005),
+      paints.glass,
+    );
+    face.position.set(0, 0.02, z + Math.sign(z) * 0.038);
     group.add(face);
   }
+  const pump = kit.mesh(
+    new RoundedBoxGeometry(0.5, 0.16, 0.42, 4, 0.06),
+    paints.graphite,
+  );
+  pump.position.set(0, -0.22, 0.05);
+  group.add(pump);
+  const pumpBand = kit.mesh(new BoxGeometry(0.502, 0.03, 0.1), paints.accent);
+  pumpBand.position.set(0, -0.22, 0.05);
+  group.add(pumpBand);
   const eye = kit.mesh(new SphereGeometry(0.06, 14, 10), paints.glass);
   eye.position.set(0, 0.2, 0.78);
   group.add(eye);
@@ -762,7 +853,7 @@ function buildSprayer(kit: Kit): Parts {
       new Vector3(x, -0.12, z),
     ]);
     group.add(
-      kit.mesh(new TubeGeometry(hose, 20, 0.018, 8, false), paints.rubber),
+      kit.mesh(new TubeGeometry(hose, 20, 0.026, 8, false), paints.rubber),
     );
     const stem = kit.mesh(
       new CylinderGeometry(0.03, 0.03, 0.3, 10),
@@ -795,8 +886,8 @@ function flyingWingStation(x: number): Station {
     x,
     y: 0.01 + 0.07 * u ** 1.6,
     zLE: 0.24 - 0.6 * u ** 1.15,
-    chord: 0.62 * (1 - 0.6 * u),
-    t: 0.115 - 0.04 * u,
+    chord: 0.68 * (1 - 0.62 * u),
+    t: 0.13 - 0.05 * u,
     bank: Math.atan((0.07 * 1.6 * u ** 0.6) / FW_HALF_SPAN),
   };
 }
@@ -926,9 +1017,37 @@ function buildFixedWing(kit: Kit): Parts {
       surfacePoint(flyingWingStation(1.7), 0.97, true, FW_CAMBER, 0.0012),
     ]),
   );
+  // Brand-coloured trim along the trailing edge of the elevons
+  wingHalf.add(
+    skinLine(
+      kit,
+      paints.accent,
+      [0.2, 0.6, 1.0, 1.4, 1.7].map((x) =>
+        surfacePoint(flyingWingStation(x), 0.985, true, FW_CAMBER, 0.0015),
+      ),
+      0.0065,
+    ),
+  );
   const wingLeft = wingHalf.clone();
   wingLeft.scale.x = -1;
   body.add(wingHalf, wingLeft);
+
+  // A belly skid with two struts, for hand landings
+  const skid = kit.mesh(
+    new CapsuleGeometry(0.014, 0.62, 3, 8),
+    paints.graphite,
+  );
+  skid.rotation.x = Math.PI / 2;
+  skid.position.set(0, -0.155, 0.05);
+  body.add(skid);
+  for (const z of [-0.18, 0.28]) {
+    const strut = kit.mesh(
+      new CylinderGeometry(0.01, 0.01, 0.05, 8),
+      paints.graphite,
+    );
+    strut.position.set(0, -0.13, z);
+    body.add(strut);
+  }
 
   // Belly camera hatch and lens
   const hatchBelly = kit.mesh(
@@ -962,16 +1081,16 @@ function buildFixedWing(kit: Kit): Parts {
   holder.position.set(0, 0, -0.735);
   holder.rotation.x = Math.PI / 2;
   const propeller = new Group();
-  const blade = createBladeGeometry();
+  const blade = createTippedBladeGeometry();
   for (let index = 0; index < 2; index += 1) {
     const pivot = new Group();
     pivot.rotation.y = index * Math.PI;
-    const mesh = kit.mesh(blade, kit.prop);
+    const mesh = kit.mesh(blade, paints.blade);
     mesh.scale.setScalar(0.95);
     pivot.add(mesh);
     propeller.add(pivot);
   }
-  const blur = kit.mesh(new CircleGeometry(0.38, 40), kit.blur);
+  const blur = kit.mesh(new CircleGeometry(0.4, 48), paints.blurDisc);
   blur.rotation.x = -Math.PI / 2;
   propeller.add(blur);
   holder.add(propeller);
