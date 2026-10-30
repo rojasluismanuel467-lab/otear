@@ -125,7 +125,7 @@ test("the decisions of a request read in order with the chosen quote and the hec
   assert.ok(text.includes("Cotizaciones: 2"));
   assert.ok(text.includes("Cotización elegida: AeroUno"));
   assert.ok(text.includes("$ 35.000 COP para 10 ha"));
-  assert.ok(text.includes("El motivo de la elección no queda registrado"));
+  assert.ok(text.includes("Sin motivo anotado al elegir"));
   assert.ok(text.includes("declaró 9,5 ha cubiertas"));
   assert.ok(text.includes("Factura FV-1"));
   assert.ok(text.includes("AeroUno: 10 / 9,5 / 10 ha"));
@@ -177,4 +177,65 @@ test("the consolidated report adds the decisions section only when asked", () =>
       services: true,
     }).includes("SERVICIOS CONTRATADOS Y DECISIONES"),
   );
+});
+
+test("the reason written when assigning appears in the report, and the dispute answer too", () => {
+  const withReason = {
+    ...request,
+    assignReason: "La más barata y con mejor historial en el sitio",
+    verification: {
+      result: "disputed" as const,
+      note: "Cuento 1 ha menos",
+      on: "2026-10-25",
+      by: "m",
+    },
+    disputeReply: {
+      kind: "adjusted" as const,
+      note: "De acuerdo.",
+      supportFiles: ["Registro de vuelo (CSV)"],
+      on: "2026-10-26",
+      by: "o",
+      previousHa: 9.5,
+      adjustedHa: 8.5,
+    },
+  } as ServiceRequest;
+  const text = serviceDecisionLines({
+    site,
+    requests: [withReason],
+    parties,
+    invoices: [],
+    flights: [],
+    zoneMeasure: { z1: 10 },
+    operators: [],
+    period,
+  }).join("\n");
+  assert.ok(
+    text.includes(
+      "Motivo de la elección: La más barata y con mejor historial en el sitio.",
+    ),
+  );
+  assert.ok(!text.includes("Sin motivo anotado"));
+  assert.ok(text.includes("por Ingenio: Cuento 1 ha menos"));
+  assert.ok(text.includes("aceptó el ajuste, de 9,5 a 8,5 ha"));
+  assert.ok(text.includes("Soportes anotados: Registro de vuelo (CSV)"));
+});
+
+test("a delivery without hectares (a service priced per flight) says only that it was delivered", () => {
+  const perFlight = {
+    ...request,
+    unit: "flight",
+    delivery: { deliveredOn: "2026-10-24", note: "", deliverables: [] },
+  } as ServiceRequest;
+  const text = serviceDecisionLines({
+    site,
+    requests: [perFlight],
+    parties,
+    invoices: [],
+    flights: [],
+    zoneMeasure: { z1: 10 },
+    operators: [],
+    period,
+  }).join("\n");
+  assert.ok(text.includes("AeroUno entregó el"));
+  assert.ok(!text.includes("cubiertas"));
 });

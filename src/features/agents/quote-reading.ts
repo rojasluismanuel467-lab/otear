@@ -114,7 +114,10 @@ export function operatorRecord(
       COMMITTED.includes(request.status),
   );
   const latest = own
-    .filter((request) => request.delivery && orderedOf(request) > 0)
+    .filter(
+      (request) =>
+        request.delivery?.coveredHa !== undefined && orderedOf(request) > 0,
+    )
     .sort((a, b) =>
       (b.delivery?.deliveredOn ?? "").localeCompare(
         a.delivery?.deliveredOn ?? "",
@@ -123,9 +126,10 @@ export function operatorRecord(
   return {
     operatorId,
     services: own.length,
-    lastCoveragePct: latest?.delivery
-      ? (latest.delivery.coveredHa / orderedOf(latest)) * 100
-      : undefined,
+    lastCoveragePct:
+      latest?.delivery?.coveredHa !== undefined
+        ? (latest.delivery.coveredHa / orderedOf(latest)) * 100
+        : undefined,
     disputed: own.filter(
       (request) =>
         request.status === "disputed" ||

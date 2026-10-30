@@ -1,5 +1,5 @@
-import { polygonAreaHa } from "../../lib/geo.ts";
-import type { Position } from "../demo/types";
+import { lineLengthKm, polygonAreaHa } from "../../lib/geo.ts";
+import type { Position, Sector } from "../demo/types";
 
 /**
  * Checking an area-priced service before paying: the area ordered (from the map), the area the
@@ -26,14 +26,30 @@ export interface AreaCheck {
   messages: string[];
 }
 
-/** Hectares of the zones of a flight; lines (roads) and degenerate shapes do not count. */
+/**
+ * Hectares of the zones of a flight. A road is a line, not a surface: with `sector` set to roads the
+ * answer is zero, because a line drawn with five points is not a polygon of five corners. Without
+ * `sector` only the shape decides (fewer than three points is not a surface).
+ */
 export function orderedHa(
+  zones: { id: string; outline: Position[] }[],
+  zoneIds: string[],
+  sector?: Sector,
+): number {
+  if (sector === "roads") return 0;
+  return zones
+    .filter((zone) => zoneIds.includes(zone.id) && zone.outline.length >= 3)
+    .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0);
+}
+
+/** Kilometres of the line zones of a road service (the measure that replaces hectares there). */
+export function orderedKm(
   zones: { id: string; outline: Position[] }[],
   zoneIds: string[],
 ): number {
   return zones
-    .filter((zone) => zoneIds.includes(zone.id) && zone.outline.length >= 3)
-    .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0);
+    .filter((zone) => zoneIds.includes(zone.id) && zone.outline.length >= 2)
+    .reduce((sum, zone) => sum + lineLengthKm(zone.outline), 0);
 }
 
 const ha = (value: number) =>

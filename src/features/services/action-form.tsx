@@ -7,7 +7,7 @@ import { DEMO_DATE } from "@/features/demo/demo-data";
 import type { ServiceRequest } from "@/features/demo/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { ActionInput } from "./use-services";
-import type { ActionId } from "./workflow";
+import { replyKinds, type ActionId } from "./workflow";
 import styles from "./services.module.css";
 
 const number = (text: string) => Number(text.trim().replace(",", "."));
@@ -43,6 +43,12 @@ export function ActionForm({
     String(declared ?? "").replace(".", ","),
   );
   const billed = number(billedText);
+  const kinds = replyKinds(request);
+  const [replyKind, setReplyKind] = useState<"adjusted" | "upheld" | "">(
+    kinds.length === 1 ? kinds[0] : "",
+  );
+  const [adjustedText, setAdjustedText] = useState("");
+  const adjusted = number(adjustedText);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -72,7 +78,7 @@ export function ActionForm({
       case "deliver":
         input = {
           id: "deliver",
-          coveredHa: number(read("coveredHa")),
+          coveredHa: perHa ? number(read("coveredHa")) : undefined,
           deliverables: read("deliverables")
             .split(/[,\n]/)
             .map((item) => item.trim())
@@ -82,10 +88,38 @@ export function ActionForm({
           photoCount: optional(read("photoCount")),
         };
         break;
+      case "reply": {
+        const supportFiles = read("supportFiles")
+          .split(/[,\n]/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+        if (replyKind === "adjusted") {
+          input = {
+            id: "reply",
+            kind: "adjusted",
+            adjustedHa: number(adjustedText),
+            note: read("note"),
+            supportFiles,
+          };
+        } else if (replyKind === "upheld") {
+          input = {
+            id: "reply",
+            kind: "upheld",
+            note: read("note"),
+            supportFiles,
+          };
+        } else {
+          setError(
+            "Elija cómo responde: aceptar el ajuste o sostener lo entregado.",
+          );
+          return;
+        }
+        break;
+      }
       case "verify": {
         const result = read("result");
         if (result !== "accepted" && result !== "disputed") {
-          setError("Elija si acepta la entrega o pide que la corrijan.");
+          setError("Elija si acepta la entrega o pide un ajuste.");
           return;
         }
         input = { id: "verify", result, note: read("note") };
@@ -104,7 +138,12 @@ export function ActionForm({
     }
     if (
       (input.id === "quote" && !Number.isFinite(input.price)) ||
-      (input.id === "deliver" && !Number.isFinite(input.coveredHa)) ||
+      (input.id === "deliver" &&
+        input.coveredHa !== undefined &&
+        !Number.isFinite(input.coveredHa)) ||
+      (input.id === "reply" &&
+        input.kind === "adjusted" &&
+        !Number.isFinite(input.adjustedHa)) ||
       (input.id === "invoice" &&
         input.billedHa !== undefined &&
         !Number.isFinite(input.billedHa))
@@ -227,31 +266,34 @@ export function ActionForm({
             </p>
           )}
           <div className={styles.formGrid}>
-            <label className="form-field">
-              <span className="field-label">Hectáreas que cubrió</span>
-              <input
-                className="field-input"
-                name="coveredHa"
-                inputMode="decimal"
-                autoFocus
-                placeholder={
-                  orderedHa
-                    ? new Intl.NumberFormat("es-CO", {
-                        maximumFractionDigits: 1,
-                      }).format(orderedHa)
-                    : ""
-                }
-              />
-              <span className="text-muted">
-                Es lo que usted declara; quien contrata lo contrasta con lo
-                pedido.
-              </span>
-            </label>
+            {perHa && (
+              <label className="form-field">
+                <span className="field-label">Hectáreas que cubrió</span>
+                <input
+                  className="field-input"
+                  name="coveredHa"
+                  inputMode="decimal"
+                  autoFocus
+                  placeholder={
+                    orderedHa
+                      ? new Intl.NumberFormat("es-CO", {
+                          maximumFractionDigits: 1,
+                        }).format(orderedHa)
+                      : ""
+                  }
+                />
+                <span className="text-muted">
+                  Es lo que usted declara; quien contrata lo contrasta con lo
+                  pedido.
+                </span>
+              </label>
+            )}
             <label className="form-field">
               <span className="field-label">Archivos que entrega</span>
               <input
                 className="field-input"
                 name="deliverables"
+                autoFocus={!perHa}
                 placeholder="Ortomosaico (GeoTIFF), Registro de vuelo (CSV)"
               />
               <span className="text-muted">
@@ -288,8 +330,112 @@ export function ActionForm({
           </label>
         </>
       )}
+      {action === "reply" && (
+        <>
+          {request.verification && (
+            <p className={styles.notice}>
+              El cliente escribió
+              {request.verification.note
+                ? `: «${request.verification.note}»`
+                : " que pide ajustar la entrega."}{" "}
+              Su respuesta queda en la historia y la ve quien contrata.
+            </p>
+          )}
+          <fieldset className={styles.choices}>
+            <legend>Su respuesta</legend>
+            {kinds.includes("adjusted") && (
+              <label className={styles.choice}>
+                <input
+                  type="radio"
+                  name="replyKind"
+                  value="adjusted"
+                  checked={replyKind === "adjusted"}
+                  onChange={() => setReplyKind("adjusted")}
+                />
+                <span>
+                  Aceptar el ajuste: facturo menos hectáreas, las que el cliente
+                  pide.
+                </span>
+              </label>
+            )}
+            <label className={styles.choice}>
+              <input
+                type="radio"
+                name="replyKind"
+                value="upheld"
+                checked={replyKind === "upheld"}
+                onChange={() => setReplyKind("upheld")}
+              />
+              <span>
+                Sostener lo entregado: explico por qué y puedo anotar los
+                archivos que lo respaldan.
+              </span>
+            </label>
+          </fieldset>
+          {replyKind === "adjusted" && declared !== undefined && (
+            <label className="form-field">
+              <span className="field-label">
+                Hectáreas que acepta dejar como cubiertas
+              </span>
+              <input
+                className="field-input"
+                inputMode="decimal"
+                autoFocus
+                value={adjustedText}
+                onChange={(event) => setAdjustedText(event.target.value)}
+              />
+              <span className="text-muted" aria-live="polite">
+                Declaró {hectares(declared)}; la cifra nueva debe ser menor.
+                {chosen && Number.isFinite(adjusted) && adjusted > 0
+                  ? ` A ${formatMoney(chosen.price)} por hectárea, ${hectares(adjusted)} son ${formatMoney(Math.round(chosen.price * adjusted))} en vez de ${formatMoney(Math.round(chosen.price * declared))} (cifras de ejemplo).`
+                  : ""}
+              </span>
+            </label>
+          )}
+          <label className="form-field">
+            <span className="field-label">
+              {replyKind === "upheld"
+                ? "Su nota para el cliente (obligatoria)"
+                : "Su nota para el cliente (opcional)"}
+            </span>
+            <input
+              className="field-input"
+              name="note"
+              maxLength={300}
+              autoFocus={replyKind !== "adjusted"}
+            />
+          </label>
+          <label className="form-field">
+            <span className="field-label">Archivos de soporte (opcional)</span>
+            <input
+              className="field-input"
+              name="supportFiles"
+              placeholder="Registro de vuelo (CSV), Captura de la ruta (PNG)"
+            />
+            <span className="text-muted">
+              Sepárelos con comas. Solo se anotan los nombres: en esta demo no
+              se sube ningún archivo.
+            </span>
+          </label>
+        </>
+      )}
       {action === "verify" && (
         <>
+          {request.disputeReply && (
+            <p className={styles.notice}>
+              {request.disputeReply.kind === "adjusted"
+                ? `El operador aceptó el ajuste: ahora declara ${hectares(request.disputeReply.adjustedHa ?? 0)} (antes ${hectares(request.disputeReply.previousHa ?? 0)}).`
+                : "El operador sostiene lo entregado y lo explicó."}{" "}
+              Su respuesta está arriba, junto al reclamo.
+            </p>
+          )}
+          {declared === undefined && (
+            <p className={styles.notice}>
+              Acepte la entrega si recibió lo acordado. Los archivos que anotó
+              el operador están en la entrega; en esta demo no hay archivos que
+              abrir.
+            </p>
+          )}
           {declared !== undefined && (
             <p className={styles.notice}>
               El operador declaró {hectares(declared)}
@@ -313,14 +459,14 @@ export function ActionForm({
             <label className={styles.choice}>
               <input type="radio" name="result" value="disputed" />
               <span>
-                Pedir que la corrija: queda en disputa hasta que la vuelva a
-                entregar.
+                Pedir un ajuste: queda en disputa hasta que el operador responda
+                o vuelva a entregar.
               </span>
             </label>
           </fieldset>
           <label className="form-field">
             <span className="field-label">
-              Comentario (obligatorio si pide corregir)
+              Comentario (obligatorio si pide un ajuste)
             </span>
             <input className="field-input" name="note" maxLength={300} />
           </label>

@@ -66,7 +66,7 @@ export function NewRequestDialog({
       invited,
       windowStart: read("windowStart"),
       windowEnd: read("windowEnd"),
-      unit: read("unit") === "ha" ? "ha" : "flight",
+      unit: read("unit") === "ha" && site.sector !== "roads" ? "ha" : "flight",
       maxPrice: maxText ? Number(maxText) : undefined,
     });
     if (!result.ok) {
@@ -123,7 +123,10 @@ export function NewRequestDialog({
                         setUnit(event.target.value === "ha" ? "ha" : "flight")
                       }
                     >
-                      <option value="ha">Hectárea</option>
+                      {/* A road has length, not hectares: it is priced per flight. */}
+                      {site.sector !== "roads" && (
+                        <option value="ha">Hectárea</option>
+                      )}
                       <option value="flight">Vuelo completo</option>
                     </select>
                   </label>

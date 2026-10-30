@@ -15,6 +15,10 @@ import type {
  *                                                  ↑   ↓
  *                                               disputed
  *
+ * In a dispute the operator answers in one of three ways: accepts the adjustment (fewer hectares to
+ * bill) or stands by what it delivered, and the request goes back to «delivered» with the answer
+ * attached so the requester verifies again; or corrects and delivers again.
+ *
  * The requester (the manager, for example a sugar mill, or the owner of the land, for example a
  * cane grower) asks, compares quotes, assigns, verifies the delivery and pays; the operator quotes,
  * schedules, delivers and bills. Each step records who did it.
@@ -66,6 +70,7 @@ export type ActionId =
   | "assign"
   | "schedule"
   | "deliver"
+  | "reply"
   | "verify"
   | "invoice"
   | "cancel";
@@ -132,6 +137,12 @@ export function availableActions(
     case "scheduled":
     case "disputed":
       if (mine && request.operatorId === operatorId) {
+        if (request.status === "disputed")
+          actions.push({
+            id: "reply",
+            label: "Responder al cliente",
+            by: "operator",
+          });
         actions.push({
           id: "deliver",
           label:
@@ -189,6 +200,9 @@ const money = (value: number) =>
     currency: "COP",
     maximumFractionDigits: 0,
   }).format(value);
+/** «6,6 ha», the way the rest of the screens write hectares. */
+const haText = (value: number) =>
+  `${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(value)} ha`;
 const nameOf = (parties: Party[], id: string | undefined) =>
   parties.find((party) => party.id === id)?.name ?? "Sin nombre";
 
@@ -356,10 +370,15 @@ export function decline(
   };
 }
 
+/** Longest «motivo de la elección» kept: a short sentence, not a report. */
+export const MAX_REASON_LENGTH = 160;
+
 export function assign(
   request: ServiceRequest,
   operatorId: string,
   ctx: Context,
+  /** Why this operator, optional; it goes to the request and to the consolidated report. */
+  reason = "",
 ): Result {
   if (!isRequester(ctx.actor.role))
     return { ok: false, error: "Solo quien contrata asigna el servicio." };
@@ -381,17 +400,23 @@ export function assign(
         ? { ...item, state: "declined" as const }
         : item,
   );
+  const why = reason.trim().slice(0, MAX_REASON_LENGTH);
   return {
     ok: true,
     request: record(
       request,
-      { quotes, operatorId, status: "assigned" },
+      {
+        quotes,
+        operatorId,
+        status: "assigned",
+        assignReason: why || undefined,
+      },
       {
         on: ctx.today,
         by: ctx.actor.id,
         role: ctx.actor.role,
         type: "assigned",
-        text: `${ctx.actor.name} asignó el servicio a ${nameOf(ctx.parties, operatorId)}.`,
+        text: `${ctx.actor.name} asignó el servicio a ${nameOf(ctx.parties, operatorId)}.${why ? ` Motivo: ${why}` : ""}`,
       },
     ),
   };
@@ -432,7 +457,7 @@ export function schedule(
 
 export function deliver(
   request: ServiceRequest,
-  input: { coveredHa: number; deliverables: string[]; note: string },
+  input: { coveredHa?: number; deliverables: string[]; note: string },
   ctx: Context,
 ): Result {
   if (
@@ -444,10 +469,13 @@ export function deliver(
       error: "Solo el operador asignado registra la entrega.",
     };
   }
-  if (!(input.coveredHa > 0))
+  // Hectares are declared only where the service is priced by them; a per-flight service has none.
+  const byArea = request.unit === "ha";
+  if (byArea && !(input.coveredHa! > 0))
     return { ok: false, error: "Escriba las hectáreas que cubrió." };
   if (!input.deliverables.length)
     return { ok: false, error: "Anote al menos un archivo entregado." };
+  const coveredHa = byArea ? input.coveredHa : undefined;
   return {
     ok: true,
     request: record(
@@ -455,19 +483,132 @@ export function deliver(
       {
         status: "delivered",
         delivery: {
-          coveredHa: input.coveredHa,
+          coveredHa,
           deliveredOn: ctx.today,
           note: input.note.trim().slice(0, 300),
           deliverables: input.deliverables,
         },
         verification: undefined,
+        disputeReply: undefined,
       },
       {
         on: ctx.today,
         by: ctx.actor.id,
         role: "operator",
         type: "delivered",
-        text: `${ctx.actor.name} entregó: dice haber cubierto ${input.coveredHa} ha y entregó ${input.deliverables.join(", ")}.`,
+        text: `${ctx.actor.name} entregó${coveredHa !== undefined ? `: dice haber cubierto ${haText(coveredHa)} y entregó` : ""} ${input.deliverables.join(", ")}.`,
+      },
+    ),
+  };
+}
+
+export type ReplyInput =
+  | {
+      kind: "adjusted";
+      adjustedHa: number;
+      note: string;
+      supportFiles: string[];
+    }
+  | { kind: "upheld"; note: string; supportFiles: string[] };
+
+/** Which of the operator's answers to a dispute apply: an adjustment needs hectares to lower. */
+export const replyKinds = (
+  request: Pick<ServiceRequest, "unit">,
+): readonly ReplyInput["kind"][] =>
+  request.unit === "ha"
+    ? (["adjusted", "upheld"] as const)
+    : (["upheld"] as const);
+
+/**
+ * The operator answers a dispute without delivering again. Accepting the adjustment lowers the
+ * hectares it declared (what it can bill); standing by the delivery needs a note and may name
+ * supporting files. Either way the request goes back to «delivered» for the requester to verify.
+ */
+export function reply(
+  request: ServiceRequest,
+  input: ReplyInput,
+  ctx: Context,
+): Result {
+  if (ctx.actor.id !== request.operatorId || request.status !== "disputed")
+    return {
+      ok: false,
+      error: "Solo el operador asignado responde a una entrega devuelta.",
+    };
+  if (!request.delivery)
+    return { ok: false, error: "La solicitud no tiene una entrega." };
+  const note = input.note.trim().slice(0, 300);
+  const supportFiles = input.supportFiles
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const claim = request.verification?.note.trim();
+  if (input.kind === "adjusted") {
+    const declared = request.delivery.coveredHa;
+    if (request.unit !== "ha" || declared === undefined)
+      return {
+        ok: false,
+        error:
+          "Este servicio no se cobra por hectárea: no hay hectáreas que ajustar.",
+      };
+    if (!(input.adjustedHa > 0))
+      return { ok: false, error: "Escriba las hectáreas que acepta dejar." };
+    if (!(input.adjustedHa < declared))
+      return {
+        ok: false,
+        error: `El ajuste debe ser menor que lo declarado (${haText(declared)}). Si cubrió más, corrija y vuelva a entregar.`,
+      };
+    return {
+      ok: true,
+      request: record(
+        request,
+        {
+          status: "delivered",
+          delivery: { ...request.delivery, coveredHa: input.adjustedHa },
+          disputeReply: {
+            kind: "adjusted",
+            note,
+            supportFiles,
+            on: ctx.today,
+            by: ctx.actor.id,
+            previousHa: declared,
+            adjustedHa: input.adjustedHa,
+          },
+        },
+        {
+          on: ctx.today,
+          by: ctx.actor.id,
+          role: "operator",
+          type: "replied",
+          text: `${ctx.actor.name} aceptó el ajuste${claim ? ` que pidió el cliente` : ""}: pasa de ${haText(declared)} a ${haText(input.adjustedHa)} cubiertas${note ? `. ${note}` : "."}`,
+        },
+      ),
+    };
+  }
+  if (!note)
+    return {
+      ok: false,
+      error:
+        "Explique por qué sostiene lo entregado para que el cliente lo pueda revisar.",
+    };
+  return {
+    ok: true,
+    request: record(
+      request,
+      {
+        status: "delivered",
+        disputeReply: {
+          kind: "upheld",
+          note,
+          supportFiles,
+          on: ctx.today,
+          by: ctx.actor.id,
+        },
+      },
+      {
+        on: ctx.today,
+        by: ctx.actor.id,
+        role: "operator",
+        type: "replied",
+        text: `${ctx.actor.name} sostiene lo entregado: ${note}${supportFiles.length ? ` Soportes anotados: ${supportFiles.join(", ")}.` : ""}`,
       },
     ),
   };
@@ -494,6 +635,8 @@ export function verify(
       request,
       {
         status: input.result === "accepted" ? "verified" : "disputed",
+        // A new dispute is a new round: the earlier answer stays in the history only.
+        ...(input.result === "disputed" ? { disputeReply: undefined } : {}),
         verification: {
           result: input.result,
           note: input.note.trim().slice(0, 300),
@@ -509,7 +652,7 @@ export function verify(
         text:
           input.result === "accepted"
             ? `${ctx.actor.name} aceptó la entrega${input.note.trim() ? `: ${input.note.trim()}` : ""}.`
-            : `${ctx.actor.name} pidió corregir la entrega: ${input.note.trim()}`,
+            : `${ctx.actor.name} pidió ajustar la entrega: ${input.note.trim()}`,
       },
     ),
   };

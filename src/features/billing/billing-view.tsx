@@ -123,9 +123,11 @@ export function BillingView() {
       )
     : undefined;
   const zoneIds = flight?.zoneIds ?? request?.zoneIds ?? [];
+  // A road has no hectares and a service priced per flight is not checked by area: for both the
+  // card is left out instead of showing a surface that was never ordered.
   const ordered =
-    selectedInvoice && site.sector !== "roads"
-      ? orderedHa(site.zones, zoneIds)
+    selectedInvoice && request?.unit !== "flight"
+      ? orderedHa(site.zones, zoneIds, site.sector)
       : 0;
   const coveredHa = flight
     ? coveredHaFor(flight, serviceRequests)
