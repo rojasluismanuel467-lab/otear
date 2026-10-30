@@ -1,11 +1,15 @@
 "use client";
 
-import { sourceLabel } from "@/features/agents/image-candidates";
+import { sourceLabel, isSuggested } from "@/features/agents/image-candidates";
 import { useState } from "react";
 import { Button } from "@heroui/react";
 import { Download, FileText, Printer } from "lucide-react";
 import type { Finding, Flight, Site } from "@/features/demo/types";
 import { useDemo } from "@/features/demo/demo-context";
+import {
+  measureOutline,
+  outlineKindFor,
+} from "@/features/sites/mapping/mapping-model";
 import { textToHtml, printHtml } from "@/features/traceability/document-export";
 import {
   evidenceState,
@@ -13,19 +17,24 @@ import {
 } from "@/features/traceability/integrity";
 import { compareWithHistory } from "@/features/reports/insights";
 import { downloadText, formatDate } from "@/lib/format";
+import { agree, type FindingWords } from "../finding-words";
+import { flightBrief, loggedConditions } from "../flight-brief";
+import { useFindingWords } from "../use-finding-words";
 import styles from "./flight-review.module.css";
 
-const statusLabels = {
-  pending: "Pendiente de revisión",
-  confirmed: "Confirmado en esta demo",
-  dismissed: "Descartado en esta demo",
+const priorityLabels = {
+  high: "alta",
+  medium: "media",
+  low: "baja",
 };
 
-const priorityLabels = {
-  high: "Alta",
-  medium: "Media",
-  low: "Baja",
-};
+function statusLabel(status: Finding["status"], words: FindingWords) {
+  if (status === "pending") return "Pendiente de revisión";
+  return status === "confirmed"
+    ? `${agree(words, "Confirmado", "Confirmada")} en esta demo`
+    : `${agree(words, "Descartado", "Descartada")} en esta demo`;
+}
+
 const nextStepLabels = {
   pending: "Verificar en campo antes de decidir.",
   confirmed: "Programar la labor correctiva y asignar responsable.",
@@ -39,16 +48,19 @@ const sensorLabels = {
   lidar: "LiDAR",
 };
 
-function qualityLines(flight: Flight) {
+const decimal = (value: number) =>
+  new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(value);
+
+/** Technical details of the survey, in everyday words; they go below the part an administrator reads. */
+function technicalLines(flight: Flight) {
   const log = flight.log;
   if (!log) return ["Sin bitácora registrada."];
   return [
     `Sensor: ${log.sensor ? sensorLabels[log.sensor] : "No registrado"}`,
-    `GSD: ${log.gsdCm !== undefined ? `${log.gsdCm} cm/píxel` : "No registrado"}`,
-    `Traslape: ${log.overlapPct !== undefined ? `${log.overlapPct} %` : "No registrado"}`,
-    `Puntos de control en tierra: ${log.controlPoints === undefined ? "No registrado" : log.controlPoints ? "Sí" : "No se usaron"}`,
-    `Entregables: ${log.deliverables?.length ? log.deliverables.join("; ") : "No registrados"}`,
-    `Debriefing: ${log.debrief || "Sin notas"}`,
+    `Detalle de la imagen: ${log.gsdCm !== undefined ? `cada píxel cubre ${decimal(log.gsdCm)} cm (GSD)` : "No registrado"}`,
+    `Traslape entre fotos: ${log.overlapPct !== undefined ? `${log.overlapPct} %` : "No registrado"}`,
+    `Puntos de referencia medidos en el terreno (puntos de control): ${log.controlPoints === undefined ? "No registrado" : log.controlPoints ? "Sí" : "No se usaron"}`,
+    `Archivos entregados: ${log.deliverables?.length ? log.deliverables.join("; ") : "No registrados"}`,
   ];
 }
 
@@ -57,13 +69,14 @@ function trendLabel(value: {
   earlierFlights: number;
 }) {
   return value.trend === "persistent"
-    ? `persistente (ya reportado en ${value.earlierFlights} ${value.earlierFlights === 1 ? "vuelo anterior" : "vuelos anteriores"})`
-    : "nuevo";
+    ? `se repite (ya se reportó en ${value.earlierFlights} ${value.earlierFlights === 1 ? "vuelo anterior" : "vuelos anteriores"})`
+    : "primera vez que se reporta";
 }
 
-function describeFlightLog(flight: Flight) {
+function describeFlightLog(flight: Flight, orderedHa: number) {
   const executed = flight.status === "completed";
-  return [
+  const conditions = loggedConditions(flight.log);
+  const rows: [string, string][] = [
     ["Fecha y hora", `${formatDate(flight.date)} · ${flight.time}`],
     ["Piloto", flight.pilot],
     ["Operador", flight.operator],
@@ -80,9 +93,23 @@ function describeFlightLog(flight: Flight) {
         : `${flight.route.length} puntos previstos`,
     ],
     ["Fotografías", executed ? String(flight.photoCount) : "Sin entrega"],
-    ["Autorización y espacio aéreo", "No registrada en la demo"],
-    ["Clima durante el vuelo", "No registrado en la demo"],
-  ] as const;
+    [
+      "Clima, según la bitácora",
+      executed ? conditions.weather : "Sin ejecución registrada",
+    ],
+    [
+      "Autorización, según la bitácora",
+      executed ? conditions.authorization : "Sin ejecución registrada",
+    ],
+  ];
+  const covered = flight.log?.coveredHa;
+  if (executed && covered !== undefined && orderedHa > 0) {
+    rows.push([
+      "Cubierto, según el operador",
+      `${decimal(covered)} de ${decimal(orderedHa)} ha pedidas`,
+    ]);
+  }
+  return rows;
 }
 
 export function FlightReport({
@@ -97,13 +124,19 @@ export function FlightReport({
   onDownload: () => void;
 }) {
   const { findings: siteFindings, flights, evidences } = useDemo();
+  const words = useFindingWords();
   const flightEvidences = evidences.filter(
     (entry) => entry.flightId === flight.id,
   );
   const trend = (finding: Finding) =>
     compareWithHistory(finding, siteFindings, flights);
+  // A suggestion nobody has reviewed is not yet a finding: it starts outside the report.
+  const isOpenSuggestion = (finding: Finding) =>
+    isSuggested(finding) && finding.status === "pending";
   const [includedIds, setIncludedIds] = useState(
-    findings.map((finding) => finding.id),
+    findings
+      .filter((finding) => !isOpenSuggestion(finding))
+      .map((finding) => finding.id),
   );
   const [notes, setNotes] = useState("");
   const included = findings.filter((finding) =>
@@ -113,62 +146,90 @@ export function FlightReport({
     .filter((zone) => flight.zoneIds.includes(zone.id))
     .map((zone) => zone.name)
     .join(", ");
+  const kind = outlineKindFor(site.sector);
+  const orderedHa =
+    kind === "polygon"
+      ? site.zones
+          .filter((zone) => flight.zoneIds.includes(zone.id))
+          .reduce((sum, zone) => sum + measureOutline(kind, zone.outline), 0)
+      : 0;
+  const brief = flightBrief({
+    site,
+    flight,
+    flights,
+    findings: siteFindings,
+    orderedHa,
+    words,
+  });
+  const logRows = describeFlightLog(flight, orderedHa);
+  const technical = technicalLines(flight);
+  const zoneName = (finding: Finding) =>
+    site.zones.find((zone) => zone.id === finding.zoneId)?.name ??
+    "Sin asignar";
+  const coordinates = (finding: Finding) =>
+    `${finding.position[0].toFixed(5)}, ${finding.position[1].toFixed(5)}`;
   const reportText = [
-    "OTEAR — BORRADOR DE DEMOSTRACIÓN",
-    "Datos sintéticos. No es un informe técnico de una operación real.",
+    "OTEAR — INFORME DEL VUELO (BORRADOR DE DEMOSTRACIÓN)",
+    "Datos de ejemplo. No es un informe técnico de una operación real.",
     "",
     `${site.name} · ${site.sectorLabel}`,
     `Vuelo: ${flight.title}`,
     `Fecha: ${formatDate(flight.date)} · ${flight.time}`,
     `Estado: ${flight.status === "completed" ? "Completado en el escenario de ejemplo" : flight.status === "scheduled" ? "Programado; sin entrega documentada" : "Cancelado en el escenario de ejemplo"}`,
     `Objetivo: ${flight.objective}`,
-    `Zonas: ${zoneNames || "Sin zonas seleccionadas"}`,
+    `${site.zoneLabel}: ${zoneNames || "Sin zonas seleccionadas"}`,
     "",
-    "REGISTRO DEL VUELO",
-    ...describeFlightLog(flight).map(([label, value]) => `${label}: ${value}`),
+    "EN BREVE",
+    ...brief.map((line) => `- ${line}`),
     "",
-    "CALIDAD DE LOS DATOS",
-    ...qualityLines(flight),
+    "CÓMO FUE EL VUELO",
+    ...logRows.map(([label, value]) => `${label}: ${value}`),
+    ...(flight.log?.debrief
+      ? ["", "NOTAS DEL OPERADOR AL ATERRIZAR", flight.log.debrief]
+      : []),
     "",
     "TRAZABILIDAD DE DOCUMENTOS",
     ...(flightEvidences.length
       ? flightEvidences.map((entry) => {
           const state = evidenceState(entry);
-          return `- ${entry.title}: ${evidenceLabels[state.status]} · huella ${state.hash.slice(0, 12)}${state.missingRoles.length ? ` · falta ${state.missingRoles.join(", ")}` : ""}`;
+          return `- ${entry.title}: ${evidenceLabels[state.status]} · sello ${state.hash.slice(0, 12)}${state.missingRoles.length ? ` · falta ${state.missingRoles.join(", ")}` : ""}`;
         })
       : ["- Sin documentos registrados para este vuelo."]),
     "",
-    "OBSERVACIONES SELECCIONADAS",
+    `${words.Plural.toUpperCase()} INCLUIDOS`,
     ...(included.length
       ? included.map(
           (finding, index) =>
-            `${index + 1}. ${finding.title}\n   Zona: ${site.zones.find((zone) => zone.id === finding.zoneId)?.name ?? "Sin asignar"}\n   Fuente: ${sourceLabel(finding)}\n   Descripción: ${finding.description}\n   Prioridad: ${priorityLabels[finding.priority]}\n   Ubicación: ${finding.position[0].toFixed(5)}, ${finding.position[1].toFixed(5)}\n   Revisión: ${statusLabels[finding.status]}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Tarea local: ${finding.taskAssigned ? "Propuesta de verificación añadida" : "Sin tarea"}\n   Referencia de muestra: ${finding.id}`,
+            `${index + 1}. ${finding.title}\n   ${site.zoneLabel.replace(/s$/, "")}: ${zoneName(finding)} · prioridad ${priorityLabels[finding.priority]}\n   ${finding.description}\n   Fuente: ${sourceLabel(finding, words)}\n   Estado: ${statusLabel(finding.status, words)}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Tarea de verificación: ${finding.taskAssigned ? "propuesta y añadida a esta sesión" : "sin tarea"}\n   Coordenadas de ejemplo: ${coordinates(finding)}\n   Referencia de muestra: ${finding.id}`,
         )
-      : ["Sin observaciones seleccionadas."]),
+      : [`Sin ${words.plural} incluidos.`]),
     "",
     "NOTAS DE REVISIÓN",
     notes.trim() || "Sin notas adicionales.",
+    "",
+    "DETALLE TÉCNICO",
+    ...technical,
     "",
     "FIRMAS DEL INFORME",
     "Preparado por: ______________________  Fecha: ____________",
     "Revisado por:  ______________________  Fecha: ____________",
     "",
     "LÍMITES Y PROCEDENCIA",
-    "Fotografías ilustrativas sin correspondencia técnica con el sitio del mapa. No acreditan lo descrito por las observaciones sintéticas.",
-    "No se ejecutó análisis de IA. No hay diagnóstico profesional ni validación de cobertura o calidad de una labor.",
+    "Fotografías ilustrativas sin correspondencia técnica con el sitio del mapa. No acreditan lo descrito por los puntos de ejemplo.",
+    "Ningún programa analizó las fotos ni midió la cobertura: las hectáreas cubiertas, el clima y la autorización los declara el operador en su bitácora.",
     "Las revisiones y tareas existen solo en la sesión de demostración. Este archivo de texto sí fue generado y descargado localmente; no se envió a terceros.",
   ].join("\n");
 
   return (
     <div className={styles.reportGrid}>
       <section className={`surface ${styles.reportOptions}`}>
-        <h2 className="section-heading">Preparar borrador</h2>
+        <h2 className="section-heading">Qué incluir en el informe</h2>
         <p className="text-muted">
-          Selecciona qué observaciones quieres incluir. El contexto del vuelo
+          Marque los {words.plural} que quiere incluir. El contexto del vuelo
           acompaña al informe.
         </p>
         <fieldset className={styles.checklist}>
-          <legend>Observaciones del vuelo</legend>
+          <legend>{words.Plural} del vuelo</legend>
           {findings.length ? (
             findings.map((finding) => (
               <label key={finding.id}>
@@ -185,12 +246,16 @@ export function FlightReport({
                 />
                 <span>
                   {finding.title}
-                  <small>{statusLabels[finding.status]}</small>
+                  <small>
+                    {isOpenSuggestion(finding)
+                      ? "Sugerencia automática sin revisar"
+                      : statusLabel(finding.status, words)}
+                  </small>
                 </span>
               </label>
             ))
           ) : (
-            <p className="text-muted">Este vuelo no tiene observaciones.</p>
+            <p className="text-muted">Este vuelo no tiene {words.plural}.</p>
           )}
         </fieldset>
         <label className="form-field">
@@ -233,49 +298,55 @@ export function FlightReport({
       >
         <div className={styles.reportBrand}>
           <FileText size={23} aria-hidden="true" />
-          <span>
-            OTEAR<span>Borrador de demostración</span>
-          </span>
+          <span>OTEAR</span>
+          <span className={styles.stamp}>Borrador de demostración</span>
         </div>
         <h2>{flight.title}</h2>
         <p className="text-muted">
           {site.name} · {formatDate(flight.date)}
         </p>
-        <hr />
-        <h3>Objetivo del vuelo</h3>
+        <div className={styles.brief}>
+          <h3>En breve</h3>
+          <ul>
+            {brief.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+        <h3>Qué se pidió</h3>
         <p>{flight.objective}</p>
         <p>
           <strong>{site.zoneLabel}:</strong> {zoneNames || "Sin asignar"}
         </p>
-        <h3>Registro del vuelo</h3>
+        <h3>Cómo fue el vuelo</h3>
         <dl className={styles.logGrid}>
-          {describeFlightLog(flight).map(([label, value]) => (
+          {logRows.map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>
               <dd>{value}</dd>
             </div>
           ))}
         </dl>
-        <h3>Calidad de los datos</h3>
-        <ul className={styles.limits}>
-          {qualityLines(flight).map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-        <h3>Observaciones seleccionadas</h3>
+        {flight.log?.debrief && (
+          <>
+            <h3>Notas del operador al aterrizar</h3>
+            <p>{flight.log.debrief}</p>
+          </>
+        )}
+        <h3>{words.Plural} incluidos</h3>
         {included.length ? (
           included.map((finding) => (
             <article className={styles.reportFinding} key={finding.id}>
               <h4>{finding.title}</h4>
               <p>{finding.description}</p>
               <small>
-                Prioridad {priorityLabels[finding.priority].toLowerCase()} ·{" "}
-                {finding.position[0].toFixed(5)},{" "}
-                {finding.position[1].toFixed(5)}
+                {zoneName(finding)} · prioridad{" "}
+                {priorityLabels[finding.priority]}
               </small>
               <small>
-                {sourceLabel(finding)} · {statusLabels[finding.status]}
-                {finding.taskAssigned ? " · Con tarea local" : ""}
+                {sourceLabel(finding, words)} ·{" "}
+                {statusLabel(finding.status, words)}
+                {finding.taskAssigned ? " · Con tarea de verificación" : ""}
               </small>
               <small>
                 Frente a vuelos anteriores: {trendLabel(trend(finding))}
@@ -283,11 +354,14 @@ export function FlightReport({
               <small className={styles.nextStepLine}>
                 Siguiente paso: {nextStepLabels[finding.status]}
               </small>
+              <small className={styles.coordinates}>
+                Coordenadas de ejemplo: {coordinates(finding)}
+              </small>
             </article>
           ))
         ) : (
           <p className="text-muted">
-            No hay observaciones incluidas en este borrador.
+            No hay {words.plural} incluidos en este borrador.
           </p>
         )}
         {notes.trim() && (
@@ -296,14 +370,25 @@ export function FlightReport({
             <p className={styles.preserveLines}>{notes}</p>
           </>
         )}
+        <details className={styles.technical}>
+          <summary>Detalle técnico</summary>
+          <ul className={styles.limits}>
+            {technical.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </details>
         <h3>Límites de los datos</h3>
         <ul className={styles.limits}>
           <li>Las fotografías son ilustrativas y no corresponden al sitio.</li>
-          <li>No se ejecutó análisis de IA ni se midió cobertura o calidad.</li>
+          <li>
+            Ningún programa analizó las fotos ni midió la cobertura: el clima,
+            la autorización y las hectáreas cubiertas los declara el operador.
+          </li>
           <li>Las coordenadas y el recorrido son de ejemplo.</li>
         </ul>
         <p className="demo-note">
-          Datos sintéticos. Requiere revisión humana; no acredita un diagnóstico
+          Datos de ejemplo. Requiere revisión humana; no acredita un diagnóstico
           ni una operación real.
         </p>
       </section>

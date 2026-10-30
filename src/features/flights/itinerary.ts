@@ -5,7 +5,13 @@ import type {
   FlightDocument,
   Invoice,
 } from "../demo/types";
+import { isSuggested } from "../agents/image-candidates.ts";
 import { evidenceState } from "../traceability/integrity.ts";
+import {
+  agree,
+  defaultFindingWords,
+  type FindingWords,
+} from "./finding-words.ts";
 import { itemsWithoutSupport } from "../traceability/requirements.ts";
 
 export type StageState = "done" | "partial" | "todo";
@@ -25,6 +31,8 @@ export interface ItineraryInput {
   documents: FlightDocument[];
   evidences: Evidence[];
   checklistTotal: number;
+  /** The company's word for a finding; «hallazgo» when not given. */
+  findingWords?: FindingWords;
 }
 
 function acceptance(evidences: Evidence[], flightId: string) {
@@ -37,6 +45,7 @@ function acceptance(evidences: Evidence[], flightId: string) {
 /** The seven stages of an operation, each derived from what the session actually holds. */
 export function buildItinerary(input: ItineraryInput): Stage[] {
   const { flight, documents, evidences, checklistTotal } = input;
+  const words = input.findingWords ?? defaultFindingWords;
   const findings = input.findings.filter((item) => item.flightId === flight.id);
   const invoices = input.invoices.filter((item) => item.flightId === flight.id);
   const completed = flight.status === "completed";
@@ -56,6 +65,9 @@ export function buildItinerary(input: ItineraryInput): Stage[] {
   const authDone = authState === "signed" || authState === "attached";
   const unsupported = itemsWithoutSupport(flight, evidences, docsInOrder);
   const reviewed = findings.filter((item) => item.status !== "pending").length;
+  const suggestedPending = findings.filter(
+    (item) => isSuggested(item) && item.status === "pending",
+  ).length;
   const act = acceptance(evidences, flight.id);
   const actState = act ? evidenceState(act) : undefined;
   const total = invoices.reduce((sum, item) => sum + item.total, 0);
@@ -93,7 +105,7 @@ export function buildItinerary(input: ItineraryInput): Stage[] {
       id: "preflight",
       title: "Prevuelo",
       state: pre ? "done" : flight.checklist.length ? "partial" : "todo",
-      detail: `${flight.checklist.length} de ${checklistTotal} ítems${unsupported.length ? ` · ${unsupported.length} sin soporte` : ""}`,
+      detail: `${flight.checklist.length} de ${checklistTotal} ítems${unsupported.length ? ` · ${unsupported.length} marcados sin documento` : ""}`,
       href: "/programacion",
     },
     {
@@ -109,7 +121,7 @@ export function buildItinerary(input: ItineraryInput): Stage[] {
     },
     {
       id: "review",
-      title: "Revisión de hallazgos",
+      title: `Revisión de ${words.plural}`,
       state: !completed
         ? "todo"
         : findings.length === 0 || reviewed === findings.length
@@ -118,7 +130,7 @@ export function buildItinerary(input: ItineraryInput): Stage[] {
             ? "partial"
             : "todo",
       detail: completed
-        ? `${reviewed} de ${findings.length} revisados`
+        ? `${reviewed} de ${findings.length} ${agree(words, "revisados", "revisadas")}${suggestedPending ? ` · ${suggestedPending} ${suggestedPending === 1 ? "sugerencia automática sin revisar" : "sugerencias automáticas sin revisar"}` : ""}`
         : "Después del vuelo",
       href: "/vuelos",
     },

@@ -2,6 +2,7 @@ import { Button } from "@heroui/react";
 import { ArrowRight } from "lucide-react";
 import { AiBadge } from "@/components/ui/ai-badge";
 import type { Finding, Flight } from "@/features/demo/types";
+import { useFindingWords } from "@/features/flights/use-finding-words";
 import { isSuggested, reviewQueue, suggestionStats } from "./image-candidates";
 import styles from "./suggestions.module.css";
 
@@ -17,6 +18,7 @@ export function SuggestionSummary({
   siteFindings: Finding[];
   onReview: (id: string) => void;
 }) {
+  const words = useFindingWords();
   const mine = flightFindings.filter(isSuggested);
   if (!mine.length) return null;
   const queue = reviewQueue(flightFindings);
@@ -24,19 +26,19 @@ export function SuggestionSummary({
   return (
     <section className={`surface ${styles.summary}`}>
       <div className={styles.summaryText}>
-        <AiBadge />
+        <AiBadge>Sugerencia automática · ejemplo</AiBadge>
         <p className={styles.summaryTitle}>
-          {mine.length} {mine.length === 1 ? "candidato" : "candidatos"} tras
+          {mine.length} {mine.length === 1 ? "sugerencia" : "sugerencias"} tras
           revisar las {flight.photoCount} fotos de este vuelo
           {queue.length
             ? ` · ${queue.length} por revisar`
-            : " · todos revisados"}
+            : " · todas revisadas"}
         </p>
         <p className={styles.summaryHint}>
           {stats.reviewed
             ? `Sugerencias anteriores: ${stats.confirmed} de ${stats.reviewed} revisadas se confirmaron.${stats.small ? " Son pocas para medir su acierto." : ""}`
             : "Aún no hay sugerencias revisadas para medir su acierto."}{" "}
-          Ninguna es un hallazgo hasta que usted la confirme.
+          Ninguna cuenta como {words.singular} hasta que usted la confirme.
         </p>
       </div>
       {queue.length > 0 && (

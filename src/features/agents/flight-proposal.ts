@@ -8,6 +8,13 @@ import {
   type CapturePoint,
 } from "../evolution/evolution.ts";
 import { planMission } from "../flights/mission-plan.ts";
+import { isSuggested } from "./image-candidates.ts";
+import {
+  agree,
+  countOf,
+  defaultFindingWords,
+  type FindingWords,
+} from "../flights/finding-words.ts";
 import { compareWithHistory } from "../reports/insights.ts";
 
 /**
@@ -24,7 +31,10 @@ export type SignalKind =
 export interface ZoneSignal {
   kind: SignalKind;
   weight: number;
+  /** The whole sentence, with the numbers that produced it. */
   text: string;
+  /** Two or three words that say what it is, for a table. */
+  label: string;
 }
 
 export type Level = "high" | "medium" | "low";
@@ -40,7 +50,7 @@ export interface ZoneAssessment {
 }
 
 export type OpportunityKind =
-  "review-first" | "coverage" | "spacing" | "reliability";
+  "review-first" | "coverage" | "spacing" | "reliability" | "merge";
 
 export interface Opportunity {
   id: string;
@@ -88,6 +98,8 @@ export interface SuggestInput {
   today: string;
   /** Hectares (km for roads) of each zone, measured from its outline. */
   zoneMeasure: Record<string, number>;
+  /** The company's word for a finding; «hallazgo» when not given. */
+  findingWords?: FindingWords;
 }
 
 /** Days after which a zone is due for another look, by sector. */
@@ -123,6 +135,14 @@ const whole = (value: number) =>
 const plural = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
 
+function shortDate(date: string) {
+  return new Intl.DateTimeFormat("es-CO", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T12:00:00Z`));
+}
+
 function levelOf(score: number): Level {
   return score >= HIGH_MIN_SCORE
     ? "high"
@@ -150,6 +170,7 @@ function assessZones(
   completed: Flight[],
 ): ZoneAssessment[] {
   const { site, flights, findings, today } = input;
+  const words = input.findingWords ?? defaultFindingWords;
   const indicator = indicatorFor(site.sector);
   const zoneIds = site.zones.map((zone) => zone.id);
   const declining =
@@ -169,7 +190,8 @@ function assessZones(
       signals.push({
         kind: "decline",
         weight: 40,
-        text: `El vigor bajó en cada uno de los últimos 2 vuelos (${values.map((value) => number(value)).join(" → ")}).`,
+        text: `El vigor (medida de 0 a 1) bajó en cada uno de los últimos 2 vuelos (${values.map((value) => number(value)).join(" → ")}).`,
+        label: "baja de vigor",
       });
     }
     if (stalled.includes(zone.id)) {
@@ -178,6 +200,7 @@ function assessZones(
         kind: "stalled",
         weight: 35,
         text: `Avanzó menos de 8 puntos en los últimos 2 vuelos (${values.map((value) => `${whole(value)} %`).join(" → ")}).`,
+        label: "avance detenido",
       });
     }
 
@@ -194,7 +217,8 @@ function assessZones(
       signals.push({
         kind: "open",
         weight,
-        text: `${plural(open.length, "observación confirmada sigue", "observaciones confirmadas siguen")} sin verificar${high.length ? ` (${high.length} de prioridad alta)` : ""}.`,
+        text: `${countOf(words, open.length)} ${open.length === 1 ? "sigue" : "siguen"} ${agree(words, open.length === 1 ? "confirmado" : "confirmados", open.length === 1 ? "confirmada" : "confirmadas")} en la revisión y sin verificar en el sitio${high.length ? ` (${high.length} de prioridad alta)` : ""}.`,
+        label: `${open.length} sin verificar`,
       });
     }
     const repeated = inZone
@@ -210,6 +234,7 @@ function assessZones(
         kind: "persistent",
         weight: 15,
         text: `«${repeated.finding.title}» ya se había reportado en ${plural(repeated.earlierFlights, "vuelo anterior", "vuelos anteriores")}.`,
+        label: "se repite",
       });
     }
 
@@ -222,6 +247,7 @@ function assessZones(
         kind: "never",
         weight: 30,
         text: "Ningún vuelo completado la ha recorrido todavía.",
+        label: "nunca volada",
       });
     } else {
       const since = dayNumber(today) - dayNumber(last.date);
@@ -234,6 +260,7 @@ function assessZones(
           kind: "stale",
           weight: 15 + extra,
           text: `Hace ${since} días que no se vuela (lo habitual en este sector es revisar cada ${staleDays}).`,
+          label: `${since} días sin volar`,
         });
       }
     }
@@ -260,16 +287,39 @@ function findOpportunities(
   assessments: ZoneAssessment[],
   chosen: ZoneAssessment[],
 ): Opportunity[] {
-  const { site, findings, zoneMeasure } = input;
+  const { site, findings, zoneMeasure, flights, today } = input;
+  const words = input.findingWords ?? defaultFindingWords;
   const indicator = indicatorFor(site.sector);
   const opportunities: Opportunity[] = [];
 
   const pending = findings.filter((finding) => finding.status === "pending");
+  const suggestedPending = pending.filter(isSuggested).length;
+  const reported = pending.length - suggestedPending;
   if (pending.length) {
+    const parts = [
+      reported ? `${countOf(words, reported)} del operador` : "",
+      suggestedPending
+        ? `${suggestedPending} ${suggestedPending === 1 ? "sugerencia automática" : "sugerencias automáticas"}`
+        : "",
+    ].filter(Boolean);
     opportunities.push({
       id: "review-first",
       kind: "review-first",
-      text: `Hay ${plural(pending.length, "observación", "observaciones")} de vuelos anteriores sin revisar. Revíselas antes de volar para no repetir lo que ya se vio.`,
+      text: `Hay ${parts.join(" y ")} de vuelos anteriores sin revisar. Revíselos antes de volar para no repetir lo que ya se vio.`,
+    });
+  }
+
+  const nextBooked = flights
+    .filter((flight) => flight.status === "scheduled" && flight.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (chosen.length && nextBooked) {
+    const alreadyThere = site.zones
+      .filter((zone) => nextBooked.zoneIds.includes(zone.id))
+      .map((zone) => zone.name);
+    opportunities.push({
+      id: "merge",
+      kind: "merge",
+      text: `Antes de pedir un vuelo aparte: «${nextBooked.title}» (${shortDate(nextBooked.date)}) ya va a ${listNames(alreadyThere) || "otras zonas"}. Podría sumar ${listNames(chosen.map((item) => item.name))} a ese vuelo y ahorrar un viaje; la decisión es suya.`,
     });
   }
 
@@ -308,7 +358,7 @@ function findOpportunities(
       opportunities.push({
         id: "spacing",
         kind: "spacing",
-        text: `${listNames(steady.map((item) => item.name))}: sin cambios en los últimos 3 vuelos y sin observaciones abiertas. Podría espaciar sus vuelos y ahorrar costo; la decisión es suya, porque el cultivo puede cambiar entre vuelos.`,
+        text: `${listNames(steady.map((item) => item.name))}: sin cambios en los últimos 3 vuelos y sin ${words.plural} ${agree(words, "abiertos", "abiertas")}. Podría espaciar sus vuelos y ahorrar costo; la decisión es suya, porque el cultivo puede cambiar entre vuelos.`,
       });
     }
   }

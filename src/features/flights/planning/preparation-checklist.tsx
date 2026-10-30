@@ -71,8 +71,8 @@ export function PreparationChecklist({
       <div className={styles.heading}>
         <h3>Preparación</h3>
         <span>
-          {done} de {preparationTotal}
-          {withoutSupport > 0 && ` · ${withoutSupport} sin soporte`}
+          {done} de {preparationTotal} marcados
+          {withoutSupport > 0 && ` · ${withoutSupport} sin documento`}
         </span>
       </div>
       <div
@@ -82,7 +82,9 @@ export function PreparationChecklist({
       />
       <p className={styles.help}>
         Lista orientativa basada en prácticas públicas. No certifica aptitud ni
-        autorización; confirma los requisitos vigentes con la Aerocivil.
+        autorización; confirme los requisitos vigentes con la Aerocivil. Marcar
+        un ítem sin documento es válido en esta demo; qué documentos pide cada
+        cliente lo decide usted.
       </p>
       <div className={styles.groups}>
         {preparationGroups.map((group) => {

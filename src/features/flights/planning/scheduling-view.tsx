@@ -31,6 +31,8 @@ import { AiBadge } from "@/components/ui/ai-badge";
 import { NextFlightAssistant } from "@/features/agents/next-flight-assistant";
 import type { FlightProposal } from "@/features/agents/flight-proposal";
 import { DEMO_DATE } from "@/features/demo/demo-data";
+import { ExampleNotice } from "../example-notice";
+import { loggedConditions } from "../flight-brief";
 import { FlightItinerary } from "./flight-itinerary";
 import { LogDialog } from "./log-dialog";
 import { PreparationChecklist } from "./preparation-checklist";
@@ -160,7 +162,25 @@ function FlightForm({
   );
   const [route, setRoute] = useState<Position[]>(proposal?.route ?? []);
   const [error, setError] = useState("");
+  const { aircraft, batteries } = useDemo();
   const [drone, setDrone] = useState(seed?.drone ?? "");
+  const [aircraftId, setAircraftId] = useState(
+    aircraft.some((item) => item.id === seed?.aircraftId)
+      ? (seed?.aircraftId ?? "")
+      : "",
+  );
+  const chosenAircraft = aircraft.find((item) => item.id === aircraftId);
+  const chosenBatteries = chosenAircraft
+    ? batteries.filter(
+        (battery) =>
+          battery.aircraftId === chosenAircraft.id && !battery.retired,
+      )
+    : [];
+  function chooseAircraft(id: string) {
+    setAircraftId(id);
+    const next = aircraft.find((item) => item.id === id);
+    if (next) setDrone(`${next.make} ${next.model}`);
+  }
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
   function handleGalleryChange(open: boolean) {
@@ -173,12 +193,12 @@ function FlightForm({
     const read = (key: string) => String(data.get(key) ?? "").trim();
     if (!zoneIds.length) {
       setError(
-        `Selecciona al menos una zona en ${site.zoneLabel.toLowerCase()}.`,
+        `Seleccione al menos una zona en ${site.zoneLabel.toLowerCase()}.`,
       );
       return;
     }
     if (route.length < 2) {
-      setError("Añade al menos dos puntos al recorrido previsto en el mapa.");
+      setError("Añada al menos dos puntos al recorrido previsto en el mapa.");
       return;
     }
     if (
@@ -190,11 +210,11 @@ function FlightForm({
         "pilot",
         "operator",
         "manager",
-        "drone",
-      ].some((key) => !read(key))
+      ].some((key) => !read(key)) ||
+      !drone.trim()
     ) {
       setError(
-        "Completa los campos del plan; no se admiten valores en blanco.",
+        "Complete los campos del plan; no se admiten valores en blanco.",
       );
       return;
     }
@@ -207,7 +227,8 @@ function FlightForm({
       pilot: read("pilot"),
       operator: read("operator"),
       manager: read("manager"),
-      drone: read("drone"),
+      drone: drone.trim(),
+      ...(chosenAircraft ? { aircraftId: chosenAircraft.id } : {}),
       zoneIds,
       route,
       status: "scheduled",
@@ -250,10 +271,10 @@ function FlightForm({
         </p>
         {proposal && (
           <p className={styles.proposalNote}>
-            <AiBadge />
-            Precargado con la propuesta del asistente. Piloto, operador,
-            encargado y dron son los de un vuelo anterior: confírmelos. Usted
-            decide.
+            <AiBadge>Sugerencia automática · ejemplo</AiBadge>
+            Precargado con la sugerencia automática. No se avisa a nadie hasta
+            que usted guarde el plan. Piloto, operador, encargado y dron son los
+            de un vuelo anterior: confírmelos. Usted decide.
           </p>
         )}
         <label className="form-field">
@@ -269,13 +290,13 @@ function FlightForm({
           />
         </label>
         <label className="form-field">
-          <span className="field-label">¿Qué necesitas revisar?</span>
+          <span className="field-label">¿Qué necesita revisar?</span>
           <textarea
             className="field-input"
             name="objective"
             defaultValue={proposal?.objective}
             rows={2}
-            placeholder="Describe el objetivo y la entrega que esperas."
+            placeholder="Describa el objetivo y la entrega que espera."
             required
             maxLength={500}
           />
@@ -325,6 +346,35 @@ function FlightForm({
               />
             </label>
           ))}
+          <div className="form-field">
+            <label className="field-label" htmlFor="flight-aircraft">
+              Aeronave de su flota
+            </label>
+            <select
+              id="flight-aircraft"
+              className="field-select"
+              value={aircraftId}
+              onChange={(event) => chooseAircraft(event.target.value)}
+            >
+              <option value="">Otro equipo (no está en la flota)</option>
+              {aircraft.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name} · {item.make} {item.model}
+                </option>
+              ))}
+            </select>
+            <small className={styles.formHelp}>
+              {chosenAircraft
+                ? `Al completarse el vuelo, sus horas suman a ${chosenAircraft.name} en Equipos${
+                    chosenBatteries.length
+                      ? `; las baterías se eligen al registrar la bitácora (${chosenBatteries
+                          .map((battery) => battery.label)
+                          .join(", ")})`
+                      : ""
+                  }.`
+                : "Sin una aeronave de la flota, las horas y los ciclos de batería de Equipos no avanzan con este vuelo."}
+            </small>
+          </div>
           <div className={`form-field ${styles.droneField}`}>
             <label className="field-label" htmlFor="flight-drone">
               Dron
@@ -337,6 +387,7 @@ function FlightForm({
                 name="drone"
                 type="text"
                 value={drone}
+                readOnly={Boolean(chosenAircraft)}
                 onChange={(event) => setDrone(event.target.value)}
                 placeholder="Escriba el equipo o elíjalo de la galería"
                 required
@@ -386,7 +437,7 @@ function FlightForm({
             <span className="text-muted">{route.length} puntos</span>
           </div>
           <p className={styles.formHelp}>
-            Añade puntos en el mapa. Usa sus controles para editar el recorrido.
+            Añada puntos en el mapa. Use sus controles para editar el recorrido.
           </p>
           <div className={styles.formMap}>
             <SiteMap
@@ -420,7 +471,13 @@ function FlightForm({
         onOpenChange={handleGalleryChange}
         currentId={drone ? droneOptionFor(drone).id : undefined}
         chooseLabel="Usar en el vuelo"
-        onChoose={(option) => setDrone(option.equipmentName)}
+        onChoose={(option) => {
+          setDrone(option.equipmentName);
+          const match = aircraft.find(
+            (item) => `${item.make} ${item.model}` === option.equipmentName,
+          );
+          setAircraftId(match?.id ?? "");
+        }}
       />
     </>
   );
@@ -485,7 +542,7 @@ export function SchedulingView() {
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description="Prepara el próximo vuelo. Conserva el contexto de cada recorrido."
+        description="Prepare el próximo vuelo. Conserve el contexto de cada recorrido."
         actions={
           <Button
             ref={triggerRef}
@@ -497,6 +554,7 @@ export function SchedulingView() {
           </Button>
         }
       />
+      <ExampleNotice />
       <NextFlightAssistant onPrepare={prepareFrom} />
       <section className={`surface ${styles.stage}`}>
         <aside className={styles.rail}>
@@ -536,7 +594,7 @@ export function SchedulingView() {
               {date
                 ? formatDate(date, { day: "numeric", month: "long" })
                 : tab === "agenda"
-                  ? "Tu agenda"
+                  ? "Su agenda"
                   : "Vuelos anteriores"}
             </h3>
             <span>
@@ -574,7 +632,7 @@ export function SchedulingView() {
           {!visibleFlights.length && (
             <EmptyState
               title="Sin vuelos en esta selección"
-              description="Elige otra fecha o programa un nuevo recorrido."
+              description="Elija otra fecha o programe un nuevo recorrido."
             />
           )}
         </aside>
@@ -598,7 +656,7 @@ export function SchedulingView() {
                 {activeFlight.origin && (
                   <details className={styles.origin}>
                     <summary>
-                      <AiBadge>Propuesto por el asistente · ejemplo</AiBadge>
+                      <AiBadge>Sugerencia automática · ejemplo</AiBadge>
                       <span>
                         Aprobado por usted el{" "}
                         {formatDate(activeFlight.origin.approvedOn)}
@@ -654,13 +712,18 @@ export function SchedulingView() {
             <div className={styles.weather}>
               <CloudSun size={24} aria-hidden="true" />
               <div>
-                <strong>Clima de la fecha del vuelo</strong>
+                <strong>
+                  {activeFlight.log
+                    ? "Clima según la bitácora del operador"
+                    : "Clima de la fecha del vuelo"}
+                </strong>
                 <p>
-                  Sin conexión meteorológica. El pronóstico aún no está
-                  disponible.
+                  {activeFlight.log
+                    ? `${loggedConditions(activeFlight.log).weather}. Lo declara el operador; no viene de un servicio meteorológico.`
+                    : "Sin conexión meteorológica. El pronóstico aún no está disponible."}
                 </p>
               </div>
-              <span>Muestra</span>
+              <span>{activeFlight.log ? "Declarado" : "Muestra"}</span>
             </div>
           </section>
           <DroneHangar droneName={activeFlight.drone} />
