@@ -7,6 +7,7 @@ import {
   FileUp,
   Fingerprint,
   Printer,
+  RefreshCw,
   Send,
   ShieldCheck,
   Trash2,
@@ -17,10 +18,12 @@ import { useDemo } from "@/features/demo/demo-context";
 import type { Evidence, Flight, Site } from "@/features/demo/types";
 import { downloadText } from "@/lib/format";
 import { documentHtml, documentText, printHtml } from "./document-export";
+import { flightReportChanges } from "./flight-report-document";
 import {
   evidenceState,
   isComplete,
   newEvidence,
+  signingConflict,
   statusLabels,
   withFields,
   withSignature,
@@ -31,7 +34,9 @@ import { SignaturePad } from "./signature-pad";
 import {
   autofill,
   missingFields,
-  templates,
+  roleLabel,
+  suggestedSigner,
+  templateFor,
   type TemplateId,
 } from "./templates";
 import styles from "./traceability.module.css";
@@ -63,6 +68,7 @@ export function EvidenceDialog({
   site,
   flight,
   templateId,
+  prefill,
   onComplete,
 }: {
   isOpen: boolean;
@@ -70,6 +76,8 @@ export function EvidenceDialog({
   site: Site;
   flight: Flight;
   templateId: TemplateId;
+  /** Content the opening screen already has (the flight report's text), applied over the autofill. */
+  prefill?: Record<string, string>;
   /** Called when the document becomes complete (all signatures, or a file attached). */
   onComplete: (templateId: TemplateId) => void;
 }) {
@@ -79,7 +87,9 @@ export function EvidenceDialog({
         <Modal.Container size="lg" scroll="inside">
           <Modal.Dialog>
             <Modal.Header>
-              <Modal.Heading>{templates[templateId].title}</Modal.Heading>
+              <Modal.Heading>
+                {templateFor(templateId, site.sector).title}
+              </Modal.Heading>
               <Modal.CloseTrigger aria-label="Cerrar documento" />
             </Modal.Header>
             <Modal.Body>
@@ -87,6 +97,7 @@ export function EvidenceDialog({
                 site={site}
                 flight={flight}
                 templateId={templateId}
+                prefill={prefill}
                 onComplete={onComplete}
                 onClose={() => onOpenChange(false)}
               />
@@ -102,21 +113,23 @@ function EvidenceBody({
   site,
   flight,
   templateId,
+  prefill,
   onComplete,
   onClose,
 }: {
   site: Site;
   flight: Flight;
   templateId: TemplateId;
+  prefill?: Record<string, string>;
   onComplete: (templateId: TemplateId) => void;
   onClose: () => void;
 }) {
   const { evidences, saveEvidence, removeEvidence, setNotice } = useDemo();
-  const template = templates[templateId];
+  const template = templateFor(templateId, site.sector);
   const stored = evidences.find(
     (item) => item.flightId === flight.id && item.templateId === templateId,
   );
-  const auto = autofill(templateId, { site, flight });
+  const auto = { ...autofill(templateId, { site, flight }), ...prefill };
   const [fields, setFields] = useState<Record<string, string>>(() => ({
     ...auto,
     ...(stored?.fields ?? {}),
@@ -156,8 +169,21 @@ function EvidenceBody({
   const dirty =
     Boolean(stored) &&
     stored?.kind === "drafted" &&
-    JSON.stringify(stored.fields) !== JSON.stringify(fields);
+    Object.keys({ ...stored.fields, ...fields }).some(
+      (key) => (stored.fields[key] ?? "") !== (fields[key] ?? ""),
+    );
   const missing = missingFields(templateId, fields);
+  // A report taken from the flight's record can fall behind it: say which parts changed.
+  const outdated =
+    template.fromRecord && prefill && stored
+      ? flightReportChanges(stored, prefill)
+      : [];
+  const outdatedAfterEdit =
+    stored && prefill
+      ? flightReportChanges({ ...stored, fields }, prefill)
+      : [];
+  const editable = template.fields.filter((field) => !field.hidden);
+  const labelOf = (role: string) => roleLabel(template, role);
 
   function persistFields(): Evidence {
     const now = new Date().toISOString();
@@ -180,24 +206,15 @@ function EvidenceBody({
     return saved;
   }
 
-  function defaultSigner(role: string) {
-    if (role.startsWith("Propietario")) {
-      return { name: fields.ownerName ?? "", documentId: fields.ownerId ?? "" };
-    }
-    if (role === "Piloto") return { name: flight.pilot, documentId: "" };
-    if (role === "Operador") return { name: flight.pilot, documentId: "" };
-    return { name: flight.manager, documentId: "" };
-  }
-
   function startSigning(role: string) {
     if (missing.length) {
-      setError(`Antes de firmar completa: ${missing.join(", ")}.`);
+      setError(`Antes de firmar complete: ${missing.join(", ")}.`);
       return;
     }
     setError("");
     setSigning(role);
     setSigner({
-      ...defaultSigner(role),
+      ...suggestedSigner(role, fields, flight),
       method: "drawn",
       image: "",
       consent: false,
@@ -208,16 +225,21 @@ function EvidenceBody({
     if (!signing) return;
     if (signer.name.trim().length < 3 || signer.documentId.trim().length < 3) {
       setError(
-        "Escribe el nombre completo y el número de documento de quien firma.",
+        "Escriba el nombre completo y el número de documento de quien firma.",
       );
       return;
     }
     if (signer.method === "drawn" && !signer.image) {
-      setError("Dibuja la firma o cambia a firma escrita.");
+      setError("Dibuje la firma o cambie a firma escrita.");
       return;
     }
     if (!signer.consent) {
-      setError("Confirma que aceptas firmar electrónicamente.");
+      setError("Confirme que acepta firmar electrónicamente.");
+      return;
+    }
+    const conflict = signingConflict(working, signing, signer);
+    if (conflict) {
+      setError(conflict);
       return;
     }
     const now = new Date().toISOString();
@@ -281,7 +303,7 @@ function EvidenceBody({
 
   function request() {
     if (requestTo.trim().length < 3) {
-      setError("Escribe a quién se le pide el documento.");
+      setError("Escriba a quién se le pide el documento.");
       return;
     }
     const now = new Date().toISOString();
@@ -313,26 +335,28 @@ function EvidenceBody({
       </div>
       <p className={styles.note}>{template.note}</p>
 
-      <div
-        className="segmented-control"
-        role="group"
-        aria-label="Cómo respaldar este ítem"
-      >
-        <button
-          type="button"
-          aria-pressed={mode === "draft"}
-          onClick={() => setMode("draft")}
+      {!template.fromRecord && (
+        <div
+          className="segmented-control"
+          role="group"
+          aria-label="Cómo respaldar este ítem"
         >
-          Redactar y firmar aquí
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === "attach"}
-          onClick={() => setMode("attach")}
-        >
-          Adjuntar un archivo
-        </button>
-      </div>
+          <button
+            type="button"
+            aria-pressed={mode === "draft"}
+            onClick={() => setMode("draft")}
+          >
+            Redactar y firmar aquí
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === "attach"}
+            onClick={() => setMode("attach")}
+          >
+            Adjuntar un archivo
+          </button>
+        </div>
+      )}
 
       {mode === "attach" ? (
         <section className={styles.section}>
@@ -371,7 +395,40 @@ function EvidenceBody({
         <div className={styles.columns}>
           <section className={styles.section} aria-label="Datos del documento">
             <h3>Datos</h3>
-            {template.fields.map((field) => {
+            {template.fromRecord && (
+              <>
+                <p className={styles.hint}>
+                  Este informe se arma con el registro del vuelo: usted lo lee
+                  en «Documento» y lo firma. Para cambiar su contenido, cambie
+                  el vuelo, los puntos incluidos o las notas en la pantalla del
+                  informe y vuelva a abrir este documento.
+                </p>
+                {outdated.length > 0 && (
+                  <div className={styles.alert} role="status">
+                    <TriangleAlert size={16} aria-hidden="true" />
+                    <span>
+                      El informe en pantalla ya no coincide con el guardado
+                      (cambió: {outdated.join(", ")}).{" "}
+                      {outdatedAfterEdit.length === 0
+                        ? "Ya cargó los datos actuales: pulse «Guardar cambios» para dejar el cambio en el historial; las firmas anteriores quedarán sin validez."
+                        : "Si lo actualiza, las firmas hechas sobre la versión anterior quedan sin validez."}
+                    </span>
+                  </div>
+                )}
+                {outdatedAfterEdit.length > 0 && (
+                  <Button
+                    variant="secondary"
+                    onPress={() =>
+                      setFields((current) => ({ ...current, ...prefill }))
+                    }
+                  >
+                    <RefreshCw size={16} aria-hidden="true" />
+                    Usar los datos actuales del vuelo
+                  </Button>
+                )}
+              </>
+            )}
+            {editable.map((field) => {
               const isAuto =
                 Boolean(auto[field.key]) &&
                 fields[field.key] === auto[field.key];
@@ -443,8 +500,10 @@ function EvidenceBody({
               <p className={styles.alert} role="alert">
                 <TriangleAlert size={16} aria-hidden="true" />
                 El contenido cambió después de firmar. Las firmas de{" "}
-                {state.staleSignatures.map((s) => s.role).join(", ")} ya no
-                valen: deben firmar de nuevo.
+                {state.staleSignatures
+                  .map((signature) => labelOf(signature.role))
+                  .join(", ")}{" "}
+                ya no valen: deben firmar de nuevo.
               </p>
             )}
           </section>
@@ -466,7 +525,7 @@ function EvidenceBody({
                   }
                 >
                   <span className={styles.signerName}>
-                    <strong>{item.role}</strong>
+                    <strong>{labelOf(item.role)}</strong>
                     <small>
                       {signature
                         ? `${signature.name} · ${time(signature.signedAt)}${valid ? "" : " · sin validez"}`
@@ -491,9 +550,9 @@ function EvidenceBody({
             <div
               className={styles.signPanel}
               role="group"
-              aria-label={`Firmar como ${signing}`}
+              aria-label={`Firmar como ${labelOf(signing)}`}
             >
-              <h4>Firmar como {signing}</h4>
+              <h4>Firmar como {labelOf(signing)}</h4>
               <div className={styles.signFields}>
                 <label className="form-field">
                   <span className="field-label">Nombre completo</span>
@@ -595,9 +654,10 @@ function EvidenceBody({
           </p>
         ) : (
           <p className={styles.hint}>
-            Por ejemplo, el propietario del predio. En la versión conectada se
-            enviaría un enlace por correo o WhatsApp; en la demo solo queda el
-            registro.
+            Por ejemplo,{" "}
+            {template.requestExample ?? "quien debe revisar o firmar"}. En la
+            versión conectada se enviaría un enlace por correo o WhatsApp; en la
+            demo solo queda el registro.
           </p>
         )}
         <div className={styles.inline}>
@@ -680,7 +740,7 @@ function EvidenceBody({
           <div role="group" aria-label="Confirmar eliminación">
             <p>
               {evidenceState(stored).validRoles.length
-                ? `Este documento tiene firmas de ${evidenceState(stored).validRoles.join(", ")}. Al eliminarlo se pierden el documento, las firmas y su historial de esta demostración.`
+                ? `Este documento tiene firmas de ${evidenceState(stored).validRoleLabels.join(", ")}. Al eliminarlo se pierden el documento, las firmas y su historial de esta demostración.`
                 : "Se elimina el documento y su historial de esta demostración."}
             </p>
             <Button

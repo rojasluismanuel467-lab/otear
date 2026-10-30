@@ -511,10 +511,12 @@ export function DocumentView() {
         <summary>¿Qué garantiza una firma o una huella digital aquí?</summary>
         <p>
           En los documentos que se redactan y firman en la demo (por ejemplo, en
-          la lista de preparación del vuelo), la <strong>huella digital</strong>{" "}
-          es un código calculado con el contenido del documento. Si alguien
-          cambia una letra, el código cambia y las firmas anteriores quedan sin
-          validez: sirve para notar que algo se modificó después de firmar.
+          la lista de preparación del vuelo o en el informe del vuelo), la{" "}
+          <strong>huella digital</strong> es un código calculado con el título y
+          el texto del documento tal como se muestra en pantalla (no con el
+          archivo que se descarga). Si alguien cambia una letra, el código
+          cambia y las firmas anteriores quedan sin validez: sirve para notar
+          que algo se modificó después de firmar.
         </p>
         <p>
           No es un sello de tiempo certificado ni una firma con certificado

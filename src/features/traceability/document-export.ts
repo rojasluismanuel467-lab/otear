@@ -1,9 +1,17 @@
 import type { Evidence } from "../demo/types";
-import { evidenceState, statusLabels } from "./integrity.ts";
-import { templates, type TemplateId } from "./templates.ts";
+import {
+  displayTitle,
+  evidenceState,
+  roleLabelOf,
+  statusLabels,
+  templateOf,
+} from "./integrity.ts";
 
 const DISCLAIMER =
-  "Firma electrónica simple. Las leyes colombianas (Ley 527 de 1999, Decreto 2364 de 2012) la reconocen como medio de prueba, pero puede ser controvertida. La hora es la del dispositivo y no es un sello de tiempo certificado.";
+  "Firma electrónica simple. Las leyes colombianas (Ley 527 de 1999, Decreto 2364 de 2012) la reconocen como medio de prueba, pero puede ser controvertida. La hora es la del dispositivo y no es un sello de tiempo certificado. La firma de esta demostración no tiene valor legal.";
+
+const HASH_NOTE =
+  "La huella (SHA-256) se calcula con el título y el texto del documento tal como se muestra en pantalla, no con el archivo descargado: si alguien cambia una letra, la huella cambia y las firmas anteriores quedan sin validez. No prueba quién escribió el nombre de quien firma ni la hora exacta.";
 
 export function bodyOf(evidence: Evidence): string {
   if (evidence.kind === "attachment") {
@@ -12,9 +20,7 @@ export function bodyOf(evidence: Evidence): string {
       ? `Archivo adjunto: ${file.name} (${file.size} bytes)\nHuella SHA-256 del archivo: ${file.hash}`
       : "Archivo solicitado; todavía no se ha adjuntado.";
   }
-  const template = evidence.templateId
-    ? templates[evidence.templateId as TemplateId]
-    : undefined;
+  const template = templateOf(evidence);
   return template ? template.render(evidence.fields) : "";
 }
 
@@ -30,7 +36,7 @@ export function documentText(evidence: Evidence): string {
   const lines = [
     "OTEAR · DOCUMENTO DE DEMOSTRACIÓN",
     "",
-    evidence.title.toUpperCase(),
+    displayTitle(evidence).toUpperCase(),
     "",
     bodyOf(evidence),
     "",
@@ -43,14 +49,14 @@ export function documentText(evidence: Evidence): string {
   for (const signature of evidence.signatures) {
     const valid = signature.contentHash === state.hash;
     lines.push(
-      `- ${signature.role}: ${signature.name} (${signature.documentId}) · ${formatTime(signature.signedAt)} · versión ${signature.contentHash.slice(0, 12)} · ${valid ? "válida" : "SIN VALIDEZ: el contenido cambió"}`,
+      `- ${roleLabelOf(evidence, signature.role)}: ${signature.name} (${signature.documentId}) · ${formatTime(signature.signedAt)} · versión ${signature.contentHash.slice(0, 12)} · ${valid ? "válida" : "SIN VALIDEZ: el contenido cambió"}`,
     );
   }
   lines.push("", "HISTORIAL");
   for (const event of evidence.events) {
     lines.push(`- ${formatTime(event.at)} · ${event.text}`);
   }
-  lines.push("", DISCLAIMER);
+  lines.push("", HASH_NOTE, DISCLAIMER);
   return lines.join("\n");
 }
 
@@ -71,10 +77,10 @@ export function documentHtml(evidence: Evidence): string {
       const image = signature.image
         ? `<img src="${escapeHtml(signature.image)}" alt="Firma de ${escapeHtml(signature.name)}" />`
         : `<em class="typed">${escapeHtml(signature.name)}</em>`;
-      return `<tr><td>${image}</td><td><strong>${escapeHtml(signature.name)}</strong><br>${escapeHtml(signature.role)} · ${escapeHtml(signature.documentId)}</td><td>${escapeHtml(formatTime(signature.signedAt))}<br><small>versión ${escapeHtml(signature.contentHash.slice(0, 12))}${valid ? "" : " · sin validez"}</small></td></tr>`;
+      return `<tr><td>${image}</td><td><strong>${escapeHtml(signature.name)}</strong><br>${escapeHtml(roleLabelOf(evidence, signature.role))} · ${escapeHtml(signature.documentId)}</td><td>${escapeHtml(formatTime(signature.signedAt))}<br><small>versión ${escapeHtml(signature.contentHash.slice(0, 12))}${valid ? "" : " · sin validez"}</small></td></tr>`;
     })
     .join("");
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${escapeHtml(evidence.title)}</title><style>
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${escapeHtml(displayTitle(evidence))}</title><style>
     body{font:14px/1.6 system-ui,sans-serif;color:#222b32;margin:40px;max-width:720px}
     h1{font-size:20px;margin:0 0 4px}.brand{color:#1c6f8d;font-weight:700;letter-spacing:.06em;font-size:12px}
     pre{white-space:pre-wrap;font:inherit;border:1px solid #e1e5e8;border-radius:12px;padding:16px;background:#f8f9fa}
@@ -83,11 +89,12 @@ export function documentHtml(evidence: Evidence): string {
     code{font-size:11px;word-break:break-all}
   </style></head><body>
     <div class="brand">OTEAR · DOCUMENTO DE DEMOSTRACIÓN</div>
-    <h1>${escapeHtml(evidence.title)}</h1>
+    <h1>${escapeHtml(displayTitle(evidence))}</h1>
     <pre>${escapeHtml(bodyOf(evidence))}</pre>
     <h2 style="font-size:15px">Firmas</h2>
     ${signatures ? `<table>${signatures}</table>` : "<p>Sin firmas.</p>"}
     <p class="note">Estado: ${escapeHtml(statusLabels[state.status])}<br>Huella SHA-256 del contenido: <code>${escapeHtml(state.hash)}</code></p>
+    <p class="note">${escapeHtml(HASH_NOTE)}</p>
     <p class="note">${escapeHtml(DISCLAIMER)}</p>
   </body></html>`;
 }
