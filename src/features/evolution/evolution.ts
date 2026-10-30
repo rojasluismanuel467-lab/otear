@@ -30,7 +30,10 @@ export interface CapturePoint {
   date: string;
   values: Record<string, number>;
   levels?: number;
-  /** Average of the zone values: percent, vigor or count. */
+  /**
+   * Average of the zone values: percent, vigor or count. Simple unless `weights` were given to
+   * `buildCaptures` (roads weigh each stretch by its length).
+   */
   mean: number;
   controlPoints?: boolean;
   gsdCm?: number;
@@ -41,6 +44,8 @@ export function buildCaptures(
   site: Site,
   flights: Flight[],
   findings: Finding[],
+  /** Weight of each zone in the average (for example its length in km); equal when missing. */
+  weights?: Record<string, number>,
 ): CapturePoint[] {
   const indicator = indicatorFor(site.sector);
   return flights
@@ -63,19 +68,40 @@ export function buildCaptures(
         );
       }
       if (!values || !Object.keys(values).length) return [];
-      const list = Object.values(values);
+      const mean = weightedMean(values, weights);
       return [
         {
           flightId: flight.id,
           date: flight.date,
           values,
           levels: flight.capture?.levels,
-          mean: list.reduce((sum, value) => sum + value, 0) / list.length,
+          mean,
           controlPoints: flight.log?.controlPoints,
           gsdCm: flight.log?.gsdCm,
         },
       ];
     });
+}
+
+/** Average of the values; each one counts as much as its weight when weights are given. */
+export function weightedMean(
+  values: Record<string, number>,
+  weights?: Record<string, number>,
+) {
+  const entries = Object.entries(values);
+  if (!entries.length) return 0;
+  const weightOf = (id: string) => {
+    const weight = weights?.[id];
+    return weight !== undefined && weight > 0 ? weight : undefined;
+  };
+  const usable = weights && entries.every(([id]) => weightOf(id) !== undefined);
+  if (!usable) {
+    return entries.reduce((sum, [, value]) => sum + value, 0) / entries.length;
+  }
+  const total = entries.reduce((sum, [id]) => sum + weightOf(id)!, 0);
+  return (
+    entries.reduce((sum, [id, value]) => sum + value * weightOf(id)!, 0) / total
+  );
 }
 
 const DAY_MS = 86_400_000;
@@ -194,7 +220,7 @@ export function comparisonReliability(
   }
   return {
     level: "medium",
-    text: "Al menos un vuelo no usó puntos de control: tome como fiables solo cambios grandes (más de 15 cm).",
+    text: "Al menos un vuelo no usó puntos de control: tome como fiables solo diferencias de medida grandes (más de 15 cm entre un vuelo y otro).",
   };
 }
 
@@ -235,4 +261,75 @@ export function progressColor(percent: number) {
 export function countColor(value: number, max: number) {
   const t = max > 0 ? Math.min(1, value / max) : 0;
   return `rgb(${lerp(226, 181, t)}, ${lerp(232, 101, t)}, ${lerp(237, 74, t)})`;
+}
+
+export interface FindingChange {
+  /** Reported at the capture shown but not at the one it is compared with. */
+  appeared: number;
+  /** Reported at the comparison capture and no longer at the one shown. */
+  gone: number;
+  /** Reported at both. */
+  persistent: number;
+}
+
+/**
+ * How the findings changed between two captures: the same title in the same zone counts as the
+ * same finding. Dismissed ones and unreviewed suggestions are left out.
+ */
+export function findingChange(
+  findings: Finding[],
+  current: Pick<CapturePoint, "flightId">,
+  reference: Pick<CapturePoint, "flightId">,
+): FindingChange {
+  const keys = (flightId: string) =>
+    new Set(
+      findings
+        .filter(
+          (item) =>
+            item.flightId === flightId &&
+            item.status !== "dismissed" &&
+            !(item.suggestion && item.status === "pending"),
+        )
+        .map((item) => `${item.zoneId}|${item.title}`),
+    );
+  const now = keys(current.flightId);
+  const before = keys(reference.flightId);
+  const persistent = [...now].filter((key) => before.has(key)).length;
+  return {
+    appeared: now.size - persistent,
+    gone: before.size - persistent,
+    persistent,
+  };
+}
+
+export type ZoneVerdict = "better" | "worse" | "same";
+
+/**
+ * Whether a zone improved or got worse between two captures. Vigor and progress are better when
+ * they rise (vigor needs a change of 0,03 to count, progress 2 points); news per flight are better
+ * when they fall.
+ */
+export function zoneVerdict(kind: IndicatorKind, change: number): ZoneVerdict {
+  const limit = kind === "vigor" ? 0.03 : kind === "progress" ? 2 : 1;
+  if (Math.abs(change) < limit) return "same";
+  const rises = change > 0;
+  return (kind === "count" ? !rises : rises) ? "better" : "worse";
+}
+
+/** The date a zone's values started to fall, going back from `index` while each capture is lower. */
+export function fallingSince(
+  points: CapturePoint[],
+  zoneId: string,
+  index: number,
+): CapturePoint | undefined {
+  let start = index;
+  while (
+    start > 0 &&
+    points[start - 1].values[zoneId] !== undefined &&
+    points[start].values[zoneId] !== undefined &&
+    points[start - 1].values[zoneId] > points[start].values[zoneId]
+  ) {
+    start -= 1;
+  }
+  return start === index ? undefined : points[start];
 }

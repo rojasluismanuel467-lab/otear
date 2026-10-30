@@ -33,7 +33,15 @@ function clock(seconds: number) {
  * same playback as the map, so both always show the same moment.
  */
 export function ReplayBar({ replay }: { replay: Replay }) {
-  const { track, playback, preview, reducedMotion, measuresArea } = replay;
+  const {
+    track,
+    playback,
+    preview,
+    reducedMotion,
+    measuresArea,
+    recordedKm,
+    declaredHa,
+  } = replay;
   const playing = useSyncExternalStore(
     playback.subscribe,
     playback.getState,
@@ -49,6 +57,11 @@ export function ReplayBar({ replay }: { replay: Replay }) {
   const total = track.photoTimes.length;
   const phase = phaseLabels[state.phase];
   const title = preview ? "Vista previa de la ruta" : "Simulación del vuelo";
+  // The route is drawn with rounded corners, so its length differs a little from the recorded
+  // kilometres; the reading follows the recorded figure so every screen shows the same number.
+  const routeKm = (track.points[track.points.length - 1]?.distM ?? 0) / 1000;
+  const totalKm = recordedKm ?? routeKm;
+  const doneKm = routeKm > 0 ? totalKm * (state.distM / 1000 / routeKm) : 0;
   const jump = (event: { t: number } | undefined) => {
     if (!event) return;
     playback.pause();
@@ -71,7 +84,7 @@ export function ReplayBar({ replay }: { replay: Replay }) {
           </p>
         </div>
         <span className={styles.badge}>
-          {preview ? "Planificado" : "Ilustrativa"}
+          {preview ? "Ruta planificada" : "Ruta ilustrativa"}
         </span>
       </header>
 
@@ -153,8 +166,8 @@ export function ReplayBar({ replay }: { replay: Replay }) {
       </div>
       {reducedMotion && (
         <p className={styles.note}>
-          Tu dispositivo pide menos movimiento: la simulación no se reproduce
-          sola. Avanza por los momentos del vuelo o arrastra la línea de tiempo.
+          Su dispositivo pide menos movimiento: la simulación no se reproduce
+          sola. Avance por los momentos del vuelo o arrastre la línea de tiempo.
         </p>
       )}
 
@@ -210,8 +223,7 @@ export function ReplayBar({ replay }: { replay: Replay }) {
         <div>
           <dt>Recorrido</dt>
           <dd>
-            {number(state.distM / 1000, 1)} de{" "}
-            {number(track.points[track.points.length - 1]?.distM / 1000, 1)} km
+            {number(doneKm, 1)} de {number(totalKm, 1)} km
           </dd>
         </div>
         {!preview && (
@@ -224,11 +236,25 @@ export function ReplayBar({ replay }: { replay: Replay }) {
         )}
         {measuresArea && (
           <div>
-            <dt>{preview ? "Área prevista" : "Área alcanzada"}</dt>
+            <dt>
+              {preview ? "Área prevista de la ruta" : "Área de la ruta"}
+              {!preview && " (ilustrativa)"}
+            </dt>
             <dd>
-              {number(state.coveredHa, 1)} de {number(track.orderedHa, 1)} ha ·{" "}
-              {number(state.coveredShare * 100)} %
+              {number(state.coveredHa, 1)} de {number(track.orderedHa, 1)} ha
+              pedidas · {number(state.coveredShare * 100)} %
             </dd>
+          </div>
+        )}
+        {!preview && measuresArea && declaredHa !== undefined && (
+          <div className={styles.declared}>
+            <dt>Cubierto, según el operador</dt>
+            <dd>
+              {number(declaredHa, 1)} de {number(track.orderedHa, 1)} ha
+              {track.orderedHa - declaredHa > 0.05 &&
+                ` · faltaron ${number(track.orderedHa - declaredHa, 1)} ha`}
+            </dd>
+            <small>Lo declara en su bitácora; es la cifra que usa Pagos.</small>
           </div>
         )}
       </dl>
@@ -274,7 +300,7 @@ export function ReplayBar({ replay }: { replay: Replay }) {
       <p className={styles.note}>
         {preview
           ? "Vista previa de la ruta planificada. Altura, velocidad y tiempos son estimados."
-          : "Simulación ilustrativa. Altura, velocidad, tiempos y área alcanzada son estimados a partir de la ruta; no son el registro real del vuelo. El dron se dibuja a tamaño fijo, no a escala."}
+          : "Simulación ilustrativa: se dibuja desde la ruta planificada, por eso muestra la ruta completa aunque el operador haya declarado menos. Altura, velocidad, tiempos y área de la ruta son estimados; el recorrido en kilómetros es el registrado. Solo las hectáreas «según el operador» salen de su bitácora. El dron se dibuja a tamaño fijo, no a escala."}
       </p>
     </section>
   );

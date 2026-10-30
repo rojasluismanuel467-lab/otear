@@ -17,6 +17,7 @@ import {
   type ChoiceId,
 } from "@/features/entry/entry";
 import { useEntry, writeEntry } from "@/features/entry/entry-store";
+import { DemoLink } from "./demo-link";
 import styles from "./sector-picker.module.css";
 
 const icons = {
@@ -42,10 +43,6 @@ export function SectorPicker() {
     writeEntry({ choice: id, other: id === "other" ? other : undefined });
   }
 
-  function openDemo() {
-    if (entry) writeEntry({ ...entry, launch: true });
-  }
-
   return (
     <section
       className={styles.wrap}
@@ -56,11 +53,12 @@ export function SectorPicker() {
         <div className={styles.controls}>
           <span className={styles.tag}>Pruébelo con su sector</span>
           <h2 id="picker-title" className={styles.title}>
-            ¿Qué <span className="accent">opera</span> usted?
+            ¿Qué <span className="accent">supervisa</span> usted?
           </h2>
           <p className={styles.lead}>
             Elija una opción y vea cómo se llamarían sus cosas. La demo se abre
-            con ese vocabulario.
+            con ese vocabulario y en la pantalla que responde la pregunta
+            principal de su sector.
           </p>
 
           <div
@@ -107,18 +105,21 @@ export function SectorPicker() {
           )}
 
           <div className={styles.actions}>
-            <Link
-              href="/programacion/"
-              className={styles.primary}
-              onClick={openDemo}
-            >
+            <DemoLink className={styles.primary}>
               Abrir la demo de {choice ? choice.demoLabel : "ejemplo"}{" "}
               <ArrowRight size={16} aria-hidden />
-            </Link>
+            </DemoLink>
             <Link href="#contacto" className={styles.secondary}>
               Prefiero que me la muestren
             </Link>
           </div>
+          <p className={styles.operatorLine}>
+            ¿Opera drones para otras empresas?{" "}
+            <DemoLink viewAs="operator" className={styles.operatorLink}>
+              Abra la demo como operador
+            </DemoLink>
+            .
+          </p>
         </div>
 
         <div className={styles.preview} aria-live="polite">

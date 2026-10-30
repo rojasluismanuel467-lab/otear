@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Check, CircleDashed, CircleDot } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
+import { useFindingWords } from "../use-finding-words";
 import type { Flight } from "@/features/demo/types";
 import { buildItinerary, type StageState } from "../itinerary";
 import { preparationTotal } from "./preparation-items";
@@ -22,6 +23,7 @@ const labels: Record<StageState, string> = {
 /** The seven stages of an operation, from planning to payment. */
 export function FlightItinerary({ flight }: { flight: Flight }) {
   const { findings, invoices, documents, evidences } = useDemo();
+  const findingWords = useFindingWords();
   const stages = buildItinerary({
     flight,
     findings,
@@ -29,6 +31,7 @@ export function FlightItinerary({ flight }: { flight: Flight }) {
     documents,
     evidences,
     checklistTotal: preparationTotal,
+    findingWords,
   });
   const done = stages.filter((stage) => stage.state === "done").length;
   return (

@@ -7,6 +7,8 @@ export interface Zone {
   name: string;
   description: string;
   outline: Position[];
+  /** Roads only: abscissa (PK) of the start and the end of the stretch, in metres from PK 0+000. */
+  chainage?: { startM: number; endM: number };
 }
 
 export interface Site {
@@ -93,6 +95,8 @@ export interface Finding {
   priority: "high" | "medium" | "low";
   status: "pending" | "confirmed" | "dismissed";
   position: Position;
+  /** Where it is, in the sector's own terms (roads: «PK 12+410 · margen derecha»). */
+  locationLabel?: string;
   imageUrl: string;
   source: string;
   taskAssigned: boolean;

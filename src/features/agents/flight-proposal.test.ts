@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { addDays, suggestNextFlight } from "./flight-proposal.ts";
+import { findingWords } from "../flights/finding-words.ts";
 import type { Finding, Flight, Position, Site } from "../demo/types";
 
 function square(lat: number, lng: number): Position[] {
@@ -338,4 +339,61 @@ test("no more than four zones are proposed", () => {
 
 test("adds days across months", () => {
   assert.equal(addDays("2026-10-30", 5), "2026-11-04");
+});
+
+test("suggests adding the proposed zone to the next flight already booked", () => {
+  const upcoming = flight(
+    "next",
+    "2026-10-29",
+    {},
+    { status: "scheduled", zoneIds: ["z2", "z3"], capture: undefined },
+  );
+  const result = suggestNextFlight({
+    site: makeSite(),
+    flights: [...history, upcoming],
+    findings: [],
+    today,
+    zoneMeasure: {},
+  });
+  assert.deepEqual(result.proposal?.zoneIds, ["z1"]);
+  const merge = result.opportunities.find((item) => item.kind === "merge");
+  assert.ok(merge);
+  assert.match(merge.text, /Lote 2 y Lote 3/);
+  assert.match(merge.text, /sumar Lote 1/);
+});
+
+test("words about findings follow the company's term and keep suggestions apart", () => {
+  const suggested = finding("s1", "f3", {
+    status: "pending",
+    suggestion: {
+      agent: "image",
+      confidence: "medium",
+      evidence: [],
+      limits: "",
+      photoSpan: [0.1, 0.2],
+    },
+  });
+  const result = suggestNextFlight({
+    site: makeSite(),
+    flights: history,
+    findings: [
+      finding("a", "f3", { priority: "high" }),
+      finding("b", "f3", { status: "pending" }),
+      suggested,
+    ],
+    today,
+    zoneMeasure: {},
+    findingWords: findingWords("No conformidad", "No conformidades"),
+  });
+  const open = result.assessments
+    .find((item) => item.zoneId === "z1")
+    ?.signals.find((signal) => signal.kind === "open");
+  assert.match(open?.text ?? "", /1 no conformidad sigue confirmada/);
+  const review = result.opportunities.find(
+    (item) => item.kind === "review-first",
+  );
+  assert.match(
+    review?.text ?? "",
+    /1 no conformidad del operador y 1 sugerencia automática/,
+  );
 });

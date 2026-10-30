@@ -72,7 +72,7 @@ export function QuoteAdvisor({ request }: { request: ServiceRequest }) {
   return (
     <section className={styles.advisor} aria-labelledby="advisor-title">
       <header className={styles.head}>
-        <AiBadge />
+        <AiBadge>Sugerencia automática · ejemplo</AiBadge>
         <h3 id="advisor-title">
           {request.quotes.length
             ? "Lectura de las cotizaciones"

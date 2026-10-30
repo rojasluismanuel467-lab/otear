@@ -61,7 +61,8 @@ function Locked({ feature }: { feature: Feature }) {
   return (
     <p className={styles.locked} role="note">
       <Lock size={15} aria-hidden="true" />
-      Disponible desde el plan {plan?.name ?? "Empresarial"}.
+      Disponible en el plan de ejemplo «{plan?.name ?? "Empresarial"}». Los
+      planes reales están por definir.
     </p>
   );
 }
@@ -84,7 +85,7 @@ export function ConfigView() {
     );
     setMessage({
       tone: "ok",
-      text: "Configuración exportada. No incluye el plan, que lo fija la licencia.",
+      text: "Configuración exportada. No incluye el plan de la demostración.",
     });
   }
 
@@ -641,15 +642,18 @@ export function ConfigView() {
             ))}
           </div>
           <small>
-            En el producto real el plan lo fija la licencia que usted emite al
-            cliente. Aquí se puede cambiar para ver cómo cambia lo que cada
-            empresa puede adaptar.
+            Esta demostración arranca en «Empresarial» y muestra todo lo que se
+            puede adaptar; su plan podría incluir menos. Cuántos planes habrá,
+            qué incluye cada uno y cuánto cuestan está por definir y se acuerda
+            con usted en la conversación. Aquí puede cambiar de plan para ver
+            cómo cambia lo que su empresa podría adaptar.
           </small>
         </fieldset>
         <table className={styles.table}>
           <caption className={styles.caption}>
-            Planes de ejemplo para ilustrar el modelo. Los nombres, límites y
-            precios los define el propietario del software.
+            Estos tres planes son ejemplos para mostrar cómo podría ordenarse lo
+            que se adapta; no son una oferta. Nombres, límites y precios: por
+            definir.
           </caption>
           <thead>
             <tr>
@@ -670,7 +674,7 @@ export function ConfigView() {
                     {featureLabels[feature].detail}
                     {featureLabels[feature].available
                       ? ""
-                      : " Aún no está construido."}
+                      : " Es una propuesta: aún no está construido."}
                   </small>
                 </th>
                 {plans.map((plan) => (
@@ -695,7 +699,7 @@ export function ConfigView() {
           </tbody>
         </table>
         <section className={styles.core} aria-label="Lo que no se personaliza">
-          <h2>Lo que siempre queda en el núcleo</h2>
+          <h2>Lo que no cambia en ningún plan</h2>
           <ul>
             <li>
               Los cálculos (horas, ciclos, desgaste, avance) y su integridad.
@@ -705,7 +709,10 @@ export function ConfigView() {
               de la aeronave.
             </li>
             <li>Los nombres de las piezas, que son los del fabricante.</li>
-            <li>La huella y la firma de las evidencias.</li>
+            <li>
+              La marca de integridad y la firma de las evidencias (si alguien
+              cambia el contenido, la firma queda sin validez).
+            </li>
           </ul>
         </section>
       </div>

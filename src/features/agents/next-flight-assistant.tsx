@@ -7,6 +7,7 @@ import { AiBadge } from "@/components/ui/ai-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SiteMap } from "@/components/maps/site-map";
 import { useDemo } from "@/features/demo/demo-context";
+import { useFindingWords } from "@/features/flights/use-finding-words";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import type { Flight } from "@/features/demo/types";
 import {
@@ -29,6 +30,15 @@ const levelText: Record<Level, string> = {
   medium: "Prioridad media",
   low: "Sin urgencia",
 };
+const shortDate = (date: string) =>
+  formatDate(date, { day: "numeric", month: "short" });
+
+function listNames(names: string[]) {
+  if (names.length <= 1) return names[0] ?? "";
+  if (names.length === 2) return `${names[0]} y ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
+}
+
 const levelTone: Record<Level, "danger" | "warning" | "neutral"> = {
   high: "danger",
   medium: "warning",
@@ -41,6 +51,7 @@ export function NextFlightAssistant({
   onPrepare: (proposal: FlightProposal) => void;
 }) {
   const { site, flights, findings } = useDemo();
+  const words = useFindingWords();
   const [isOpen, setIsOpen] = useState(false);
   const kind = outlineKindFor(site.sector);
   const suggestion = useMemo(
@@ -50,6 +61,7 @@ export function NextFlightAssistant({
         flights,
         findings,
         today: DEMO_DATE,
+        findingWords: words,
         zoneMeasure: Object.fromEntries(
           site.zones.map((zone) => [
             zone.id,
@@ -57,14 +69,34 @@ export function NextFlightAssistant({
           ]),
         ),
       }),
-    [site, flights, findings, kind],
+    [site, flights, findings, kind, words],
   );
   const { proposal, assessments, opportunities, basis } = suggestion;
   const chosen = proposal
     ? assessments.filter((item) => proposal.zoneIds.includes(item.zoneId))
     : [];
   const others = assessments.filter((item) => !chosen.includes(item));
-  const zoneWord = site.zoneLabel.toLowerCase();
+  // Zones with signals that an upcoming flight already covers, grouped by that flight.
+  const booked = new Map<
+    string,
+    { title: string; date: string; names: string[] }
+  >();
+  for (const item of others) {
+    if (!item.scheduled || item.score < PROPOSE_MIN_SCORE) continue;
+    const entry = booked.get(item.scheduled.flightId) ?? {
+      title: item.scheduled.title,
+      date: item.scheduled.date,
+      names: [],
+    };
+    entry.names.push(item.name);
+    booked.set(item.scheduled.flightId, entry);
+  }
+  const bookedNote = [...booked.values()]
+    .map(
+      (entry) =>
+        `${listNames(entry.names)} ${entry.names.length === 1 ? "ya está" : "ya están"} en el vuelo del ${shortDate(entry.date)}.`,
+    )
+    .join(" ");
   const measure = proposal
     ? formatMeasure(
         kind,
@@ -103,14 +135,16 @@ export function NextFlightAssistant({
         aria-label="Sugerencia para el próximo vuelo"
       >
         <div className={styles.bannerText}>
-          <AiBadge />
+          <AiBadge>Sugerencia automática · ejemplo</AiBadge>
           <p className={styles.bannerTitle}>
             {proposal
-              ? `${chosen.length} de ${assessments.length} ${zoneWord} ${chosen.length === 1 ? "merece" : "merecen"} un vuelo pronto`
+              ? `${listNames(chosen.map((item) => item.name))} ${chosen.length === 1 ? "pide" : "piden"} un vuelo pronto`
               : "Ninguna zona pide un vuelo adicional hoy"}
           </p>
           <p className={styles.bannerHint}>
-            {proposal ? proposal.reasons[0] : suggestion.none}
+            {proposal
+              ? [proposal.reasons[0], bookedNote].filter(Boolean).join(" ")
+              : suggestion.none}
           </p>
         </div>
         <Button variant="secondary" onPress={() => setIsOpen(true)}>
@@ -128,11 +162,11 @@ export function NextFlightAssistant({
               </Modal.Header>
               <Modal.Body>
                 <div className={styles.body}>
-                  <p className="demo-note">
-                    Sugerencia de ejemplo. Se calcula con reglas sobre los{" "}
-                    {basis.completedFlights} vuelos completados de esta demo; en
-                    producción la generaría un modelo con sus vuelos reales.
-                    Nada se programa hasta que usted lo apruebe.
+                  <p className={styles.lead}>
+                    Sugerencia de ejemplo. En esta demo se calcula con reglas
+                    sencillas sobre los {basis.completedFlights} vuelos
+                    completados de ejemplo; una versión real usaría los vuelos
+                    de su empresa. Nada se programa hasta que usted lo apruebe.
                   </p>
                   {basis.limited && (
                     <p className={styles.caution} role="note">
@@ -238,8 +272,54 @@ export function NextFlightAssistant({
                     </section>
                   )}
 
+                  {assessments.length > 0 && (
+                    <section className={styles.section}>
+                      <h3>Puntos por zona</h3>
+                      <div className={styles.tableWrap}>
+                        <table className={styles.scores}>
+                          <caption>
+                            Cuántos puntos suma cada zona con el historial de
+                            hoy. Desde {PROPOSE_MIN_SCORE} puntos se propone un
+                            vuelo.
+                          </caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">Zona</th>
+                              <th scope="col">Puntos</th>
+                              <th scope="col">Lo que más pesó</th>
+                              <th scope="col">Estado</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {assessments.map((item) => (
+                              <tr key={item.zoneId}>
+                                <th scope="row">{item.name}</th>
+                                <td>{item.score}</td>
+                                <td>
+                                  {item.signals
+                                    .slice(0, 2)
+                                    .map((signal) => signal.label)
+                                    .join(" + ") || "Sin señales"}
+                                </td>
+                                <td>
+                                  {chosen.includes(item)
+                                    ? "Se propone"
+                                    : item.scheduled
+                                      ? `Ya en el vuelo del ${shortDate(item.scheduled.date)}`
+                                      : item.score >= PROPOSE_MIN_SCORE
+                                        ? "Pide vuelo"
+                                        : "Sin urgencia"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  )}
+
                   <details className={styles.details} open={!proposal}>
-                    <summary>Resumen de {zoneWord}</summary>
+                    <summary>Lo que dice el historial de cada zona</summary>
                     <ul>
                       {(proposal ? others : assessments).map((item) => (
                         <li key={item.zoneId}>
@@ -262,17 +342,34 @@ export function NextFlightAssistant({
                   <details className={styles.details}>
                     <summary>Cómo se calculó</summary>
                     <p>
-                      Cada zona suma puntos por lo que muestra el historial:
-                      baja sostenida del vigor (40) o avance detenido (35), la
-                      zona nunca volada (30), observaciones confirmadas sin
-                      verificar (hasta 25), una observación que se repite (15) y
-                      los días sin volarla (15 a 30). Desde {PROPOSE_MIN_SCORE}{" "}
-                      puntos se propone; desde {HIGH_MIN_SCORE}, con prioridad
-                      alta. Se proponen hasta cuatro zonas que no estén ya en la
-                      agenda. Los pesos son un punto de partida para validar con
-                      quienes deciden dónde volar, no una norma del sector.
+                      Cada zona suma puntos según su propio historial. Pesa más
+                      si el vigor o el avance baja vuelo tras vuelo, si hay{" "}
+                      {words.plural} sin verificar, si lo señalado se repite o
+                      si lleva mucho tiempo sin volarse. Se proponen hasta
+                      cuatro zonas que no estén ya en la agenda. Los pesos son
+                      un punto de partida para validar con quienes deciden dónde
+                      volar, no una norma del sector.
                     </p>
+                    <details className={styles.inner}>
+                      <summary>Ver los puntos de cada regla</summary>
+                      <p>
+                        Baja sostenida del vigor (40) o avance detenido (35), la
+                        zona nunca volada (30), {words.plural} confirmados sin
+                        verificar (hasta 25), un punto que se repite (15) y los
+                        días sin volarla (15 a 30). Desde {PROPOSE_MIN_SCORE}{" "}
+                        puntos se propone; desde {HIGH_MIN_SCORE}, con prioridad
+                        alta.
+                      </p>
+                    </details>
                   </details>
+
+                  <p className={styles.prepareNote}>
+                    «Preparar este vuelo» abre el formulario de Programación con
+                    estos datos. No se avisa a nadie ni se pide el servicio a un
+                    operador hasta que usted lo guarde; para pedirlo a un
+                    operador, use Servicios (esta demo no lleva la propuesta
+                    hasta allá).
+                  </p>
                 </div>
               </Modal.Body>
               <Modal.Footer>

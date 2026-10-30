@@ -8,6 +8,9 @@ import type { Position } from "../demo/types";
  * cartography, because the equipment records the work but not its area.
  */
 
+/** Difference, in percent, above which billing more (or less) than was covered is flagged. */
+export const DEFAULT_TOLERANCE_PCT = 5;
+
 export type AreaState = "match" | "over" | "under" | "unknown";
 
 export interface AreaCheck {
@@ -47,7 +50,7 @@ export function checkArea(input: {
   billedHa?: number;
   tolerancePct?: number;
 }): AreaCheck {
-  const tolerancePct = input.tolerancePct ?? 5;
+  const tolerancePct = input.tolerancePct ?? DEFAULT_TOLERANCE_PCT;
   const { orderedHa: ordered, coveredHa, billedHa } = input;
   const messages: string[] = [];
   const coveredOfOrderedPct =
@@ -104,5 +107,63 @@ export function checkArea(input: {
     billedVsCoveredPct,
     coveredOfOrderedPct,
     messages,
+  };
+}
+
+/** The sentence that answers the buyer's question first: how far is billed from covered. */
+export function areaHeadline(check: AreaCheck): string {
+  const { coveredHa, billedHa } = check;
+  if (check.state === "over")
+    return `Facturó ${ha(billedHa! - coveredHa!)} ha más de las que el operador dice haber cubierto.`;
+  if (check.state === "under")
+    return `Facturó ${ha(coveredHa! - billedHa!)} ha menos de las que el operador dice haber cubierto.`;
+  if (check.state === "match")
+    return "Lo facturado coincide con lo que el operador dice haber cubierto.";
+  return "Todavía no se puede comparar lo facturado con lo cubierto.";
+}
+
+export interface AreaValue {
+  /** Price per hectare used to turn hectares into pesos. */
+  unitPrice: number;
+  /** «quote» is the price agreed on the service; «invoice» is the invoice total over its hectares. */
+  source: "quote" | "invoice";
+  /** Hectares billed minus hectares covered (negative when billed less). */
+  differenceHa: number;
+  /** The same difference in pesos at `unitPrice`. */
+  differenceCop: number;
+  /** Billed hectares times the quoted price, when there is a quote to check against. */
+  expectedTotal?: number;
+  /** Invoice total minus `expectedTotal`. */
+  totalGap?: number;
+}
+
+/**
+ * Pesos behind the hectares. With the price quoted for the service it also checks the invoice total
+ * against billed hectares times that price; without it the price is the invoice's own total over
+ * its billed hectares, so the difference in pesos is only as good as the invoice.
+ */
+export function areaValue(input: {
+  coveredHa?: number;
+  billedHa?: number;
+  invoiceTotal: number;
+  quotedPrice?: number;
+}): AreaValue | undefined {
+  const { coveredHa, billedHa, invoiceTotal, quotedPrice } = input;
+  if (coveredHa === undefined || billedHa === undefined || !(billedHa > 0))
+    return undefined;
+  const source = quotedPrice && quotedPrice > 0 ? "quote" : "invoice";
+  const unitPrice = source === "quote" ? quotedPrice! : invoiceTotal / billedHa;
+  if (!Number.isFinite(unitPrice) || !(unitPrice > 0)) return undefined;
+  const differenceHa = billedHa - coveredHa;
+  const expectedTotal =
+    source === "quote" ? Math.round(quotedPrice! * billedHa) : undefined;
+  return {
+    unitPrice,
+    source,
+    differenceHa,
+    differenceCop: Math.round(differenceHa * unitPrice),
+    expectedTotal,
+    totalGap:
+      expectedTotal === undefined ? undefined : invoiceTotal - expectedTotal,
   };
 }

@@ -49,7 +49,11 @@ test("agriculture flags a sustained decline with its place and numbers", () => {
   assert.equal(decline?.zoneId, "a");
   assert.equal(decline?.tone, "danger");
   assert.ok(decline?.position);
-  assert.ok(decline?.facts.some((fact) => fact.label.startsWith("Desde el")));
+  // The comparison says which date and what the vigor was then, not just a bare sign.
+  assert.ok(decline?.facts.some((fact) => fact.label.startsWith("Frente al")));
+  // And says since when it falls, with the date of the highest capture before the fall.
+  assert.ok(decline?.summary.includes("Viene bajando desde el 1 de ene"));
+  assert.ok(decline?.facts.some((fact) => fact.label === "Los demás hoy"));
 });
 
 test("construction reports the delay against the plan and stalled fronts", () => {

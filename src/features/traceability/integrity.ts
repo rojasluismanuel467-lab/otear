@@ -87,7 +87,26 @@ export function withFields(
   const after = evidenceState(next);
   const events = [...evidence.events];
   if (after.hash !== before.hash) {
-    events.push({ at: now, text: "Se modificó el contenido del documento." });
+    const template = evidence.templateId
+      ? templates[evidence.templateId as TemplateId]
+      : undefined;
+    const shown = (value: string | undefined) => {
+      const text = (value ?? "").trim();
+      if (!text) return "vacío";
+      return `«${text.length > 60 ? `${text.slice(0, 57)}…` : text}»`;
+    };
+    const changes = Object.keys({ ...evidence.fields, ...fields })
+      .filter((key) => (evidence.fields[key] ?? "") !== (fields[key] ?? ""))
+      .map((key) => {
+        const label = template?.fields.find((f) => f.key === key)?.label ?? key;
+        return `${label}: ${shown(evidence.fields[key])} → ${shown(fields[key])}`;
+      });
+    events.push({
+      at: now,
+      text: changes.length
+        ? `Se modificó el contenido del documento. ${changes.join("; ")}.`
+        : "Se modificó el contenido del documento.",
+    });
     if (before.validRoles.length) {
       events.push({
         at: now,

@@ -155,3 +155,16 @@ test("exports escape HTML and flag signatures that lost their validity", () => {
   );
   assert.ok(documentText(edited).includes("SIN VALIDEZ"));
 });
+
+test("the history says which field changed and from what to what", () => {
+  const evidence = sample();
+  const key = Object.keys(evidence.fields)[0];
+  const edited = withFields(
+    evidence,
+    { ...evidence.fields, [key]: "valor nuevo" },
+    NOW,
+  );
+  const event = edited.events[edited.events.length - 1];
+  assert.ok(event.text.includes("→"), event.text);
+  assert.ok(event.text.includes("«valor nuevo»"), event.text);
+});

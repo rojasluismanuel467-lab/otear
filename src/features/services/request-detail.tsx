@@ -6,14 +6,22 @@ import Link from "next/link";
 import { useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { QuoteAdvisor } from "@/features/agents/quote-advisor";
-import { orderedHa as sumOrderedHa } from "@/features/billing/coverage";
+import {
+  DEFAULT_TOLERANCE_PCT,
+  orderedHa as sumOrderedHa,
+} from "@/features/billing/coverage";
 import { useTerm } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
-import type { ServiceRequest, ServiceStatus } from "@/features/demo/types";
+import type {
+  ServiceEvent,
+  ServiceRequest,
+  ServiceStatus,
+} from "@/features/demo/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import { ActionForm } from "./action-form";
 import { useServices, type ActionInput } from "./use-services";
 import * as workflow from "./workflow";
+import { measureText, measureZones } from "./zones";
 import styles from "./services.module.css";
 
 const tones: Record<
@@ -39,57 +47,156 @@ const hectares = (value: number) =>
   `${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(value)} ha`;
 
 /** What the request is waiting for, in one sentence addressed to whoever is looking. */
-function waitingFor(request: ServiceRequest, name: (id?: string) => string) {
+function waitingFor(
+  request: ServiceRequest,
+  name: (id?: string) => string,
+  /** Set when the person looks as an operator: the sentences then speak to that operator. */
+  operatorId?: string,
+) {
+  if (request.status === "cancelled") return "La solicitud se canceló.";
+  if (request.status === "invoiced")
+    return "Facturado. El pago se gestiona en Pagos y costos.";
+  if (operatorId === undefined) {
+    switch (request.status) {
+      case "requested":
+        return "Esperando cotizaciones de los operadores invitados.";
+      case "quoted":
+        return "Compare las cotizaciones y asigne el servicio a uno de los operadores.";
+      case "assigned":
+        return `${name(request.operatorId)} debe programar el vuelo.`;
+      case "scheduled":
+        return `${name(request.operatorId)} debe volar y registrar la entrega.`;
+      case "delivered":
+        return `${name(request.requestedBy)} debe verificar la entrega.`;
+      case "disputed":
+        return `${name(request.operatorId)} debe corregir y volver a entregar.`;
+      default:
+        return `${name(request.operatorId)} puede facturar.`;
+    }
+  }
+  const own = request.quotes.find((quote) => quote.operatorId === operatorId);
+  const declined = own !== undefined && workflow.wasDeclinedByOperator(own);
+  if (request.status === "requested" || request.status === "quoted") {
+    if (declined) return "Usted respondió que no puede atender esta solicitud.";
+    if (own)
+      return "Su cotización está enviada. El cliente decide después de comparar las cotizaciones.";
+    return "Falta su cotización: cotice o responda que no puede atenderla.";
+  }
+  if (request.operatorId !== operatorId)
+    return declined
+      ? "Usted respondió que no puede atender esta solicitud."
+      : "El cliente asignó el servicio a otro operador. Su cotización queda guardada.";
   switch (request.status) {
-    case "requested":
-      return "Esperando cotizaciones de los operadores invitados.";
-    case "quoted":
-      return "Compare las cotizaciones y asigne el servicio a uno de los operadores.";
     case "assigned":
-      return `${name(request.operatorId)} debe programar el vuelo.`;
+      return "Le toca programar el vuelo.";
     case "scheduled":
-      return `${name(request.operatorId)} debe volar y registrar la entrega.`;
+      return "Le toca volar y registrar la entrega.";
     case "delivered":
-      return `${name(request.requestedBy)} debe verificar la entrega.`;
+      return `Entrega registrada${request.delivery ? ` el ${formatDate(request.delivery.deliveredOn)}` : ""}. Falta que ${name(request.requestedBy)} la verifique.`;
     case "disputed":
-      return `${name(request.operatorId)} debe corregir y volver a entregar.`;
-    case "verified":
-      return `${name(request.operatorId)} puede facturar.`;
-    case "invoiced":
-      return "Facturado. El pago se gestiona en Pagos y costos.";
+      return `${name(request.requestedBy)} pidió corregir la entrega. Corríjala y vuelva a entregarla.`;
     default:
-      return "La solicitud se canceló.";
+      return "La entrega fue aceptada. Le toca facturar.";
   }
 }
 
-export function RequestDetail({ request }: { request: ServiceRequest }) {
-  const { site } = useDemo();
+/**
+ * The history as the person looking may read it. An operator sees its own steps and the buyer's,
+ * not the prices, names or deliveries of the operators it competes with.
+ */
+function eventsFor(
+  request: ServiceRequest,
+  operatorId: string | undefined,
+  name: (id?: string) => string,
+): ServiceEvent[] {
+  if (operatorId === undefined) return request.events;
+  return request.events.flatMap((event) => {
+    if (event.role === "operator" && event.by !== operatorId) return [];
+    if (event.type === "requested")
+      return [
+        {
+          ...event,
+          text: `${name(event.by)} pidió el servicio e invitó a ${request.invited.length} operadores, entre ellos usted.`,
+        },
+      ];
+    if (event.type === "assigned" && request.operatorId !== operatorId)
+      return [
+        {
+          ...event,
+          text: `${name(event.by)} asignó el servicio a otro operador.`,
+        },
+      ];
+    return [event];
+  });
+}
+
+export function RequestDetail({
+  request,
+  onActed,
+}: {
+  request: ServiceRequest;
+  /** Called after a step succeeds, so the list keeps this request selected. */
+  onActed?: () => void;
+}) {
+  const { site, flights } = useDemo();
   const t = useTerm();
   const { actor, nameOf, act } = useServices();
   const [openAction, setOpenAction] = useState<workflow.ActionId | null>(null);
-  const actions = workflow.availableActions(
-    request,
-    actor.role,
-    actor.role === "operator" ? actor.id : undefined,
-  );
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [assignError, setAssignError] = useState("");
+  const asOperator = actor.role === "operator";
+  const operatorId = asOperator ? actor.id : undefined;
+  const actions = workflow.availableActions(request, actor.role, operatorId);
   const direct = actions.filter((action) => action.id !== "assign");
   const canAssign = actions.some((action) => action.id === "assign");
   const canAct = canAssign || direct.some((action) => action.id !== "cancel");
   const ordered = sumOrderedHa(site.zones, request.zoneIds);
-  const zoneNames = site.zones
-    .filter((zone) => request.zoneIds.includes(zone.id))
-    .map((zone) => zone.name);
+  const measures = measureZones(
+    site.zones,
+    request.zoneIds,
+    site.sector === "roads",
+  );
+  const flightDate = flights.find((item) => item.id === request.flightId)?.date;
   const current = workflow.stepIndex(request.status);
   const stopped =
     request.status === "cancelled" || request.status === "disputed";
   const ranked = workflow.rankedQuotes(request);
   const cheapest = ranked.find((item) => item.state !== "declined");
+  // An operator reads only its own quote: the others' prices, and the «más económica» label,
+  // belong to the buyer who is comparing them.
+  const shownQuotes = asOperator
+    ? request.quotes.filter((quote) => quote.operatorId === actor.id)
+    : request.quotes;
+  const received = request.quotes.filter(
+    (quote) => !workflow.wasDeclinedByOperator(quote),
+  ).length;
+  const confirmingQuote = request.quotes.find(
+    (quote) => quote.operatorId === confirming && quote.state === "open",
+  );
+  const assignedToOther = asOperator && request.operatorId !== actor.id;
+  const flies = request.operatorId
+    ? assignedToOther
+      ? "otro operador"
+      : nameOf(request.operatorId)
+    : "sin asignar";
+  const seesDelivery = request.delivery && !assignedToOther;
+  const agreed = request.quotes.find((quote) => quote.state === "chosen");
 
   function run(input: ActionInput) {
     const result = act(request, input);
     if (!result.ok) return result.error;
     setOpenAction(null);
+    onActed?.();
     return undefined;
+  }
+
+  function confirmAssign(id: string) {
+    const failure = run({ id: "assign", operatorId: id });
+    if (failure) setAssignError(failure);
+    else {
+      setAssignError("");
+      setConfirming(null);
+    }
   }
 
   return (
@@ -103,9 +210,12 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
         <div>
           <h2 id="request-title">{request.title}</h2>
           <p>
-            {workflow.kindLabels[request.kind]} · pidió{" "}
-            {nameOf(request.requestedBy)}
+            {workflow.kindLabels[request.kind]}
             {request.description ? ` · ${request.description}` : ""}
+          </p>
+          <p className={styles.roleLine}>
+            Pide: {nameOf(request.requestedBy)} · Paga: por definir · Vuela:{" "}
+            {flies}
           </p>
         </div>
         <StatusBadge tone={tones[request.status]}>
@@ -143,13 +253,14 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
         aria-live="polite"
       >
         <h3>{canAct ? "Le toca a usted" : "Estado actual"}</h3>
-        <p>{waitingFor(request, nameOf)}</p>
+        <p>{waitingFor(request, nameOf, operatorId)}</p>
         {openAction ? (
           <ActionForm
             key={openAction}
             request={request}
             action={openAction}
             orderedHa={ordered}
+            flightDate={flightDate}
             onSubmit={run}
             onCancel={() => setOpenAction(null)}
           />
@@ -177,7 +288,18 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
       <dl className={styles.facts}>
         <div>
           <dt>{site.zoneLabel}</dt>
-          <dd>{zoneNames.join(", ")}</dd>
+          <dd>
+            <ul className={styles.zoneList}>
+              {measures.map((zone) => (
+                <li key={zone.id}>
+                  {zone.name} <span>{measureText(zone)}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/mapa" className={styles.mapLink}>
+              Ver en el mapa <ArrowUpRight size={12} aria-hidden="true" />
+            </Link>
+          </dd>
         </div>
         <div>
           <dt>Área pedida</dt>
@@ -198,20 +320,44 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
           </dd>
         </div>
         <div>
-          <dt>{t("operator", "plural")} invitados</dt>
-          <dd>{request.invited.map((id) => nameOf(id)).join(", ")}</dd>
+          <dt>
+            {asOperator ? "Invitados" : `${t("operator", "plural")} invitados`}
+          </dt>
+          <dd>
+            {asOperator
+              ? `${request.invited.length}, entre ellos usted`
+              : request.invited.map((id) => nameOf(id)).join(", ")}
+          </dd>
         </div>
         {request.operatorId && (
           <div>
             <dt>Asignado a</dt>
-            <dd>{nameOf(request.operatorId)}</dd>
+            <dd>
+              {assignedToOther ? "Otro operador" : nameOf(request.operatorId)}
+            </dd>
           </div>
         )}
       </dl>
+      {ordered > 0 && (
+        <p className="text-muted">
+          El área pedida la calcula Otear con el contorno de cada zona dibujado
+          en el mapa; el operador vuela, y declara, lo que cubrió.
+        </p>
+      )}
 
-      {request.quotes.length > 0 && (
+      {shownQuotes.length > 0 && (
         <section className={styles.section} aria-labelledby="quotes-title">
-          <h3 id="quotes-title">Cotizaciones</h3>
+          <h3 id="quotes-title">
+            {asOperator ? "Su cotización" : "Cotizaciones"}
+          </h3>
+          {asOperator &&
+            (request.status === "requested" || request.status === "quoted") && (
+              <p className="text-muted">
+                Se han recibido {received}{" "}
+                {received === 1 ? "cotización" : "cotizaciones"}, incluida la
+                suya. Usted verá el resultado cuando el cliente decida.
+              </p>
+            )}
           <div className={styles.tableWrap}>
             <table className={styles.quotes}>
               <thead>
@@ -229,60 +375,50 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
                 </tr>
               </thead>
               <tbody>
-                {request.quotes.map((quote) => {
-                  const declined = quote.state === "declined";
+                {shownQuotes.map((quote) => {
+                  // Only a quote the operator withdrew has no price; one that was not selected
+                  // keeps the price and the date it was given.
+                  const withdrawn = workflow.wasDeclinedByOperator(quote);
                   const over =
                     request.maxPrice !== undefined &&
-                    !declined &&
+                    !withdrawn &&
                     quote.price > request.maxPrice;
+                  const isCheapest =
+                    !asOperator &&
+                    cheapest?.operatorId === quote.operatorId &&
+                    ranked.length > 1;
                   return (
                     <tr key={quote.operatorId}>
                       <td>
                         {nameOf(quote.operatorId)}
                         {quote.note && <small>{quote.note}</small>}
                       </td>
-                      <td
-                        className={
-                          cheapest?.operatorId === quote.operatorId &&
-                          ranked.length > 1
-                            ? styles.best
-                            : undefined
-                        }
-                      >
-                        {declined ? "—" : formatMoney(quote.price)}
+                      <td className={isCheapest ? styles.best : undefined}>
+                        {withdrawn ? "—" : formatMoney(quote.price)}
                         {over && <small>Supera el tope</small>}
-                        {cheapest?.operatorId === quote.operatorId &&
-                          ranked.length > 1 && <small>La más económica</small>}
+                        {isCheapest && <small>La más económica</small>}
                       </td>
                       {request.unit === "ha" && ordered > 0 && (
                         <td>
-                          {declined
+                          {withdrawn
                             ? "—"
                             : formatMoney(
                                 workflow.quoteTotal(request, quote, ordered),
                               )}
                         </td>
                       )}
-                      <td>{declined ? "—" : formatDate(quote.startDate)}</td>
-                      <td>
-                        {declined
-                          ? "No puede"
-                          : quote.state === "chosen"
-                            ? "Elegida"
-                            : "Vigente"}
-                      </td>
+                      <td>{withdrawn ? "—" : formatDate(quote.startDate)}</td>
+                      <td>{workflow.quoteStateLabel(quote)}</td>
                       {canAssign && (
                         <td>
                           {quote.state === "open" && (
                             <Button
                               size="sm"
                               variant="secondary"
-                              onPress={() =>
-                                run({
-                                  id: "assign",
-                                  operatorId: quote.operatorId,
-                                })
-                              }
+                              onPress={() => {
+                                setAssignError("");
+                                setConfirming(quote.operatorId);
+                              }}
                             >
                               Asignar
                             </Button>
@@ -295,6 +431,45 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
               </tbody>
             </table>
           </div>
+          {canAssign && confirmingQuote && (
+            <div
+              className={styles.confirm}
+              role="group"
+              aria-labelledby="assign-confirm-title"
+            >
+              <p id="assign-confirm-title">
+                <strong>Asignar a {nameOf(confirmingQuote.operatorId)}:</strong>{" "}
+                {formatMoney(confirmingQuote.price)}
+                {request.unit === "ha" ? " por hectárea" : ""}
+                {request.unit === "ha" && ordered > 0
+                  ? `, ${formatMoney(workflow.quoteTotal(request, confirmingQuote, ordered))} en total sobre ${hectares(ordered)} (de ejemplo)`
+                  : ""}
+                .
+              </p>
+              <p>
+                Las demás cotizaciones quedan guardadas, con su precio y su
+                fecha, como «No fue seleccionada». No se envía nada fuera de la
+                demo.
+              </p>
+              {assignError && (
+                <p className={styles.error} role="alert">
+                  {assignError}
+                </p>
+              )}
+              <div className={styles.formActions}>
+                <Button
+                  variant="primary"
+                  autoFocus
+                  onPress={() => confirmAssign(confirmingQuote.operatorId)}
+                >
+                  Confirmar la asignación
+                </Button>
+                <Button variant="secondary" onPress={() => setConfirming(null)}>
+                  Volver
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -303,7 +478,7 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
           <QuoteAdvisor request={request} />
         )}
 
-      {request.delivery && (
+      {seesDelivery && request.delivery && (
         <section className={styles.delivery} aria-labelledby="delivery-title">
           <h3 id="delivery-title">
             Entrega del {formatDate(request.delivery.deliveredOn)}
@@ -327,11 +502,33 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
               aria-label={`Cubierto: ${Math.round((request.delivery.coveredHa / ordered) * 100)} % de lo pedido`}
             />
           )}
+          {request.unit === "ha" && agreed && (
+            <p className={styles.deliveryNote}>
+              Al precio cotizado ({formatMoney(agreed.price)} por hectárea),{" "}
+              {hectares(request.delivery.coveredHa)} son{" "}
+              <strong>
+                {formatMoney(
+                  Math.round(agreed.price * request.delivery.coveredHa),
+                )}
+              </strong>
+              .{" "}
+              {request.status === "verified" || request.status === "invoiced"
+                ? "Con esa cifra se aceptó la entrega."
+                : "Esa es la cifra que se da por buena al aceptar la entrega."}{" "}
+              Si se factura más, Pagos lo marca cuando la diferencia pasa de{" "}
+              {DEFAULT_TOLERANCE_PCT} %; esa tolerancia aún no se acuerda en el
+              pedido (por definir). Cifras de ejemplo.
+            </p>
+          )}
           <ul>
             {request.delivery.deliverables.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
+          <p className="text-muted">
+            Son nombres anotados por el operador: en esta demo no hay archivos
+            que abrir ni descargar.
+          </p>
           {request.verification && (
             <p className={styles.deliveryNote}>
               <CircleCheck size={15} aria-hidden="true" />{" "}
@@ -357,16 +554,18 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
       <section className={styles.section} aria-labelledby="history-title">
         <h3 id="history-title">Historia</h3>
         <ol className={styles.timeline}>
-          {[...request.events].reverse().map((event) => (
-            <li key={event.id}>
-              <time dateTime={event.on}>{formatDate(event.on)}</time>
-              <span>{withDates(event.text)}</span>
-            </li>
-          ))}
+          {[...eventsFor(request, operatorId, nameOf)]
+            .reverse()
+            .map((event) => (
+              <li key={event.id}>
+                <time dateTime={event.on}>{formatDate(event.on)}</time>
+                <span>{withDates(event.text)}</span>
+              </li>
+            ))}
         </ol>
       </section>
 
-      {(request.flightId || request.invoiceId) && (
+      {(request.flightId || request.invoiceId) && !assignedToOther && (
         <nav className={styles.links} aria-label="Registros relacionados">
           {request.flightId && (
             <Link href="/vuelos">

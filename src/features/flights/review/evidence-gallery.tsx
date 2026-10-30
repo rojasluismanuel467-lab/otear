@@ -7,6 +7,8 @@ import { Columns2, Expand, ImageIcon } from "lucide-react";
 import type { Finding, Flight, Site } from "@/features/demo/types";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate } from "@/lib/format";
+import { agree } from "../finding-words";
+import { useFindingWords } from "../use-finding-words";
 import styles from "./flight-review.module.css";
 
 export function EvidenceGallery({
@@ -20,12 +22,13 @@ export function EvidenceGallery({
   findings: Finding[];
   onFindingSelect: (id: string) => void;
 }) {
+  const words = useFindingWords();
   const [isComparing, setIsComparing] = useState(false);
   if (flight.status !== "completed") {
     return (
       <EmptyState
         title="Todavía no hay una entrega"
-        description="Este vuelo no tiene una ejecución documentada. Sus fotos y observaciones aparecerían aquí al recibirlas."
+        description={`Este vuelo no tiene una ejecución documentada. Sus fotos y ${words.plural} aparecerían aquí al recibirlas.`}
       />
     );
   }
@@ -141,7 +144,8 @@ export function EvidenceGallery({
                       />
                       <p className="demo-note">
                         Fotografía de ambientación. No corresponde a evidencia
-                        técnica ni confirma la observación descrita.
+                        técnica ni confirma {words.the} {words.singular}{" "}
+                        {agree(words, "descrito", "descrita")}.
                       </p>
                     </Modal.Body>
                   </Modal.Dialog>
@@ -160,7 +164,7 @@ export function EvidenceGallery({
                   size="sm"
                   onPress={() => onFindingSelect(sample.id)}
                 >
-                  Abrir hallazgo
+                  Abrir {words.singular}
                 </Button>
               )}
             </div>

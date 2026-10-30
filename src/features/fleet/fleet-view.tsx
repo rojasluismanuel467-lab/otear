@@ -89,7 +89,7 @@ export function FleetView() {
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description={`Las aeronaves de ${site.name}: su estado, su plan de mantenimiento y todo lo que les ha pasado.`}
+        description={`Las aeronaves de ${site.name}: su estado, su plan de mantenimiento y todo lo que les ha pasado. Las aeronaves, las horas y los estados son de ejemplo.`}
         actions={<AircraftDialog />}
       />
       {!rows.length ? (

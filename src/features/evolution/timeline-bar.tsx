@@ -5,13 +5,14 @@ import { Pause, Play } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import styles from "./evolution.module.css";
 
-/** The flights of the site as stops on a line, with how many problems each one shows. */
+/** The flights of the site as stops on a line, with how many findings each one shows. */
 export function TimelineBar({
   dates,
   counts,
   index,
   referenceIndex,
   playing,
+  noun,
   onSelect,
   onTogglePlay,
 }: {
@@ -20,6 +21,8 @@ export function TimelineBar({
   index: number;
   referenceIndex: number;
   playing: boolean;
+  /** The company's word for a finding, lowercase. */
+  noun: { singular: string; plural: string };
   onSelect: (index: number) => void;
   onTogglePlay: () => void;
 }) {
@@ -100,8 +103,8 @@ export function TimelineBar({
                   </span>
                   <span className={styles.srOnly}>
                     {counts[i] === 0
-                      ? "sin problemas"
-                      : `${counts[i]} ${counts[i] === 1 ? "problema" : "problemas"}`}
+                      ? `sin ${noun.plural}`
+                      : `${counts[i]} ${counts[i] === 1 ? noun.singular : noun.plural}`}
                     {i === referenceIndex && i !== index
                       ? ", fecha de comparación"
                       : ""}

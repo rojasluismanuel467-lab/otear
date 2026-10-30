@@ -53,6 +53,7 @@
 /* Superficies de cristal: desenfocan lo que pasa por detrás para que el texto se lea
    sobre un fondo calmado. Mismos valores que los diálogos de la app. */
 .role,
+.example,
 .stepper {
   /* Vidrio casi blanco sobre un fondo de gris medio: el contraste entre ambos lo separa.
      El borde es un trazo oscuro fino (uno blanco no se vería) y la sombra refuerza el borde.
@@ -78,6 +79,7 @@
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
 ) {
   .role,
+  .example,
   .stepper {
     --glass-fill: 94%;
   }
@@ -85,6 +87,7 @@
 
 @media (prefers-reduced-transparency: reduce) {
   .role,
+  .example,
   .stepper {
     --glass-fill: 96%;
     -webkit-backdrop-filter: none;
@@ -316,6 +319,22 @@
   text-wrap: pretty;
   margin-bottom: 32px;
   max-width: var(--measure-lead);
+}
+
+/* Lo que Otear no es, en la primera pantalla y en palabras llanas. */
+.heroNote {
+  margin-bottom: 32px;
+  padding-left: 16px;
+  border-left: 3px solid var(--sky);
+  font-size: var(--text-body);
+  line-height: 1.55;
+  color: #e3eef3;
+  max-width: var(--measure-lead);
+  text-wrap: pretty;
+}
+
+.heroNote strong {
+  color: #fff;
 }
 
 .ctaRow {
@@ -779,6 +798,154 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--background);
+}
+
+.rolesRailTwo {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* El operador pesa tanto como quien contrata: una tarjeta ancha, con lo que recibe,
+   lo que entrega y lo que todavía no está definido. */
+.operatorCard {
+  margin-top: 16px;
+}
+
+.operatorCols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px 32px;
+  margin-bottom: 8px;
+}
+
+.operatorCols h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 8px;
+}
+
+.operatorCols ul,
+.stateList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.operatorCols li,
+.stateList li {
+  position: relative;
+  padding-left: 16px;
+  font-size: var(--text-small);
+  line-height: 1.55;
+  color: var(--foreground);
+  text-wrap: pretty;
+}
+
+.operatorCols li::before,
+.stateList li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.operatorCard .inlineLink {
+  align-self: flex-start;
+}
+
+/* Un caso con cifras de la propia demo, rotulado como ejemplo. */
+.example {
+  margin-top: 24px;
+  padding: 28px 32px;
+  border-radius: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.exampleHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.exampleHead h3 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  text-wrap: balance;
+}
+
+.exampleBadge {
+  padding: 4px 10px;
+  border: 1px dashed var(--accent);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--accent);
+  background: var(--background);
+}
+
+.exampleNumbers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 0;
+}
+
+.exampleNumbers > div {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+}
+
+.exampleNumbers dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.exampleNumbers dd {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  font-feature-settings: "tnum";
+}
+
+.exampleNumbers small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.exampleText {
+  font-size: var(--text-body);
+  line-height: 1.6;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.exampleNote {
+  font-size: var(--text-small);
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0;
+}
+
+.example .inlineLink {
+  justify-self: start;
 }
 
 /* --- "su sector" open card + inline links --- */
@@ -1311,6 +1478,10 @@ a.channel:focus-visible {
     grid-template-columns: 1fr 1fr;
   }
 
+  .operatorCols {
+    grid-template-columns: 1fr;
+  }
+
   .step {
     grid-template-columns: 80px 1fr;
     gap: 24px;
@@ -1342,8 +1513,14 @@ a.channel:focus-visible {
   }
 
   .rolesRail,
-  .casesRail {
+  .rolesRailTwo,
+  .casesRail,
+  .exampleNumbers {
     grid-template-columns: 1fr;
+  }
+
+  .example {
+    padding: 24px 20px;
   }
 
   .formGrid {

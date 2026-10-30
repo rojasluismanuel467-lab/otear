@@ -24,6 +24,10 @@ export interface Replay {
   preview: boolean;
   /** Whether the area reached is measured (zones that are surfaces, not roads or fences). */
   measuresArea: boolean;
+  /** Kilometres recorded for the flight, the figure every other screen shows; absent when not flown. */
+  recordedKm?: number;
+  /** Hectares the operator declared in the flight log, the only area figure that is not illustrative. */
+  declaredHa?: number;
   reducedMotion: boolean;
   aircraft: ReplayAircraft;
   flightKind: DroneKind;
@@ -144,6 +148,8 @@ export function useReplay(
     open,
     preview,
     measuresArea,
+    recordedKm: !preview && flight.distance > 0 ? flight.distance : undefined,
+    declaredHa: flight.log?.coveredHa,
     reducedMotion,
     aircraft,
     flightKind: replayKindFor(flight.drone),

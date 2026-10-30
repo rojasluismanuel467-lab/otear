@@ -31,7 +31,7 @@ export function PaymentDialog({ invoice }: { invoice: Invoice }) {
     const value = Number(amount);
     if (!/^\d+$/.test(amount) || !Number.isSafeInteger(value) || value <= 0) {
       setError(
-        "Escribe un importe mayor que cero, en pesos enteros y sin puntos.",
+        "Escriba un importe mayor que cero, en pesos enteros y sin puntos.",
       );
       amountRef.current?.focus();
       return;
@@ -45,7 +45,7 @@ export function PaymentDialog({ invoice }: { invoice: Invoice }) {
     }
     if (!recordPayment(invoice.id, value, `${method} registrada · ejemplo`)) {
       setError(
-        "El saldo cambió. Revisa el importe antes de volver a registrarlo.",
+        "El saldo cambió. Revise el importe antes de volver a registrarlo.",
       );
       amountRef.current?.focus();
       return;
@@ -98,7 +98,7 @@ export function PaymentDialog({ invoice }: { invoice: Invoice }) {
                     }
                   />
                   <span id="payment-amount-help" className="text-muted">
-                    Pesos enteros, sin separadores. Puedes registrar un abono.
+                    Pesos enteros, sin separadores. Puede registrar un abono.
                   </span>
                   {error && (
                     <p

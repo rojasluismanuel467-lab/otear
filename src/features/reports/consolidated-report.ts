@@ -1,4 +1,7 @@
-import { computeInsights, type InsightInput } from "./insights.ts";
+import type { Party, ServiceRequest } from "../demo/types";
+import { serviceDecisionLines } from "./decisions.ts";
+import { computeInsights, ownFindings, type InsightInput } from "./insights.ts";
+import { operatorSummaries } from "./operators.ts";
 
 export interface ReportSections {
   summary: boolean;
@@ -7,6 +10,14 @@ export interface ReportSections {
   operation: boolean;
   attention: boolean;
   costs: boolean;
+  /** Service requests, quote chosen, delivery, check and invoice; off when missing. */
+  services?: boolean;
+}
+
+/** What the consolidated report reads: the insights' input plus the contracting records. */
+export interface ConsolidatedInput extends InsightInput {
+  serviceRequests?: ServiceRequest[];
+  parties?: Party[];
 }
 
 const weatherLabels = { clear: "despejado", cloudy: "nublado", rain: "lluvia" };
@@ -31,7 +42,7 @@ function money(value: number) {
 
 /** Plain-text consolidated report for the flights between `from` and `to` (inclusive). */
 export function buildConsolidatedReport(
-  input: InsightInput,
+  input: ConsolidatedInput,
   period: { from: string; to: string },
   sections: ReportSections,
 ): string {
@@ -39,17 +50,27 @@ export function buildConsolidatedReport(
     (flight) => flight.date >= period.from && flight.date <= period.to,
   );
   const ids = new Set(flights.map((flight) => flight.id));
-  const findings = input.findings.filter((finding) =>
+  const allFindings = input.findings.filter((finding) =>
     ids.has(finding.flightId),
   );
+  // Unreviewed suggestions of the image assistant are not counted; the report says how many.
+  const findings = ownFindings(allFindings);
+  const suggested = allFindings.length - findings.length;
   const invoices = input.invoices.filter((invoice) =>
     ids.has(invoice.flightId),
   );
-  const insights = computeInsights({ ...input, flights, findings, invoices });
+  const insights = computeInsights({
+    ...input,
+    flights,
+    findings: allFindings,
+    invoices,
+  });
+  const fw = input.findingWord ?? { singular: "hallazgo", plural: "hallazgos" };
+  const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   const unit = insights.cost.unit;
   const lines: string[] = [
     "OTEAR — INFORME CONSOLIDADO · BORRADOR DE DEMOSTRACIÓN",
-    "Datos sintéticos. No es un informe técnico ni una certificación de una operación real.",
+    "Datos de ejemplo: los nombres, las cifras y las facturas son inventados. No es un informe técnico ni una certificación de una operación real.",
     "",
     `${input.site.name} · ${input.site.sectorLabel}`,
     `Periodo: ${date(period.from)} a ${date(period.to)}`,
@@ -64,7 +85,10 @@ export function buildConsolidatedReport(
     lines.push(
       "RESUMEN",
       `Vuelos completados: ${t.flights} · ${number(t.hours)} h · ${number(t.km)} km · ${t.photos} fotografías`,
-      `Hallazgos: ${t.findings} (${t.reviewed} revisados, ${t.pending} por revisar)`,
+      `${cap(fw.plural)}: ${t.findings} (${t.reviewed} revisados, ${t.pending} por revisar)` +
+        (suggested
+          ? `. Se excluyen ${suggested} ${suggested === 1 ? "sugerencia" : "sugerencias"} de IA que nadie ha revisado todavía.`
+          : ""),
       "",
     );
   }
@@ -74,7 +98,7 @@ export function buildConsolidatedReport(
       const log = flight.log;
       const count = findings.filter((f) => f.flightId === flight.id).length;
       lines.push(
-        `- ${date(flight.date)} · ${flight.title} · ${flight.duration} min · ${number(flight.distance)} km · ${flight.photoCount} fotos · ${count} hallazgos` +
+        `- ${date(flight.date)} · ${flight.title} · ${flight.duration} min · ${number(flight.distance)} km · ${flight.photoCount} fotos · ${count} ${count === 1 ? fw.singular : fw.plural}` +
           (log
             ? ` · ${weatherLabels[log.weather]}, viento ${log.windKmh} km/h · baterías ${log.batteries.join(", ") || "sin registro"}`
             : " · sin bitácora"),
@@ -83,7 +107,9 @@ export function buildConsolidatedReport(
     lines.push("");
   }
   if (sections.zones) {
-    lines.push(`HALLAZGOS POR ${input.site.zoneLabel.toUpperCase()}`);
+    lines.push(
+      `${fw.plural.toUpperCase()} POR ${input.site.zoneLabel.toUpperCase()}`,
+    );
     for (const zone of insights.byZone.filter((item) => item.findings > 0)) {
       lines.push(
         `- ${zone.name}: ${zone.findings} (${zone.confirmed} confirmados, ${zone.dismissed} descartados, ${zone.pending} por revisar) en ${zone.flightsWithFindings} vuelos`,
@@ -121,8 +147,31 @@ export function buildConsolidatedReport(
       `Facturado: ${money(c.billed)} · pagado: ${money(c.paid)}`,
       `Por vuelo: ${money(c.perFlight)}` +
         (c.perUnit !== null
-          ? ` · por ${unit} sobrevolada: ${money(c.perUnit)}`
+          ? ` · por ${unit} sobrevolada: ${money(c.perUnit)} (${c.perUnitBasis.invoices} ${c.perUnitBasis.invoices === 1 ? "factura" : "facturas"} de ${c.perUnitBasis.flights} ${c.perUnitBasis.flights === 1 ? "vuelo" : "vuelos"}; no es la tarifa pactada en Servicios)`
           : ""),
+      "",
+    );
+  }
+  if (sections.services) {
+    lines.push(
+      "SERVICIOS CONTRATADOS Y DECISIONES",
+      ...serviceDecisionLines({
+        site: input.site,
+        requests: input.serviceRequests ?? [],
+        parties: input.parties ?? [],
+        invoices: input.invoices.filter(
+          (invoice) => invoice.siteId === input.site.id,
+        ),
+        flights: input.flights,
+        zoneMeasure: input.zoneMeasure,
+        operators: operatorSummaries({
+          flights: input.flights,
+          findings: input.findings,
+          invoices: input.invoices,
+          requests: input.serviceRequests,
+        }),
+        period,
+      }),
       "",
     );
   }

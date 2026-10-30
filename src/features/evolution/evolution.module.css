@@ -344,6 +344,7 @@
   font-weight: 600;
   color: var(--foreground);
 }
+.comparison ul,
 .reading ul {
   list-style: none;
   margin: 10px 0 0;
@@ -351,6 +352,7 @@
   display: grid;
   gap: 6px;
 }
+.comparison li,
 .reading li {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
@@ -361,14 +363,17 @@
   color: var(--accent-soft-foreground);
   line-height: 1.45;
 }
+.comparison li[data-tone="warning"],
 .reading li[data-tone="warning"] {
   background: var(--warning-soft);
   color: #6a4a0d;
 }
+.comparison li[data-tone="danger"],
 .reading li[data-tone="danger"] {
   background: var(--danger-soft);
   color: var(--danger);
 }
+.comparison li[data-tone="info"],
 .reading li[data-tone="info"] {
   background: rgb(15 52 71 / 0.05);
   color: inherit;
@@ -616,5 +621,14 @@
   color: var(--accent);
 }
 .formats li[data-supported="false"] em {
+  color: var(--muted);
+}
+
+.comparison {
+  font-size: 13px;
+}
+.seriesNote {
+  margin: 0;
+  font-size: 13px;
   color: var(--muted);
 }

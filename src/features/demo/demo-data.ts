@@ -8,6 +8,7 @@ import {
   pointAlongLine,
   pointInsideOutline,
   polygonAreaHa,
+  splitLineByFractions,
 } from "@/lib/geo";
 import type {
   Aircraft,
@@ -24,6 +25,7 @@ import type {
   Invoice,
   Party,
   Payment,
+  Position,
   ServiceEvent,
   ServiceRequest,
   Site,
@@ -42,6 +44,14 @@ const cropByZone: Record<string, string> = {
 };
 
 const formatHa = (value: number) => value.toFixed(1).replace(".", ",");
+const pesos = (value: number) =>
+  `$ ${new Intl.NumberFormat("es-CO").format(Math.round(value))}`;
+
+/** «los lotes», «los tramos»…: the site's own word for what it is divided into. */
+function zoneWords(site: Site) {
+  const word = site.zoneLabel.toLowerCase();
+  return { word, the: `los ${word}`, all: `todos los ${word}` };
+}
 
 function describeZone(site: Site, zone: Zone) {
   if (site.sector === "roads") {
@@ -51,6 +61,51 @@ function describeZone(site: Site, zone: Zone) {
   const ha = polygonAreaHa(zone.outline).toFixed(1).replace(".", ",");
   return `${cropByZone[zone.id] ?? "Zona"} · ${ha} ha`;
 }
+
+/**
+ * Abscissa (PK) of a road stretch, written the way a road contract does: «PK 12+400» is 12 km and
+ * 400 m from the origin of the contract. The example road starts at PK 12+000.
+ */
+const ROAD_START_M = 12_000;
+const formatPk = (meters: number) => {
+  const whole = Math.round(meters);
+  return `${Math.floor(whole / 1000)}+${String(whole % 1000).padStart(3, "0")}`;
+};
+
+/** The centre line traced over the real road, in one piece (it used to be two zones). */
+const roadCenterline: Position[] = [
+  [3.799, -76.31076],
+  [3.80114, -76.30979],
+  [3.80349, -76.30893],
+  [3.80542, -76.3084],
+  [3.80756, -76.30829],
+  [3.8097, -76.3085],
+  [3.81184, -76.30825],
+  [3.81399, -76.30797],
+  [3.81548, -76.3076],
+  [3.8172, -76.307],
+  [3.81912, -76.30646],
+];
+
+/** Five stretches of 400 m and a shorter one at the end, each with its own range of PK. */
+const roadZones: Zone[] = (() => {
+  const totalM = lineLengthKm(roadCenterline) * 1000;
+  const cuts = [400, 400, 400, 400, 400, totalM - 2000];
+  const parts = splitLineByFractions(roadCenterline, cuts);
+  let from = ROAD_START_M;
+  return parts.map((outline, index) => {
+    const startM = from;
+    const endM = from + cuts[index];
+    from = endM;
+    return {
+      id: `zone-vh-${index + 1}`,
+      name: `PK ${formatPk(startM)} – ${formatPk(endM)}`,
+      description: "",
+      outline,
+      chainage: { startM, endM },
+    };
+  });
+})();
 
 const baseSites: Site[] = [
   {
@@ -107,34 +162,7 @@ const baseSites: Site[] = [
     zoneLabel: "Tramos",
     center: [3.80756, -76.30829],
     imageUrl: "/images/aerial-road.jpg",
-    zones: [
-      {
-        id: "zone-vh-1",
-        name: "Tramo sur",
-        description: "",
-        outline: [
-          [3.799, -76.31076],
-          [3.80114, -76.30979],
-          [3.80349, -76.30893],
-          [3.80542, -76.3084],
-          [3.80756, -76.30829],
-        ],
-      },
-      {
-        id: "zone-vh-2",
-        name: "Tramo norte",
-        description: "",
-        outline: [
-          [3.80756, -76.30829],
-          [3.8097, -76.3085],
-          [3.81184, -76.30825],
-          [3.81399, -76.30797],
-          [3.81548, -76.3076],
-          [3.8172, -76.307],
-          [3.81912, -76.30646],
-        ],
-      },
-    ],
+    zones: [...roadZones],
   },
   {
     id: "obra-alameda",
@@ -308,10 +336,15 @@ const captureSeries: Partial<
       [10, 28, 40, 44, 45],
     ],
   },
+  // Progress of the pavement works by stretch (PK 12+000 onwards). The fifth stretch stalls.
   roads: {
     zones: [
       [20, 45, 70, 85, 100],
+      [15, 38, 62, 80, 95],
+      [10, 28, 50, 66, 80],
+      [8, 20, 38, 50, 60],
       [5, 15, 25, 25, 30],
+      [2, 8, 14, 18, 22],
     ],
   },
   // Share of the volume planned for each bench that has been removed. The third bench stalls.
@@ -349,6 +382,8 @@ const allChecklist = preparationGroups.flatMap((group) => group.items);
 const history = [
   {
     n: 3,
+    gsdCm: 2.2,
+    overlapPct: 70,
     date: "2026-07-18",
     time: "07:30",
     duration: 38,
@@ -365,6 +400,8 @@ const history = [
   },
   {
     n: 4,
+    gsdCm: 2.0,
+    overlapPct: 75,
     date: "2026-08-22",
     time: "08:00",
     duration: 44,
@@ -381,6 +418,8 @@ const history = [
   },
   {
     n: 5,
+    gsdCm: 2.1,
+    overlapPct: 80,
     date: "2026-09-19",
     time: "07:45",
     duration: 41,
@@ -397,6 +436,8 @@ const history = [
   },
   {
     n: 6,
+    gsdCm: 2.3,
+    overlapPct: 75,
     date: "2026-10-10",
     time: "09:10",
     duration: 33,
@@ -432,7 +473,7 @@ function historyFor(
     ...common,
     id: `flight-${site.id}-0${item.n}`,
     title: "Seguimiento mensual",
-    objective: "Registro periódico para comparar el estado de las zonas.",
+    objective: `Registro periódico para comparar el estado de ${zoneWords(site).the}.`,
     date: item.date,
     time: item.time,
     status: "completed",
@@ -454,8 +495,9 @@ function historyFor(
           ? ["BAT-B01", "BAT-B02"]
           : [...item.log.batteries],
       sensor: "rgb",
-      gsdCm: 2.1,
-      overlapPct: 75,
+      // Camera settings changed a little from month to month, as they do in practice.
+      gsdCm: item.gsdCm,
+      overlapPct: item.overlapPct,
       controlPoints: false,
       deliverables: ["Fotografías originales (JPG)", "Ortomosaico (GeoTIFF)"],
     },
@@ -481,6 +523,29 @@ function findingPosition(
 }
 
 /**
+ * On a road a finding is cited by abscissa and side, not by latitude and longitude. The example
+ * values are deterministic: the side alternates with the position along the stretch.
+ */
+function findingLocation(site: Site, zone: Zone, v: number) {
+  if (site.sector !== "roads" || !zone.chainage) return {};
+  const at =
+    zone.chainage.startM + v * (zone.chainage.endM - zone.chainage.startM);
+  const side =
+    Math.round(v * 20) % 2 === 0 ? "margen derecha" : "margen izquierda";
+  return { locationLabel: `PK ${formatPk(at)} · ${side}` };
+}
+
+/** What the evidence image is: only the agriculture site has a photo of its own kind of place. */
+const exampleSource = (site: Site, source: string) =>
+  site.sector === "agriculture"
+    ? source
+    : `${source} · imagen ilustrativa, no es del sitio`;
+
+/** Roads lead the description with the abscissa, so it reads before any coordinate. */
+const describeAt = (location: { locationLabel?: string }, text: string) =>
+  location.locationLabel ? `${location.locationLabel}. ${text}` : text;
+
+/**
  * Zones the follow-up flight of 29 October covers. In agriculture it leaves out the second lot, which
  * is the one whose vigor keeps falling, so the next-flight assistant has something real to propose;
  * the other sites already have everything the history flags on the agenda.
@@ -490,6 +555,26 @@ function bookedZoneIds(site: Site) {
     .filter((_, index) => site.sector !== "agriculture" || index !== 1)
     .map((zone) => zone.id);
 }
+
+/**
+ * How a site's services are priced, in the example data: by hectare where an area is what is
+ * ordered (crops, mine benches), per flight where it is not (a road has length, a building site
+ * only a couple of hectares, a fence is flown as a loop). Quotes, invoices and flight records all follow it, so the money adds up.
+ */
+const priceUnit = (site: Site): "ha" | "flight" =>
+  site.sector === "agriculture" || site.sector === "mining" ? "ha" : "flight";
+/** Example tariff of the monthly follow-up, per hectare. Not a market price. */
+const HA_RATE = 30_000;
+/** Example flat fee of the same follow-up where it is priced per flight. */
+const FLIGHT_FEE = 700_000;
+
+/** Hectares of the given zones, to one decimal: what an invoice shows and what the area check compares. */
+const orderedHaOf = (site: Site, zoneIds: string[]) =>
+  Math.round(
+    site.zones
+      .filter((zone) => zoneIds.includes(zone.id))
+      .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0) * 10,
+  ) / 10;
 
 const flightDrafts: Flight[] = sites.flatMap((site, index) => {
   const common = {
@@ -552,13 +637,33 @@ const flightDrafts: Flight[] = sites.flatMap((site, index) => {
       ...common,
       id: `flight-${site.id}-02`,
       title: "Seguimiento programado",
-      objective: "Comparar el estado de las zonas con el registro anterior.",
+      objective: `Comparar el estado de ${zoneWords(site).the} con el registro anterior.`,
       zoneIds: bookedZoneIds(site),
       date: "2026-10-29",
       time: "07:00",
       status: "scheduled",
       duration: 35,
       distance: 5.8,
+      photoCount: 0,
+    },
+    // The flight behind the service «Mapeo de la última zona»: another operator, delivered on the 24th.
+    {
+      ...common,
+      id: `flight-${site.id}-07`,
+      title: "Mapeo de la última zona",
+      objective:
+        "Ortomosaico y modelo de superficie para actualizar la cartografía.",
+      zoneIds: site.zones.slice(-1).map((zone) => zone.id),
+      date: "2026-10-24",
+      time: "10:30",
+      status: "completed",
+      pilot: "Piloto de Drones del Pacífico (ejemplo)",
+      operator: "Drones del Pacífico (ejemplo)",
+      drone: "DJI Matrice 350 RTK",
+      aircraftId: undefined,
+      checklist: [],
+      duration: 0,
+      distance: 0,
       photoCount: 0,
     },
     ...historyFor(site, common),
@@ -604,7 +709,7 @@ export const initialFlights: Flight[] = flightDrafts.map((draft) => {
     photoCount: draft.status === "completed" ? plan.photoCount : 0,
   };
   if (
-    site.sector !== "agriculture" ||
+    priceUnit(site) !== "ha" ||
     !flight.log ||
     !(draft.status === "completed")
   )
@@ -658,60 +763,74 @@ const findingNames = {
 };
 
 const currentFindings: Finding[] = sites.flatMap((site) =>
-  [0, 1, 2].map((index) => ({
-    id: `finding-${site.id}-${index + 1}`,
-    siteId: site.id,
-    flightId: `flight-${site.id}-01`,
-    zoneId: site.zones[index % site.zones.length].id,
-    title: findingNames[site.sector][index],
-    description:
-      "El operador señaló este punto en su entrega. Revisar la evidencia y confirmar la observación en sitio antes de tomar una decisión.",
-    priority: (["high", "medium", "low"] as const)[index],
-    status: "pending",
-    position: findingPosition(
-      site,
-      site.zones[index % site.zones.length],
-      0.3 + index * 0.2,
-      0.35 + index * 0.15,
-    ),
-    imageUrl: site.imageUrl,
-    source: "Observación del operador · ejemplo",
-    taskAssigned: false,
-  })),
+  [0, 1, 2].map((index) => {
+    const zone = site.zones[index % site.zones.length];
+    const location = findingLocation(site, zone, 0.35 + index * 0.15);
+    return {
+      id: `finding-${site.id}-${index + 1}`,
+      siteId: site.id,
+      flightId: `flight-${site.id}-01`,
+      zoneId: zone.id,
+      title: findingNames[site.sector][index],
+      description: describeAt(
+        location,
+        "El operador señaló este punto en su entrega. Revisar la evidencia y confirmar la observación en sitio antes de tomar una decisión.",
+      ),
+      priority: (["high", "medium", "low"] as const)[index],
+      status: "pending" as const,
+      position: findingPosition(
+        site,
+        zone,
+        0.3 + index * 0.2,
+        0.35 + index * 0.15,
+      ),
+      ...location,
+      imageUrl: site.imageUrl,
+      source: exampleSource(site, "Observación del operador · ejemplo"),
+      taskAssigned: false,
+    };
+  }),
 );
 
 const historyFindings: Finding[] = sites.flatMap((site) =>
   history.flatMap((item, flightIndex) =>
     [0, 1, 2]
       .slice(0, flightIndex === 1 || flightIndex === 3 ? 3 : 2)
-      .map((index) => ({
-        id: `finding-${site.id}-h${item.n}-${index + 1}`,
-        siteId: site.id,
-        flightId: `flight-${site.id}-0${item.n}`,
-        // The first zone repeats on purpose: recurrence is what the insights surface.
-        zoneId:
+      .map((index) => {
+        const zone =
           site.zones[
             index === 0 ? 0 : (index + flightIndex) % site.zones.length
-          ].id,
-        title: findingNames[site.sector][index],
-        description:
-          "Observación de un vuelo anterior, ya revisada por el responsable en el escenario de ejemplo.",
-        priority: (["high", "medium", "low"] as const)[
-          (index + flightIndex) % 3
-        ],
-        status: (index === 2 ? "dismissed" : "confirmed") as Finding["status"],
-        position: findingPosition(
-          site,
-          site.zones[
-            index === 0 ? 0 : (index + flightIndex) % site.zones.length
+          ];
+        const location = findingLocation(site, zone, 0.35 + index * 0.15);
+        return {
+          id: `finding-${site.id}-h${item.n}-${index + 1}`,
+          siteId: site.id,
+          flightId: `flight-${site.id}-0${item.n}`,
+          // The first zone repeats on purpose: recurrence is what the insights surface.
+          zoneId: zone.id,
+          title: findingNames[site.sector][index],
+          description: describeAt(
+            location,
+            "Observación de un vuelo anterior, ya revisada por el responsable en el escenario de ejemplo.",
+          ),
+          priority: (["high", "medium", "low"] as const)[
+            (index + flightIndex) % 3
           ],
-          0.3 + index * 0.2 + flightIndex * 0.02,
-          0.35 + index * 0.15,
-        ),
-        imageUrl: site.imageUrl,
-        source: "Observación del operador · ejemplo",
-        taskAssigned: index === 0,
-      })),
+          status: (index === 2
+            ? "dismissed"
+            : "confirmed") as Finding["status"],
+          position: findingPosition(
+            site,
+            zone,
+            0.3 + index * 0.2 + flightIndex * 0.02,
+            0.35 + index * 0.15,
+          ),
+          ...location,
+          imageUrl: site.imageUrl,
+          source: exampleSource(site, "Observación del operador · ejemplo"),
+          taskAssigned: index === 0,
+        };
+      }),
   ),
 );
 
@@ -895,13 +1014,14 @@ function suggestedFinding(
 ): Finding {
   const item = imageCandidates[site.sector][candidate];
   const zone = site.zones[zoneIndex % site.zones.length];
+  const location = findingLocation(site, zone, 0.55 - candidate * 0.15);
   return {
     id,
     siteId: site.id,
     flightId,
     zoneId: zone.id,
     title: item.title,
-    description: item.description,
+    description: describeAt(location, item.description),
     priority: item.priority,
     status,
     position: findingPosition(
@@ -910,6 +1030,7 @@ function suggestedFinding(
       0.45 + candidate * 0.2 + shift,
       0.55 - candidate * 0.15,
     ),
+    ...location,
     imageUrl: site.imageUrl,
     source: suggestedSource(status),
     taskAssigned: false,
@@ -977,58 +1098,89 @@ export const initialFindings: Finding[] = [
   ...suggestedFindings,
 ];
 
+/** A date moved by whole days, for due and payment dates counted from a flight. */
+function shiftDate(date: string, days: number) {
+  const moved = new Date(`${date}T12:00:00Z`);
+  moved.setUTCDate(moved.getUTCDate() + days);
+  return moved.toISOString().slice(0, 10);
+}
+
+/**
+ * Every invoice of the example data adds up: where a site is priced by hectare the total is the
+ * billed hectares times the tariff, and where it is priced per flight the total is the flat fee. The
+ * description says which, so nobody has to guess. Tariffs and fees are examples, not market prices.
+ */
+const historyRates = { 3: 28_500, 4: 29_000, 5: 29_500, 6: 30_000 } as const;
+const historyFees = { 3: 660_000, 4: 680_000, 5: 690_000, 6: 700_000 } as const;
+
 const historyInvoices: Invoice[] = sites.flatMap((site, siteIndex) =>
-  history.map((item, index) => ({
-    id: `invoice-${site.id}-h${item.n}`,
-    siteId: site.id,
-    flightId: `flight-${site.id}-0${item.n}`,
-    reference: `FV-2026-${100 + siteIndex * 10 + index}`,
-    description: "Inspección aérea y entrega de evidencia",
-    operator: "AeroVisión del Valle",
-    total: 780000 + index * 20000,
-    paid: 780000 + index * 20000,
-    dueDate: item.date.replace(/-\d\d$/, "-28"),
-    source: "manual" as const,
-  })),
+  history.map((item, index) => {
+    const flightId = `flight-${site.id}-0${item.n}`;
+    const flight = initialFlights.find((entry) => entry.id === flightId);
+    const byArea = priceUnit(site) === "ha";
+    const billedHa = orderedHaOf(site, flight?.zoneIds ?? []);
+    const rate = historyRates[item.n];
+    const total = byArea ? Math.round(billedHa * rate) : historyFees[item.n];
+    // Paid on the due date, which falls before the demo date for every flight of the history.
+    const dueDate = shiftDate(item.date, 14);
+    return {
+      id: `invoice-${site.id}-h${item.n}`,
+      siteId: site.id,
+      flightId,
+      reference: `FV-2026-${100 + siteIndex * 10 + index}`,
+      description: byArea
+        ? `Seguimiento mensual · ${formatHa(billedHa)} ha × ${pesos(rate)} por ha (ejemplo)`
+        : "Seguimiento mensual · tarifa fija por vuelo (ejemplo)",
+      operator: "AeroVisión del Valle",
+      total,
+      paid: total,
+      dueDate,
+      source: "manual" as const,
+      ...(byArea ? { billedHa } : {}),
+    };
+  }),
 );
 
 export const initialInvoices: Invoice[] = [
-  ...sites.flatMap((site, index) => [
-    {
-      id: `invoice-${site.id}-01`,
-      siteId: site.id,
-      flightId: `flight-${site.id}-01`,
-      reference: `FV-2026-0${34 + index}`,
-      description: "Inspección aérea y entrega de evidencia",
-      operator: "AeroVisión del Valle",
-      total: 850000,
-      paid: 400000,
-      dueDate: "2026-10-30",
-      // The contractor bills what was ordered, not what it reached.
-      ...(site.sector === "agriculture"
-        ? {
-            billedHa:
-              Math.round(
-                site.zones.reduce(
-                  (sum, zone) => sum + polygonAreaHa(zone.outline),
-                  0,
-                ) * 10,
-              ) / 10,
-          }
-        : {}),
-    },
-    {
-      id: `invoice-${site.id}-02`,
-      siteId: site.id,
-      flightId: `flight-${site.id}-01`,
-      reference: `FV-2026-0${21 + index}`,
-      description: "Registro aéreo de seguimiento anterior",
-      operator: "AeroVisión del Valle",
-      total: 620000,
-      paid: 620000,
-      dueDate: "2026-10-15",
-    },
-  ]),
+  ...sites.flatMap((site, index) => {
+    const flightId = `flight-${site.id}-01`;
+    const byArea = priceUnit(site) === "ha";
+    // The contractor bills what was ordered, not what it reached.
+    const billedHa = orderedHaOf(
+      site,
+      site.zones.map((zone) => zone.id),
+    );
+    const total = byArea ? Math.round(billedHa * HA_RATE) : FLIGHT_FEE;
+    return [
+      {
+        id: `invoice-${site.id}-01`,
+        siteId: site.id,
+        flightId,
+        reference: `FV-2026-0${34 + index}`,
+        description: byArea
+          ? `Seguimiento del mes · ${formatHa(billedHa)} ha × ${pesos(HA_RATE)} por ha (ejemplo)`
+          : "Seguimiento del mes · tarifa fija por vuelo (ejemplo)",
+        operator: "AeroVisión del Valle",
+        total,
+        // An advance of a bit under half, as the example payment of the 25th.
+        paid: Math.round((total * 0.45) / 10_000) * 10_000,
+        dueDate: "2026-10-30",
+        ...(byArea ? { billedHa } : {}),
+      },
+      {
+        id: `invoice-${site.id}-02`,
+        siteId: site.id,
+        flightId: `flight-${site.id}-06`,
+        reference: `FV-2026-0${21 + index}`,
+        description:
+          "Ortomosaico adicional del vuelo del 10 de octubre · tarifa fija (ejemplo)",
+        operator: "AeroVisión del Valle",
+        total: 620000,
+        paid: 620000,
+        dueDate: "2026-10-15",
+      },
+    ];
+  }),
   ...historyInvoices,
 ];
 
@@ -1037,11 +1189,12 @@ export const initialPayments: Payment[] = initialInvoices.map(
     id: `payment-${index + 1}`,
     invoiceId: invoice.id,
     amount: invoice.paid,
-    date: invoice.id.includes("-h")
+    // History invoices were paid on their due date; the advance of the current one is of the demo day.
+    date: /-h\d$/.test(invoice.id)
       ? invoice.dueDate
       : invoice.paid === invoice.total
         ? "2026-10-14"
-        : "2026-10-24",
+        : DEMO_DATE,
     method: "Transferencia registrada · ejemplo",
   }),
 );
@@ -1093,6 +1246,41 @@ export const initialDocuments: FlightDocument[] = sites.flatMap((site) => [
   },
 ]);
 
+/**
+ * Who signs the authorization of the area, per sector: the party that really holds the right to
+ * allow the flight. All names are made up.
+ */
+const authorizers: Record<
+  Sector,
+  { name: string; documentId: string; role: string }
+> = {
+  agriculture: {
+    name: "Martha Lucía Ocampo",
+    documentId: "31.456.789",
+    role: "Propietario",
+  },
+  roads: {
+    name: "Gustavo Adolfo Restrepo",
+    documentId: "16.702.115",
+    role: "Representante del titular del contrato de concesión",
+  },
+  construction: {
+    name: "Martha Lucía Ocampo",
+    documentId: "31.456.789",
+    role: "Propietario del lote",
+  },
+  security: {
+    name: "Andrés Felipe Cárdenas",
+    documentId: "94.318.447",
+    role: "Administrador de la copropiedad",
+  },
+  mining: {
+    name: "Claudia Patricia Londoño",
+    documentId: "66.905.212",
+    role: "Representante del titular minero",
+  },
+};
+
 /** Signed supports for the last completed flight of each site, so the traceability has something to show. */
 export const initialEvidences: Evidence[] = sites.flatMap((site) => {
   const flight = initialFlights.find(
@@ -1121,9 +1309,10 @@ export const initialEvidences: Evidence[] = sites.flatMap((site) => {
     documentId: "16.834.201",
     method: "typed" as const,
   };
+  const authorizer = authorizers[site.sector];
   const owner = {
-    name: "Martha Lucía Ocampo",
-    documentId: "31.456.789",
+    name: authorizer.name,
+    documentId: authorizer.documentId,
     method: "typed" as const,
   };
 
@@ -1142,7 +1331,7 @@ export const initialEvidences: Evidence[] = sites.flatMap((site) => {
   let authorization = create("landowner-authorization", {
     ownerName: owner.name,
     ownerId: owner.documentId,
-    ownerRole: "Propietario",
+    ownerRole: authorizer.role,
   });
   authorization = withSignature(
     authorization,
@@ -1508,29 +1697,43 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
     const manager = `party-manager-${site.id}`;
     const owner = `party-owner-${site.id}`;
     const zoneIds = site.zones.map((zone) => zone.id);
-    // Road sites are priced per flight (a road has length, not hectares): the same example prices, scaled.
-    const unit =
-      site.sector === "roads" ? ("flight" as const) : ("ha" as const);
-    const k = unit === "flight" ? 200 : 1;
+    // Roads and works are priced per flight (a road has length, not hectares); the rest by hectare.
+    // `n` is the example's base figure: per hectare it becomes the tariff of HA_RATE scaled (the
+    // monthly follow-up is exactly HA_RATE), per flight the flat fee of FLIGHT_FEE scaled the same way.
+    const unit = priceUnit(site);
+    const price = (n: number) =>
+      unit === "flight"
+        ? Math.round(((n / 3500) * FLIGHT_FEE) / 10_000) * 10_000
+        : Math.round(((n / 3500) * HA_RATE) / 500) * 500;
     const money = (n: number) =>
-      `$ ${new Intl.NumberFormat("es-CO").format(n * k)}${unit === "ha" ? " por hectárea" : ""}`;
+      `${pesos(price(n))}${unit === "ha" ? " por hectárea" : ""}`;
+    const words = zoneWords(site);
+    const flight1 = initialFlights.find(
+      (item) => item.id === `flight-${site.id}-01`,
+    );
     const base = {
       siteId: site.id,
       invited: [OPERATOR_A, OPERATOR_B],
       unit,
+    };
+    const thirdNotes: Record<Sector, string> = {
+      agriculture: "Cámara multiespectral y mapa de vigor por lote.",
+      roads: "Cámara RGB; ortofoto y fotos con PK por tramo.",
+      construction: "Cámara RGB y nube de puntos; avance por frente.",
+      security: "Cámara con zoom; recorrido del cerramiento por sector.",
+      mining: "Modelo de superficie y volumen removido por banco.",
     };
     const first: ServiceRequest = {
       ...base,
       id: `service-${site.id}-1`,
       kind: "monitoring",
       title: "Seguimiento del mes",
-      description:
-        "Monitoreo de todas las zonas con el mismo recorrido del mes anterior.",
+      description: `Monitoreo de ${words.all} con el mismo recorrido del mes anterior.`,
       zoneIds,
       requestedBy: manager,
       windowStart: "2026-10-18",
       windowEnd: "2026-10-26",
-      maxPrice: 4500 * k,
+      maxPrice: price(4500),
       status: "invoiced",
       operatorId: OPERATOR_A,
       flightId: `flight-${site.id}-01`,
@@ -1539,7 +1742,7 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
       quotes: [
         {
           operatorId: OPERATOR_A,
-          price: 3500 * k,
+          price: price(3500),
           startDate: "2026-10-22",
           note: "Incluye ortomosaico y reporte de hallazgos.",
           state: "chosen",
@@ -1547,7 +1750,7 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
         },
         {
           operatorId: OPERATOR_B,
-          price: 4100 * k,
+          price: price(4100),
           startDate: "2026-10-24",
           note: "",
           state: "declined",
@@ -1638,12 +1841,12 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
       id: `service-${site.id}-2`,
       kind: "monitoring",
       title: "Seguimiento programado del 29 de octubre",
-      description: "Comparar el estado de las zonas con el registro anterior.",
+      description: `Comparar el estado de ${words.the} con el registro anterior.`,
       zoneIds: bookedZoneIds(site),
       requestedBy: manager,
       windowStart: "2026-10-27",
       windowEnd: "2026-10-31",
-      maxPrice: 4500 * k,
+      maxPrice: price(4500),
       status: "scheduled",
       operatorId: OPERATOR_A,
       flightId: `flight-${site.id}-02`,
@@ -1651,7 +1854,7 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
       quotes: [
         {
           operatorId: OPERATOR_A,
-          price: 3500 * k,
+          price: price(3500),
           startDate: "2026-10-27",
           note: "",
           state: "chosen",
@@ -1659,7 +1862,7 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
         },
         {
           operatorId: OPERATOR_B,
-          price: 3900 * k,
+          price: price(3900),
           startDate: "2026-10-28",
           note: "",
           state: "declined",
@@ -1723,21 +1926,21 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
       requestedBy: site.sector === "agriculture" ? owner : manager,
       windowStart: "2026-11-02",
       windowEnd: "2026-11-12",
-      maxPrice: 6500 * k,
+      maxPrice: price(6500),
       status: "quoted",
       createdOn: "2026-10-23",
       quotes: [
         {
           operatorId: OPERATOR_A,
-          price: 6000 * k,
+          price: price(6000),
           startDate: "2026-11-03",
-          note: "Cámara multiespectral y mapa de vigor por suerte.",
+          note: thirdNotes[site.sector],
           state: "open",
           on: "2026-10-24",
         },
         {
           operatorId: OPERATOR_B,
-          price: 5200 * k,
+          price: price(5200),
           startDate: "2026-11-06",
           note: "Entrega en 72 horas.",
           state: "open",
@@ -1782,14 +1985,15 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
       requestedBy: manager,
       windowStart: "2026-10-20",
       windowEnd: "2026-10-27",
-      maxPrice: 8000 * k,
+      maxPrice: price(8000),
       status: "delivered",
       operatorId: OPERATOR_B,
+      flightId: `flight-${site.id}-07`,
       createdOn: "2026-10-16",
       quotes: [
         {
           operatorId: OPERATOR_B,
-          price: 7200 * k,
+          price: price(7200),
           startDate: "2026-10-21",
           note: "",
           state: "chosen",
@@ -1797,7 +2001,7 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
         },
         {
           operatorId: OPERATOR_A,
-          price: 7900 * k,
+          price: price(7900),
           startDate: "2026-10-22",
           note: "",
           state: "declined",
@@ -1873,8 +2077,14 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
               .filter((zone) => ids.includes(zone.id))
               .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0) * 10,
           ) / 10;
+    // The delivery says what the flight record says, so Servicios and Pagos show the same hectares.
+    const orderedFirst = polygonHa(first.zoneIds);
+    const coveredFirst = flight1?.log?.coveredHa;
     first.delivery!.coveredHa =
-      Math.round(polygonHa(first.zoneIds) * 0.94 * 10) / 10 || 1;
+      coveredFirst ?? (Math.round(orderedFirst * 0.94 * 10) / 10 || 1);
+    if (coveredFirst !== undefined && orderedFirst - coveredFirst >= 0.5) {
+      first.delivery!.note = `Quedaron ${formatHa(orderedFirst - coveredFirst)} ha sin cubrir; está en el registro del vuelo.`;
+    }
     fourth.delivery!.coveredHa =
       Math.round(polygonHa(fourth.zoneIds) * 0.88 * 10) / 10 || 1;
     return [first, second, third, fourth];
