@@ -154,6 +154,7 @@
   font-weight: 650;
   font-size: 14px;
   min-height: 44px;
+  white-space: nowrap;
   border: 1px solid transparent;
   color: #e3eef3;
   background: transparent;
@@ -1370,6 +1371,24 @@ a.channel:focus-visible {
 
   .brandLogo {
     height: 32px;
+  }
+
+  /* En 375 px caben logo, «Hablemos» y «Abrir la demo» en una línea cada uno. */
+  .topbarInner {
+    gap: 8px;
+  }
+
+  .brand {
+    padding-inline: 8px;
+  }
+
+  .topbarLinks {
+    gap: 4px;
+  }
+
+  .topbarLinks .linkBtn {
+    padding-inline: 10px;
+    font-size: 13px;
   }
 
   /* 44 px también en móvil: es el tamaño que pide el dedo (WCAG 2.5.5 AAA, Apple HIG). */

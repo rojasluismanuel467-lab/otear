@@ -1,5 +1,6 @@
 .view {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
 .aircraftRow {
@@ -138,6 +139,7 @@
 }
 .detail {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   align-content: start;
   animation: detail-in 560ms cubic-bezier(0.16, 1, 0.3, 1) both;

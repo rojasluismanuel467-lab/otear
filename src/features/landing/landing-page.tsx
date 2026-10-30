@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import styles from "./landing.module.css";
 import { DroneCursor } from "./drone-cursor";
-import { DroneGreeting } from "./drone-greeting";
+import { DroneFlight } from "./drone-flight";
 import { LeadForm } from "./lead-form";
 import { SectorPicker } from "./sector-picker";
 
@@ -114,48 +113,10 @@ const roles = [
 ];
 
 export function LandingPage() {
-  // The drone sits in the hero background; it only becomes draggable when the
-  // user clicks on the hero's empty area (not on text/CTAs). It also stops
-  // being interactive once the user scrolls past the hero so the canvas never
-  // steals pointer events further down the page.
-  const [heroInteractive, setHeroInteractive] = useState(false);
-  const heroRef = useRef<HTMLElement>(null);
-
-  function handleHeroPointerDown(event: React.PointerEvent<HTMLElement>) {
-    const target = event.target as HTMLElement | null;
-    // Clicks on interactive children (CTAs, links, buttons) keep working as
-    // links — they must not toggle drone interactivity.
-    if (target?.closest("a, button, input, textarea, select, [role='button']"))
-      return;
-    setHeroInteractive(true);
-  }
-
-  useEffect(() => {
-    const hero: HTMLElement | null = heroRef.current;
-    if (!hero) return;
-    const onScroll = () => {
-      // Deactivate as soon as the hero leaves the viewport.
-      if (hero.getBoundingClientRect().bottom < 80) setHeroInteractive(false);
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target || !hero.contains(target)) setHeroInteractive(false);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    document.addEventListener("pointerdown", onPointerDown, true);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      document.removeEventListener("pointerdown", onPointerDown, true);
-    };
-  }, []);
-
   return (
     <div className={styles.page}>
       <DroneCursor />
-      <DroneGreeting
-        slotSelector="[data-drone-slot]"
-        interactive={heroInteractive}
-      />
+      <DroneFlight />
       <header className={styles.topbar} data-cursor-theme="dark">
         <div className={styles.topbarInner}>
           <Link href="/" className={styles.brand} aria-label="Otear, inicio">
@@ -185,12 +146,7 @@ export function LandingPage() {
         </div>
       </header>
 
-      <section
-        ref={heroRef}
-        className={styles.hero}
-        data-cursor-theme="dark"
-        onPointerDown={handleHeroPointerDown}
-      >
+      <section className={styles.hero} data-cursor-theme="dark">
         <div className={styles.heroContours} aria-hidden />
         <div className={styles.heroInner}>
           <div className={styles.heroCopy}>
@@ -227,9 +183,8 @@ export function LandingPage() {
             </div>
           </div>
 
-          {/* The real 3D stage renders via <DroneGreeting /> (below, at
-              page root) and docks into this slot after its scripted intro.
-              This placeholder reserves the space so the layout doesn't jump. */}
+          {/* The aircraft is drawn by <DroneFlight /> on a fixed layer; it first
+              circles over this slot. The placeholder reserves the space. */}
           <div
             className={styles.droneWrap}
             data-drone-slot
@@ -243,7 +198,7 @@ export function LandingPage() {
       <SectorPicker />
 
       <section className={styles.section} id="casos-de-uso">
-        <header className={styles.sectionHead}>
+        <header className={styles.sectionHead} data-flight-perch="head">
           <div className={styles.sectionLabel}>Ejemplos de uso</div>
           <h2 className={styles.sectionTitle}>
             Un mismo núcleo, <span className="accent">cualquier</span> sector.
@@ -312,7 +267,7 @@ export function LandingPage() {
       </section>
 
       <section className={styles.section} id="a-su-medida">
-        <header className={styles.sectionHead}>
+        <header className={styles.sectionHead} data-flight-perch="head">
           <div className={styles.sectionLabel}>
             <Blocks size={14} aria-hidden /> A su medida
           </div>
@@ -357,7 +312,7 @@ export function LandingPage() {
       </section>
 
       <section className={styles.section} id="que-resuelve">
-        <header className={styles.sectionHead}>
+        <header className={styles.sectionHead} data-flight-perch="head">
           <div className={styles.sectionLabel}>Qué resuelve</div>
           <h2 className={styles.sectionTitle}>
             Tres cosas que hoy duelen cuando pide un vuelo y mañana lo quiere
@@ -390,7 +345,7 @@ export function LandingPage() {
       </section>
 
       <section className={styles.section} id="para-quien">
-        <header className={styles.sectionHead}>
+        <header className={styles.sectionHead} data-flight-perch="head">
           <div className={styles.sectionLabel}>Para quién</div>
           <h2 className={styles.sectionTitle}>
             Pensado para quienes conviven con{" "}
@@ -446,10 +401,8 @@ export function LandingPage() {
             <div className={styles.demoStatRow}>
               <span className={styles.demoStatLabel}>Proyectos de ejemplo</span>
               <span className={styles.demoStatValue}>
-                4 <span className={styles.demoStatValueAccent}>·</span>{" "}
-                <span className={styles.demoStatValueAccent}>
-                  4 sectores de ejemplo
-                </span>
+                4 proyectos ·{" "}
+                <span className={styles.demoStatValueAccent}>4 sectores</span>
               </span>
             </div>
             <div className={styles.demoStatRow}>
@@ -516,6 +469,7 @@ export function LandingPage() {
           width={960}
           height={384}
           className={styles.footerLogo}
+          data-flight-perch="home"
         />
         <strong>Otear</strong> · Validación comercial — datos sintéticos.
         <br />

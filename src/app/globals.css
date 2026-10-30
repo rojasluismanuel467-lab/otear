@@ -1495,6 +1495,7 @@ textarea {
     font-size: 13px;
     font-weight: 650;
   }
+  .mobile-menu-button,
   .mobile-menu-button svg {
     flex-shrink: 0;
   }
@@ -1556,8 +1557,10 @@ textarea {
   }
 }
 @media (max-width: 480px) {
+  /* El título de la página ya está justo debajo; aquí no cabe junto a «Menú» y la etiqueta de demo. */
   .topbar-location > span:first-of-type,
-  .breadcrumb-divider {
+  .breadcrumb-divider,
+  .topbar-location strong {
     display: none;
   }
   .topbar-actions {

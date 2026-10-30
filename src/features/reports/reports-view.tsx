@@ -183,7 +183,10 @@ export function ReportsView() {
               <header className={styles.selectedHeader}>
                 <div>
                   <h2>
-                    {selected.title} · {formatDate(selected.date)}
+                    {selected.title} ·{" "}
+                    <span className={styles.keepTogether}>
+                      {formatDate(selected.date)}
+                    </span>
                   </h2>
                   <p>
                     {selected.duration} min · {number(selected.distance)} km ·{" "}

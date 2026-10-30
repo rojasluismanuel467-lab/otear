@@ -384,3 +384,8 @@
 .operatorTable small[data-bad="true"] {
   color: var(--danger);
 }
+
+/* La fecha del título no se parte; el separador va pegado al título (espacio duro) y queda al final de la línea, no al inicio de la siguiente. */
+.keepTogether {
+  white-space: nowrap;
+}
