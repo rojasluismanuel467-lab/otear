@@ -29,6 +29,7 @@ import {
   initialPayments,
   sites,
 } from "./demo-data";
+import type { FollowUpResult } from "@/features/flights/follow-up";
 import { distanceToLineM, pointInPolygon } from "@/lib/geo";
 import type {
   Aircraft,
@@ -128,6 +129,30 @@ function useDemoState() {
           : finding,
       ),
     );
+  }
+
+  /**
+   * Applies a change to a finding's follow-up (see features/flights/follow-up.ts) and keeps
+   * `taskAssigned` in step with it. Returns the result so the form can show why it was refused.
+   */
+  function changeFollowUp(
+    id: string,
+    change: (finding: Finding) => FollowUpResult,
+  ): FollowUpResult {
+    const finding = findingRecords.find((item) => item.id === id);
+    if (!finding) {
+      return { ok: false, error: "No se encontró el registro." };
+    }
+    const result = change(finding);
+    if (!result.ok) return result;
+    setFindingRecords((current) =>
+      current.map((item) =>
+        item.id === id
+          ? { ...item, followUp: result.followUp, taskAssigned: true }
+          : item,
+      ),
+    );
+    return result;
   }
 
   function recordPayment(
@@ -387,6 +412,7 @@ function useDemoState() {
     addFlight,
     updateFlight,
     updateFinding,
+    changeFollowUp,
     recordPayment,
     updateDocument,
     replaceZones,

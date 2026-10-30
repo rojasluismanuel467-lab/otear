@@ -7,6 +7,7 @@ import {
   sustainedDeclines,
 } from "../evolution/evolution.ts";
 import { agree, countOf, type FindingWords } from "./finding-words.ts";
+import { summarizeFollowUps } from "./follow-up.ts";
 
 /**
  * What a flight's screens say about it, worked out once so the map, the facts, the report and the
@@ -95,6 +96,8 @@ export interface BriefInput {
   /** Hectares asked for in the zones of the flight; 0 or missing when they are lines. */
   orderedHa?: number;
   words: FindingWords;
+  /** The day corrective measures are read against; the demo's day by default. */
+  today?: string;
 }
 
 const COVERAGE_TOLERANCE = 0.05;
@@ -167,6 +170,12 @@ export function flightBrief(input: BriefInput): string[] {
   if (counts.suggestedPending) {
     lines.push(
       `${counts.suggestedPending} ${counts.suggestedPending === 1 ? "sugerencia automática" : "sugerencias automáticas"} sin revisar: ${counts.suggestedPending === 1 ? "no cuenta" : "no cuentan"} como ${words.singular} hasta que una persona ${counts.suggestedPending === 1 ? "la confirme" : "las confirme"}.`,
+    );
+  }
+  const measures = summarizeFollowUps(input.findings, input.today);
+  if (measures.overdue) {
+    lines.push(
+      `${measures.overdue === 1 ? "Hay 1 medida correctiva vencida" : `Hay ${measures.overdue} medidas correctivas vencidas`} en el sitio: su plazo ya pasó y no está cerrada.`,
     );
   }
   if (!lines.length) {

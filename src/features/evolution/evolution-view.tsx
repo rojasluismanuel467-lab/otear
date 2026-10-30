@@ -24,6 +24,7 @@ import {
   vigorColor,
   type CapturePoint,
 } from "./evolution";
+import { summarizeFollowUps } from "@/features/flights/follow-up";
 import { issuesFor, type Issue } from "./issues";
 import { IssueSheet } from "./issue-sheet";
 import { LineChart, type ChartSeries } from "./line-chart";
@@ -135,6 +136,7 @@ function EvolutionContent({
     singular: t("finding").toLowerCase(),
     plural: t("finding", "plural").toLowerCase(),
   };
+  const measures = useMemo(() => summarizeFollowUps(findings), [findings]);
   const last = captures.length - 1;
   const [picked, setPicked] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -395,6 +397,25 @@ function EvolutionContent({
                     </ul>
                   </section>
                 )}
+                {measures.open +
+                  measures.inProgress +
+                  measures.closed +
+                  measures.withoutMeasure >
+                  0 && (
+                  <p className={styles.measureLine}>
+                    <strong>Medidas del sitio:</strong> {measures.open}{" "}
+                    {measures.open === 1 ? "abierta" : "abiertas"} ·{" "}
+                    {measures.inProgress} en corrección · {measures.closed}{" "}
+                    {measures.closed === 1 ? "cerrada" : "cerradas"} ·{" "}
+                    <span data-late={measures.overdue > 0}>
+                      {measures.overdue}{" "}
+                      {measures.overdue === 1 ? "vencida" : "vencidas"}
+                    </span>
+                    {measures.withoutMeasure > 0 &&
+                      ` · ${measures.withoutMeasure} sin responsable`}
+                    . Se asignan y se cierran en Vuelos.
+                  </p>
+                )}
                 {issues.length ? (
                   <ul
                     className={styles.issueList}
@@ -416,6 +437,14 @@ function EvolutionContent({
                           <span className={styles.issueText}>
                             <strong>{issue.title}</strong>
                             <small>{issue.summary}</small>
+                            {issue.measure && (
+                              <small
+                                className={styles.issueMeasure}
+                                data-tone={issue.measure.tone}
+                              >
+                                Medida: {issue.measure.label.toLowerCase()}
+                              </small>
+                            )}
                           </span>
                         </button>
                       </li>

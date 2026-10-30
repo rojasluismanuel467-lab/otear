@@ -300,3 +300,103 @@ test("cost per hectare divides the invoices by the area of the flights that were
     billed: 100000,
   });
 });
+
+const measure = (
+  status: "open" | "inProgress" | "closed",
+  dueDate: string,
+  extra: Partial<NonNullable<Finding["followUp"]>> = {},
+): NonNullable<Finding["followUp"]> => ({
+  owner: "Contratista",
+  dueDate,
+  status,
+  history: [],
+  ...extra,
+});
+
+const measureFlights = [flight("a", "2026-09-01"), flight("b", "2026-10-01")];
+const measureFindings = [
+  finding("late", "a", "z1", {
+    title: "Drenaje",
+    followUp: measure("inProgress", "2026-10-16"),
+  }),
+  finding("ok", "b", "z1", { followUp: measure("open", "2026-11-06") }),
+  finding("done", "a", "z2", {
+    followUp: measure("closed", "2026-09-20", { closedOn: "2026-09-18" }),
+  }),
+  finding("ai", "b", "z2", {
+    status: "pending",
+    followUp: measure("open", "2026-10-01"),
+    suggestion: {
+      agent: "image",
+      confidence: "low",
+      evidence: [],
+      limits: "",
+      photoSpan: [0, 0],
+    },
+  }),
+];
+
+test("measures are counted by state and a late one needs attention; unreviewed suggestions stay out", () => {
+  const result = computeInsights({
+    ...base,
+    flights: measureFlights,
+    findings: measureFindings,
+    today: "2026-10-30",
+  });
+  assert.deepEqual(result.measures, {
+    open: 1,
+    inProgress: 1,
+    closed: 1,
+    overdue: 1,
+    active: 2,
+    withoutMeasure: 0,
+  });
+  const alert = result.attention.find((item) => item.id === "overdue-measures");
+  assert.equal(alert?.tone, "danger");
+  assert.match(alert?.text ?? "", /1 medida correctiva vencida.*Drenaje/);
+  const quiet = computeInsights({
+    ...base,
+    flights: measureFlights,
+    findings: measureFindings,
+    today: "2026-10-10",
+  });
+  assert.ok(!quiet.attention.some((item) => item.id === "overdue-measures"));
+});
+
+test("the consolidated report lists pending measures and the ones closed in the period", () => {
+  const text = buildConsolidatedReport(
+    { ...base, flights: measureFlights, findings: measureFindings },
+    { from: "2026-10-01", to: "2026-10-31" },
+    {
+      summary: false,
+      flights: false,
+      zones: false,
+      operation: false,
+      attention: false,
+      costs: false,
+      followUp: true,
+    },
+  );
+  assert.match(text, /SEGUIMIENTO DE MEDIDAS CORRECTIVAS/);
+  assert.match(
+    text,
+    /Abiertas: 1 · en corrección: 1 · cerradas: 1 · vencidas: 1/,
+  );
+  assert.match(text, /- Drenaje .*Vencida \(en corrección\)/);
+  // Closed on 18 September: outside October, so it is counted but not listed.
+  assert.ok(!text.includes("- done"));
+  const september = buildConsolidatedReport(
+    { ...base, flights: measureFlights, findings: measureFindings },
+    { from: "2026-09-01", to: "2026-09-30" },
+    {
+      summary: false,
+      flights: false,
+      zones: false,
+      operation: false,
+      attention: false,
+      costs: false,
+      followUp: true,
+    },
+  );
+  assert.ok(september.includes("- done"));
+});

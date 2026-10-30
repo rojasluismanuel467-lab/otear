@@ -150,3 +150,62 @@ test("mining measures progress in percent per bench and speaks of benches", () =
   assert.match(stalled?.advice ?? "", /banco/);
   assert.ok(stalled?.position);
 });
+
+test("a finding's issue says where its corrective measure stands, and flags a late one", () => {
+  const site = {
+    sector: "security",
+    zones: [{ id: "a", outline: outline(0) }],
+  } as unknown as Site;
+  const captures = [
+    point("2026-10-01", { a: 0 }),
+    point("2026-10-24", { a: 1 }),
+  ];
+  const base = {
+    flightId: "f-2026-10-24",
+    zoneId: "a",
+    description: "d",
+    priority: "high",
+    status: "confirmed",
+    position: [1, 2],
+    taskAssigned: true,
+  } as const;
+  const run = (finding: Partial<Finding>) =>
+    issuesFor({
+      site,
+      captures,
+      index: 1,
+      referenceIndex: 0,
+      findings: [{ ...base, id: "1", title: "H", ...finding } as Finding],
+      zoneNames: names,
+      today: "2026-10-30",
+    })[0];
+  const late = run({
+    followUp: {
+      owner: "Residente",
+      dueDate: "2026-10-16",
+      status: "inProgress",
+      history: [],
+    },
+  });
+  assert.equal(late.measure?.label, "Vencida");
+  assert.match(
+    late.facts.find((fact) => fact.label === "Medida correctiva")?.value ?? "",
+    /Vencida.*Residente/,
+  );
+  assert.match(late.advice ?? "", /vencida/);
+  const without = run({ taskAssigned: false });
+  assert.equal(without.measure, undefined);
+  assert.match(without.advice ?? "", /responsable y un plazo/);
+  const closed = run({
+    followUp: {
+      owner: "Residente",
+      dueDate: "2026-10-16",
+      status: "closed",
+      closedOn: "2026-10-14",
+      closure: "Reparado y verificado.",
+      history: [],
+    },
+  });
+  assert.equal(closed.measure?.label, "Cerrada");
+  assert.equal(closed.advice, undefined);
+});
