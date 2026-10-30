@@ -1561,6 +1561,12 @@ textarea {
     left: 12px;
   }
 }
+@media (max-width: 800px) {
+  /* Táctil: 44 px de alto en cada sector. */
+  .case-switcher-option {
+    min-height: 44px;
+  }
+}
 @media (max-width: 480px) {
   /* El título de la página ya está justo debajo; aquí no cabe junto a «Menú» y la etiqueta de demo. */
   .topbar-location strong {
