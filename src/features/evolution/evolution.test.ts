@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   buildCaptures,
   comparisonReliability,
+  fallingSince,
+  findingChange,
   indicatorFor,
   paceOf,
   phaseOf,
@@ -11,6 +13,8 @@ import {
   stalledZones,
   sustainedDeclines,
   vigorColor,
+  weightedMean,
+  zoneVerdict,
   type CapturePoint,
 } from "./evolution.ts";
 import type { Flight, Site } from "../demo/types";
@@ -145,4 +149,62 @@ test("mining reports its progress as a percentage of the plan", () => {
   assert.equal(progressColor(0), progressColor(-20));
   assert.equal(progressColor(100), progressColor(250));
   assert.notEqual(progressColor(10), progressColor(90));
+});
+
+test("a road's average advance weighs each stretch by its length", () => {
+  const values = { south: 100, north: 30 };
+  assert.equal(weightedMean(values), 65);
+  const weighted = weightedMean(values, { south: 1, north: 1.3 });
+  assert.ok(Math.abs(weighted - (100 + 39) / 2.3) < 1e-9);
+  // Without a usable weight for every zone it falls back to the simple average.
+  assert.equal(weightedMean(values, { south: 1 }), 65);
+  const site = {
+    sector: "roads",
+    zones: [{ id: "south" }, { id: "north" }],
+  } as unknown as Site;
+  const flights = [
+    { id: "a", date: "2026-01-01", status: "completed", capture: { values } },
+  ] as unknown as Flight[];
+  const [capture] = buildCaptures(site, flights, [], { south: 1, north: 1.3 });
+  assert.ok(Math.abs(capture.mean - 139 / 2.3) < 1e-9);
+});
+
+test("a zone is better or worse by its indicator, with a margin of noise", () => {
+  assert.equal(zoneVerdict("vigor", 0.12), "better");
+  assert.equal(zoneVerdict("vigor", -0.13), "worse");
+  assert.equal(zoneVerdict("vigor", 0.02), "same");
+  assert.equal(zoneVerdict("progress", -5), "worse");
+  assert.equal(zoneVerdict("count", 2), "worse");
+  assert.equal(zoneVerdict("count", -2), "better");
+});
+
+test("fallingSince finds where the decline began", () => {
+  const points = [
+    point("2026-01-01", { a: 0.5 }),
+    point("2026-02-01", { a: 0.75 }),
+    point("2026-03-01", { a: 0.72 }),
+    point("2026-04-01", { a: 0.62 }),
+  ];
+  assert.equal(fallingSince(points, "a", 3)?.date, "2026-02-01");
+  assert.equal(fallingSince(points, "a", 1), undefined);
+});
+
+test("finding change tells what appeared, what went away and what stays", () => {
+  const finding = (flightId: string, title: string, status = "confirmed") =>
+    ({ flightId, zoneId: "z", title, status }) as never;
+  const findings = [
+    finding("old", "Grieta"),
+    finding("old", "Hundimiento"),
+    finding("new", "Grieta"),
+    finding("new", "Cuneta tapada"),
+    finding("new", "Descartado", "dismissed"),
+  ];
+  assert.deepEqual(
+    findingChange(findings, { flightId: "new" }, { flightId: "old" }),
+    {
+      appeared: 1,
+      gone: 1,
+      persistent: 1,
+    },
+  );
 });

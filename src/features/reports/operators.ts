@@ -18,7 +18,15 @@ export interface OperatorSummary {
   billedHa: number;
   /** Invoices where the billed area exceeds the covered area by more than the tolerance. */
   overBilled: number;
-  /** Billed money per hectare billed, when areas are stated. */
+  /** All the invoices of the operator, and how many of them state an area. */
+  invoices: number;
+  invoicesWithArea: number;
+  /** Money of the invoices that state an area: the same set that `billedHa` and `perHa` use. */
+  billedWithArea: number;
+  /**
+   * Money of the invoices that state an area divided by their hectares. Both numbers come from
+   * the same invoices; invoices without area (priced per flight) are left out of this quotient.
+   */
   perHa: number | null;
   lastFlight?: string;
 }
@@ -55,6 +63,9 @@ export function operatorSummaries(input: {
         coveredHa: 0,
         billedHa: 0,
         overBilled: 0,
+        invoices: 0,
+        invoicesWithArea: 0,
+        billedWithArea: 0,
         perHa: null,
       };
       rows.set(operator, current);
@@ -80,14 +91,16 @@ export function operatorSummaries(input: {
       else summary.pending += 1;
     }
   }
-  const moneyHa = new Map<string, { money: number; ha: number }>();
   for (const invoice of input.invoices) {
     const flight = byFlight.get(invoice.flightId);
     const summary = row(invoice.operator || flight?.operator || "Sin operador");
     summary.billed += invoice.total;
     summary.paid += invoice.paid;
     summary.balance += invoice.total - invoice.paid;
+    summary.invoices += 1;
     if (invoice.billedHa !== undefined) {
+      summary.invoicesWithArea += 1;
+      summary.billedWithArea += invoice.total;
       summary.billedHa += invoice.billedHa;
       const covered = coveredHaFor(flight, input.requests ?? []);
       if (covered !== undefined) {
@@ -98,14 +111,11 @@ export function operatorSummaries(input: {
         )
           summary.overBilled += 1;
       }
-      const acc = moneyHa.get(summary.operator) ?? { money: 0, ha: 0 };
-      acc.money += invoice.total;
-      acc.ha += invoice.billedHa;
-      moneyHa.set(summary.operator, acc);
     }
   }
-  for (const [operator, acc] of moneyHa) {
-    if (acc.ha > 0) row(operator).perHa = acc.money / acc.ha;
+  for (const summary of rows.values()) {
+    if (summary.billedHa > 0)
+      summary.perHa = summary.billedWithArea / summary.billedHa;
   }
   return [...rows.values()].sort(
     (a, b) => b.flights - a.flights || a.operator.localeCompare(b.operator),

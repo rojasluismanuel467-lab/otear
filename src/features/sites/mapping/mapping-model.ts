@@ -22,6 +22,7 @@ import {
   voronoiCells,
   type LasHeader,
 } from "@/lib/geo";
+import { formatChainage } from "./chainage";
 import type { ProductionRow } from "./production";
 
 export type OutlineKind = "polygon" | "line";
@@ -87,12 +88,6 @@ export function formatHa(value: number) {
 
 export function formatKm(value: number) {
   return `${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(value)} km`;
-}
-
-function formatChainage(km: number) {
-  const whole = Math.floor(km);
-  const meters = Math.round((km - whole) * 1000);
-  return `${whole}+${String(meters).padStart(3, "0")}`;
 }
 
 export function measureOutline(kind: OutlineKind, points: Position[]) {

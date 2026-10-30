@@ -1,6 +1,9 @@
-import type { Site } from "../demo/types";
+import type { Finding, Site } from "../demo/types";
 import {
   comparisonReliability,
+  findingChange,
+  indicatorFor,
+  zoneVerdict,
   paceOf,
   phaseOf,
   plannedAt,
@@ -198,5 +201,100 @@ export function narrate(input: {
       text: `Confiabilidad de la comparación: ${reliability.text}`,
     });
   }
+  return lines;
+}
+
+/**
+ * The answer to "did it get better or worse?" between the capture shown and the one it is
+ * compared with: zone by zone, the findings that appeared or went away, and how far to trust it.
+ * Plain sentences from the series, no model.
+ */
+export function comparisonSummary(input: {
+  site: Site;
+  captures: CapturePoint[];
+  index: number;
+  referenceIndex: number;
+  zoneNames: Record<string, string>;
+  findings: Finding[];
+  /** The company's word for a finding, lowercase. */
+  findingWord?: { singular: string; plural: string };
+}): Line[] {
+  const { site, captures, index, referenceIndex, zoneNames, findings } = input;
+  const current = captures[index];
+  const reference = captures[referenceIndex];
+  if (!current || !reference || reference === current) return [];
+  const kind = indicatorFor(site.sector).kind;
+  const word = input.findingWord ?? {
+    singular: "hallazgo",
+    plural: "hallazgos",
+  };
+  const digits = kind === "vigor" ? 2 : 0;
+  const unit = kind === "progress" ? " puntos" : "";
+  const sign = (change: number) =>
+    `${change >= 0 ? "+" : "−"}${kind === "vigor" ? vigor(Math.abs(change)) : number(Math.abs(change), digits)}${unit}`;
+  const groups: Record<"better" | "worse" | "same", string[]> = {
+    better: [],
+    worse: [],
+    same: [],
+  };
+  const declining = new Set(
+    sustainedDeclines(
+      captures.slice(0, index + 1),
+      site.zones.map((zone) => zone.id),
+    ),
+  );
+  for (const zone of site.zones) {
+    const now = current.values[zone.id];
+    const before = reference.values[zone.id];
+    if (now === undefined || before === undefined) continue;
+    const change = now - before;
+    const verdict = zoneVerdict(kind, change);
+    const name = zoneNames[zone.id] ?? zone.id;
+    // Better than the comparison date but falling now: the bare sign would hide the fall.
+    const falling =
+      verdict === "better" && kind !== "count" && declining.has(zone.id);
+    groups[verdict].push(
+      verdict === "same"
+        ? name
+        : `${name} (${sign(change)}${falling ? ", pero viene bajando" : ""})`,
+    );
+  }
+  const lines: Line[] = [];
+  const words =
+    kind === "progress"
+      ? { better: "avanzó", worse: "retrocedió", same: "casi no se movió" }
+      : { better: "mejoró", worse: "empeoró", same: "sin cambio notable en" };
+  const parts = [
+    groups.worse.length ? `${words.worse}: ${groups.worse.join(", ")}` : "",
+    groups.better.length ? `${words.better}: ${groups.better.join(", ")}` : "",
+    groups.same.length
+      ? kind === "progress"
+        ? `${words.same}: ${groups.same.join(", ")}`
+        : `${words.same} ${groups.same.join(", ")}`
+      : "",
+  ].filter(Boolean);
+  if (parts.length) {
+    lines.push({
+      tone: groups.worse.length ? "warning" : "good",
+      text: `Frente al ${date(reference.date)}, ${parts.join("; ")}.`,
+    });
+  }
+  const change = findingChange(findings, current, reference);
+  if (change.appeared || change.gone || change.persistent) {
+    const pieces = [
+      `${change.appeared} ${change.appeared === 1 ? "nuevo" : "nuevos"}`,
+      `${change.gone} ${change.gone === 1 ? "ya no aparece" : "ya no aparecen"}`,
+      `${change.persistent} ${change.persistent === 1 ? "sigue" : "siguen"} abiertos`,
+    ];
+    lines.push({
+      tone: change.appeared > change.gone ? "warning" : "info",
+      text: `En ${word.plural}, frente a entonces: ${pieces.join(", ")}.`,
+    });
+  }
+  const reliability = comparisonReliability(reference, current);
+  lines.push({
+    tone: reliability.level === "high" ? "good" : "warning",
+    text: `Qué tan fiable es la comparación: ${reliability.text}`,
+  });
   return lines;
 }

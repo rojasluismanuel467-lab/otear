@@ -109,11 +109,11 @@ function MaintenanceForm({
     const hoursAt = Number(draft.hoursAt.replace(",", "."));
     const cost = Number(draft.cost.replace(/[.\s]/g, "").replace(",", "."));
     if (draft.title.trim().length < 3) {
-      setError("Escribe qué se hizo, por ejemplo «Cambio de hélices».");
+      setError("Escriba qué se hizo, por ejemplo «Cambio de hélices».");
       return;
     }
     if (!Number.isFinite(hoursAt) || hoursAt < 0) {
-      setError("Escribe las horas de vuelo de la aeronave en ese momento.");
+      setError("Escriba las horas de vuelo de la aeronave en ese momento.");
       return;
     }
     if (!Number.isFinite(cost) || cost < 0) {

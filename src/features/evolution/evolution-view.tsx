@@ -10,7 +10,8 @@ import { StageDrawer } from "@/components/ui/stage-drawer";
 import { ParcelMap } from "@/components/maps/parcel-map";
 import { zonePalette } from "@/components/maps/zone-palette";
 import { useDemo } from "@/features/demo/demo-context";
-import { useModuleTitle } from "@/features/config/use-config";
+import { useModuleTitle, useTerm } from "@/features/config/use-config";
+import { measureOutline } from "@/features/sites/mapping/mapping-model";
 import type { Position, Site } from "@/features/demo/types";
 import { formatDate } from "@/lib/format";
 import {
@@ -26,7 +27,7 @@ import {
 import { issuesFor, type Issue } from "./issues";
 import { IssueSheet } from "./issue-sheet";
 import { LineChart, type ChartSeries } from "./line-chart";
-import { narrate, type Line } from "./narrative";
+import { comparisonSummary, narrate, type Line } from "./narrative";
 import { DeliverablesHelp, ModelBar, type ModelStatus } from "./model-panel";
 import { TimelineBar } from "./timeline-bar";
 import type { LoadedModel, Up } from "@/components/evolution/model-loader";
@@ -84,15 +85,29 @@ const toneIcon = {
 export function EvolutionView() {
   const moduleTitle = useModuleTitle("evolucion");
   const { site, flights, findings } = useDemo();
+  // A road's average advance counts each stretch by its length, not as one more number.
   const captures = useMemo(
-    () => buildCaptures(site, flights, findings),
+    () =>
+      buildCaptures(
+        site,
+        flights,
+        findings,
+        site.sector === "roads"
+          ? Object.fromEntries(
+              site.zones.map((zone) => [
+                zone.id,
+                measureOutline("line", zone.outline),
+              ]),
+            )
+          : undefined,
+      ),
     [site, flights, findings],
   );
   return (
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description={`Cómo ha cambiado ${site.name} vuelo a vuelo, y dónde está pasando algo.`}
+        description={`Cómo ha cambiado ${site.name} vuelo a vuelo, y dónde está pasando algo. Los valores son de ejemplo, inventados para la demo.`}
       />
       {captures.length < 2 ? (
         <EmptyState
@@ -115,6 +130,11 @@ function EvolutionContent({
   captures: CapturePoint[];
 }) {
   const { findings } = useDemo();
+  const t = useTerm();
+  const findingWord = {
+    singular: t("finding").toLowerCase(),
+    plural: t("finding", "plural").toLowerCase(),
+  };
   const last = captures.length - 1;
   const [picked, setPicked] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -186,6 +206,20 @@ function EvolutionContent({
       narrate({ site, captures, index, referenceIndex: refIndex, zoneNames }),
     [site, captures, index, refIndex, zoneNames],
   );
+  const comparison = useMemo(
+    () =>
+      comparisonSummary({
+        site,
+        captures,
+        index,
+        referenceIndex: refIndex,
+        zoneNames,
+        findings,
+        findingWord,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [site, captures, index, refIndex, zoneNames, findings, findingWord.plural],
+  );
   const selected = issues.find((item) => item.id === issueId);
 
   async function loadModel(file: File) {
@@ -242,8 +276,8 @@ function EvolutionContent({
           data-tone={issues.length ? "warning" : "good"}
         >
           {issues.length
-            ? `${issues.length} ${issues.length === 1 ? "problema" : "problemas"} en este vuelo`
-            : "Sin problemas en este vuelo"}
+            ? `${issues.length} ${issues.length === 1 ? findingWord.singular : findingWord.plural} en este vuelo`
+            : `Sin ${findingWord.plural} en este vuelo`}
         </span>
       </header>
 
@@ -293,10 +327,17 @@ function EvolutionContent({
                 index={index}
                 referenceIndex={refIndex}
                 playing={isPlaying}
+                noun={findingWord}
                 onSelect={go}
                 onTogglePlay={togglePlay}
               />
               <Legend site={site} />
+              <p className={styles.legendText}>
+                Datos de ejemplo: los valores por zona son inventados.
+                {site.sector === "construction"
+                  ? " La figura es esquemática."
+                  : " Solo el mapa de fondo es una imagen real del lugar."}
+              </p>
             </>
           }
           drawer={
@@ -305,6 +346,8 @@ function EvolutionContent({
                 issue={selected}
                 series={sheetSeries.points}
                 seriesLabel={sheetSeries.label}
+                listLabel={`Todos los ${findingWord.plural}`}
+                seriesNote={sheetSeries.note}
                 format={sheetSeries.format}
                 yDomain={sheetSeries.yDomain}
                 onBack={() => setIssueId(undefined)}
@@ -314,7 +357,9 @@ function EvolutionContent({
                 <header>
                   <h3>Qué pasa en este vuelo</h3>
                   <p>
-                    Toque un marcador del escenario o un problema de la lista.
+                    Toque un marcador del escenario o un {findingWord.singular}{" "}
+                    de la lista. Unos los marca quien vuela; otros salen de
+                    comparar los valores de un vuelo con otro.
                   </p>
                 </header>
                 <label className={styles.compare}>
@@ -338,10 +383,22 @@ function EvolutionContent({
                     ))}
                   </select>
                 </label>
+                {comparison.length > 0 && (
+                  <section
+                    className={styles.comparison}
+                    aria-label="Frente a la fecha de comparación"
+                  >
+                    <ul>
+                      {comparison.map((line, i) => (
+                        <ReadingLine key={i} line={line} />
+                      ))}
+                    </ul>
+                  </section>
+                )}
                 {issues.length ? (
                   <ul
                     className={styles.issueList}
-                    aria-label="Problemas detectados"
+                    aria-label={`${t("finding", "plural")} de este vuelo`}
                   >
                     {issues.map((issue) => (
                       <li key={issue.id}>
@@ -367,7 +424,7 @@ function EvolutionContent({
                 ) : (
                   <p className={styles.allGood}>
                     <CircleCheck size={18} aria-hidden="true" />
-                    No se detectaron problemas en este vuelo.
+                    Sin {findingWord.plural} en este vuelo.
                   </p>
                 )}
                 {site.sector === "construction" && <DeliverablesHelp />}
@@ -392,10 +449,10 @@ function EvolutionContent({
         <details className={styles.note}>
           <summary>Sobre estos datos</summary>
           <p>
-            Los valores por zona son de ejemplo y las figuras son esquemáticas,
-            no reconstrucciones a partir de imágenes. Con datos reales, cada
-            vuelo aportaría su ortomosaico, modelo de superficie o índice NDVI
-            ya procesado, alineado con puntos de control.
+            Las figuras son esquemáticas, no reconstrucciones a partir de
+            imágenes. Con datos reales, cada vuelo aportaría su ortomosaico,
+            modelo de superficie o medida del verdor del cultivo (NDVI) ya
+            procesados, alineados con puntos de control.
           </p>
         </details>
       </div>
@@ -416,6 +473,11 @@ function ReadingLine({ line }: { line: Line }) {
 /** Values of the zone an issue belongs to (or of the whole site) up to the capture shown. */
 function seriesOf(site: Site, upTo: CapturePoint[], issue: Issue) {
   if (issue.zoneId) {
+    // The curve of a finding's zone is the zone's own value (progress, vigor), not the finding.
+    const note =
+      issue.kind === "finding" && site.sector !== "security"
+        ? "Es el valor de la zona; no mide este hallazgo."
+        : undefined;
     const id = issue.zoneId;
     const points = upTo.flatMap((point) =>
       point.values[id] === undefined
@@ -426,6 +488,7 @@ function seriesOf(site: Site, upTo: CapturePoint[], issue: Issue) {
       return {
         points,
         label: "Vigor de la zona",
+        note,
         format: fixed,
         yDomain: [0.3, 0.9] as [number, number],
       };
@@ -433,6 +496,7 @@ function seriesOf(site: Site, upTo: CapturePoint[], issue: Issue) {
       return {
         points,
         label: "Novedades de la zona",
+        note,
         format: (value: number) => number(value, 0),
         yDomain: [0, Math.max(2, ...points.map((p) => p.value))] as [
           number,
@@ -442,6 +506,7 @@ function seriesOf(site: Site, upTo: CapturePoint[], issue: Issue) {
     return {
       points,
       label: "Avance de la zona",
+      note,
       format: (value: number) => `${number(value, 0)} %`,
       yDomain: [0, 100] as [number, number],
     };
@@ -452,7 +517,12 @@ function seriesOf(site: Site, upTo: CapturePoint[], issue: Issue) {
       date: point.date,
       value: levels ? (point.levels ?? 0) : point.mean,
     })),
-    label: levels ? "Niveles construidos" : "Avance medio",
+    label: levels
+      ? "Niveles construidos"
+      : site.sector === "roads"
+        ? "Avance de la vía (ponderado por longitud)"
+        : "Avance medio",
+    note: undefined,
     format: (value: number) =>
       levels ? number(value, 1) : `${number(value, 0)} %`,
     yDomain: [0, levels ? (site.schedule?.targetLevels ?? 8) : 100] as [
@@ -545,6 +615,12 @@ function MapStage({
   );
 }
 
+/** «Lotes» → «lote». */
+function singularLower(label: string) {
+  const lower = label.toLowerCase();
+  return lower.endsWith("ores") ? lower.slice(0, -2) : lower.replace(/s$/, "");
+}
+
 function Legend({ site }: { site: Site }) {
   if (site.sector === "roads") {
     return (
@@ -560,7 +636,7 @@ function Legend({ site }: { site: Site }) {
   }
   const text =
     site.sector === "agriculture"
-      ? "Color del lote: vigor, de rojizo (bajo) a azul (alto)."
+      ? `Color del ${singularLower(site.zoneLabel)}: vigor, de rojizo (bajo) a azul (alto). El vigor va de 0 (poco verdor) a 1 (mucho) y es una medida de ejemplo de qué tan sano se ve el cultivo desde arriba.`
       : site.sector === "security"
         ? "Color de la zona: más oscuro, más novedades."
         : site.sector === "mining"
@@ -609,7 +685,9 @@ function EvolutionChart({
         name:
           site.sector === "construction"
             ? "Niveles construidos"
-            : "Avance medio",
+            : site.sector === "roads"
+              ? "Avance de la vía (ponderado por longitud)"
+              : "Avance medio",
         color: "#1c6f8d",
         points: shown.map((p) => ({
           date: p.date,

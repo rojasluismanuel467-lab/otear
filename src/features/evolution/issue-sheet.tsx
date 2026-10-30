@@ -16,6 +16,8 @@ export function IssueSheet({
   issue,
   series,
   seriesLabel,
+  seriesNote,
+  listLabel,
   format,
   yDomain,
   onBack,
@@ -24,6 +26,10 @@ export function IssueSheet({
   /** Values of the issue's zone over time, up to the capture shown. */
   series: { date: string; value: number }[];
   seriesLabel: string;
+  /** Says what the curve is not, when it could be mistaken for the issue itself. */
+  seriesNote?: string;
+  /** «Todos los hallazgos»: the company's word for the list this sheet came from. */
+  listLabel: string;
   format: (value: number) => string;
   yDomain: [number, number];
   onBack: () => void;
@@ -33,7 +39,7 @@ export function IssueSheet({
       <header className={styles.sheetHead}>
         <button type="button" className={styles.back} onClick={onBack}>
           <ArrowLeft size={16} aria-hidden="true" />
-          Todos los problemas
+          {listLabel}
         </button>
         <span className={styles.toneChip} data-tone={issue.tone}>
           <TriangleAlert size={14} aria-hidden="true" />
@@ -57,7 +63,8 @@ export function IssueSheet({
           className={styles.sheetChart}
           aria-label="Evolución de la zona"
         >
-          <strong>Cómo ha cambiado</strong>
+          <strong>{seriesNote ? "Cómo va la zona" : "Cómo ha cambiado"}</strong>
+          {seriesNote && <p className={styles.seriesNote}>{seriesNote}</p>}
           <LineChart
             label={seriesLabel}
             series={[

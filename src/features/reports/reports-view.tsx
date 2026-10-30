@@ -9,9 +9,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { SectionTabs } from "@/components/ui/section-tabs";
 import { useDemo } from "@/features/demo/demo-context";
-import { useModuleTitle } from "@/features/config/use-config";
+import { useModuleTitle, useTerm } from "@/features/config/use-config";
 import { FlightTimeline } from "@/features/flights/flight-timeline";
 import { preparationTotal } from "@/features/flights/planning/preparation-items";
+import { chainageRanges, rangeText } from "@/features/sites/mapping/chainage";
 import {
   measureOutline,
   outlineKindFor,
@@ -27,14 +28,7 @@ import { operatorSummaries } from "./operators";
 import styles from "./reports.module.css";
 
 const weatherLabels = { clear: "Despejado", cloudy: "Nublado", rain: "Lluvia" };
-const sectionLabels: Record<keyof ReportSections, string> = {
-  summary: "Resumen",
-  flights: "Vuelos",
-  zones: "Hallazgos por zona",
-  operation: "Operación",
-  attention: "Pendientes y alertas",
-  costs: "Costos",
-};
+type SectionKey = Exclude<keyof ReportSections, never>;
 
 function number(value: number, digits = 1) {
   return new Intl.NumberFormat("es-CO", {
@@ -52,9 +46,24 @@ export function ReportsView() {
     documents,
     evidences,
     serviceRequests,
+    parties,
     selectFlight,
     setNotice,
   } = useDemo();
+  const t = useTerm();
+  const findingWord = {
+    singular: t("finding").toLowerCase(),
+    plural: t("finding", "plural").toLowerCase(),
+  };
+  const sectionLabels: Record<SectionKey, string> = {
+    summary: "Resumen",
+    flights: "Vuelos",
+    zones: `${t("finding", "plural")} por ${site.zoneLabel.toLowerCase()}`,
+    operation: "Operación",
+    attention: "Pendientes y alertas",
+    costs: "Costos",
+    services: "Servicios contratados y decisiones",
+  };
   const router = useRouter();
   const kind = outlineKindFor(site.sector);
   const zoneMeasure = Object.fromEntries(
@@ -69,6 +78,7 @@ export function ReportsView() {
     zoneMeasure,
     checklistTotal: preparationTotal,
     evidences,
+    findingWord,
   };
   const insights = computeInsights(input);
   const dates = insights.completed.map((flight) => flight.date);
@@ -84,6 +94,7 @@ export function ReportsView() {
     operation: true,
     attention: true,
     costs: true,
+    services: true,
   });
   const period = {
     from: from || dates[0] || "2026-01-01",
@@ -120,8 +131,20 @@ export function ReportsView() {
   const invalidPeriod = period.from > period.to;
   const reportText = invalidPeriod
     ? ""
-    : buildConsolidatedReport(input, period, sections);
+    : buildConsolidatedReport(
+        { ...input, serviceRequests, parties },
+        period,
+        sections,
+      );
   const unit = insights.cost.unit;
+  const basis = insights.cost.perUnitBasis;
+  // Seeded roads carry no chainage: the stretches are counted from 0+000, as in Mapa.
+  const ranges =
+    kind === "line"
+      ? Object.fromEntries(
+          chainageRanges(site.zones).map((range) => [range.zoneId, range]),
+        )
+      : {};
   const operators = operatorSummaries({
     flights,
     findings,
@@ -149,7 +172,7 @@ export function ReportsView() {
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description={`Todos los vuelos de ${site.name} en un solo lugar: qué pasó, qué se repite y qué falta.`}
+        description={`Todos los vuelos de ${site.name} en un solo lugar: qué pasó, qué se repite y qué falta. Los nombres, las cifras y las facturas son de ejemplo.`}
       />
       <section className="surface master-detail">
         <aside
@@ -191,7 +214,9 @@ export function ReportsView() {
                   <p>
                     {selected.duration} min · {number(selected.distance)} km ·{" "}
                     {selected.photoCount} fotos · {selectedPoint?.findings ?? 0}{" "}
-                    hallazgos
+                    {selectedPoint?.findings === 1
+                      ? findingWord.singular
+                      : findingWord.plural}
                   </p>
                 </div>
                 <Button
@@ -252,7 +277,7 @@ export function ReportsView() {
             tabs={[
               {
                 id: "attention",
-                label: "Atención",
+                label: "Pendientes",
                 count: insights.attention.length,
                 content: (
                   <>
@@ -297,11 +322,15 @@ export function ReportsView() {
                       aria-labelledby="zones-title"
                     >
                       <h2 id="zones-title">
-                        Hallazgos por {site.zoneLabel.toLowerCase()}
+                        {t("finding", "plural")} por{" "}
+                        {site.zoneLabel.toLowerCase()}
                       </h2>
                       <p className={styles.muted}>
-                        Lo que se repite en una misma zona merece buscar la
-                        causa.
+                        Lo que se repite en{" "}
+                        {kind === "line" ? "un mismo tramo" : "una misma zona"}{" "}
+                        merece buscar la causa.
+                        {insights.totals.suggestionsPending > 0 &&
+                          ` Se excluyen ${insights.totals.suggestionsPending} ${insights.totals.suggestionsPending === 1 ? "sugerencia" : "sugerencias"} de IA que nadie ha revisado todavía.`}
                       </p>
                       <ul className={styles.bars}>
                         {insights.byZone.map((zone) => (
@@ -313,6 +342,9 @@ export function ReportsView() {
                                 {zone.flightsWithFindings === 1
                                   ? "vuelo"
                                   : "vuelos"}
+                                {ranges[zone.zoneId]
+                                  ? ` · ${rangeText(ranges[zone.zoneId])}`
+                                  : ""}
                               </small>
                             </span>
                             <span
@@ -443,6 +475,16 @@ export function ReportsView() {
                             {insights.cost.perUnit === null
                               ? "Sin zonas medidas"
                               : formatMoney(insights.cost.perUnit)}
+                            {insights.cost.perUnit !== null && (
+                              <small>
+                                {basis.invoices}{" "}
+                                {basis.invoices === 1 ? "factura" : "facturas"}{" "}
+                                de {basis.flights}{" "}
+                                {basis.flights === 1 ? "vuelo" : "vuelos"},
+                                divididas por el área de esos vuelos. No es la
+                                tarifa de Servicios.
+                              </small>
+                            )}
                           </dd>
                         </div>
                       </dl>
@@ -456,14 +498,16 @@ export function ReportsView() {
                       <p className={styles.muted}>
                         Quién voló, qué entregó y cuánto cobró. Con más de un
                         operador sirve para comparar; las hectáreas cubiertas
-                        las reporta cada operador.
+                        las declara cada operador. El valor por hectárea usa
+                        solo las facturas que traen área; las facturas por vuelo
+                        no se dividen.
                       </p>
                       <div className={styles.tableScroll}>
                         <table className={styles.operatorTable}>
                           <thead>
                             <tr>
                               <th scope="col">Operador</th>
-                              <th scope="col">Vuelos y hallazgos</th>
+                              <th scope="col">Vuelos y {findingWord.plural}</th>
                               <th scope="col">Cobro</th>
                               <th scope="col">
                                 Hectáreas facturadas / cubiertas
@@ -490,8 +534,8 @@ export function ReportsView() {
                                   {row.flights === 1 ? "vuelo" : "vuelos"} ·{" "}
                                   {row.findings}{" "}
                                   {row.findings === 1
-                                    ? "hallazgo"
-                                    : "hallazgos"}
+                                    ? findingWord.singular
+                                    : findingWord.plural}
                                   <small>
                                     {row.confirmed} confirmados ·{" "}
                                     {row.dismissed} descartados
@@ -503,16 +547,31 @@ export function ReportsView() {
                                 <td>
                                   {formatMoney(row.billed)}
                                   <small>
-                                    Saldo {formatMoney(row.balance)} ·{" "}
+                                    {row.invoices}{" "}
+                                    {row.invoices === 1
+                                      ? "factura"
+                                      : "facturas"}{" "}
+                                    · saldo {formatMoney(row.balance)}
+                                  </small>
+                                  <small>
                                     {row.perHa === null
-                                      ? "sin área facturada"
-                                      : `${formatMoney(row.perHa)} por ha`}
+                                      ? "Sin facturas con área: no hay valor por ha"
+                                      : `${formatMoney(row.perHa)} por ha, de ${row.invoicesWithArea} de ${row.invoices} ${row.invoices === 1 ? "factura" : "facturas"} con área`}
                                   </small>
                                 </td>
                                 <td>
                                   {row.billedHa || row.coveredHa
                                     ? `${row.billedHa.toLocaleString("es-CO", { maximumFractionDigits: 1 })} / ${row.coveredHa.toLocaleString("es-CO", { maximumFractionDigits: 1 })} ha`
                                     : "—"}
+                                  {row.invoicesWithArea > 0 && (
+                                    <small>
+                                      De {row.invoicesWithArea} de{" "}
+                                      {row.invoices}{" "}
+                                      {row.invoices === 1
+                                        ? "factura"
+                                        : "facturas"}
+                                    </small>
+                                  )}
                                   {row.overBilled > 0 && (
                                     <small data-bad="true">
                                       {row.overBilled}{" "}
@@ -543,8 +602,10 @@ export function ReportsView() {
                     >
                       <h2 id="report-title">Informe consolidado</h2>
                       <p className={styles.muted}>
-                        Reúne los vuelos de un periodo en un solo texto para
-                        socios, el ingenio o el responsable.
+                        Reúne los vuelos de un periodo, y lo que se decidió en
+                        Servicios, en un solo texto para los socios, quien
+                        contrata o el responsable. Es de {site.name}; si trabaja
+                        con varios sitios, saque uno por cada uno.
                       </p>
                       <div className={styles.reportControls}>
                         <label className="form-field">
@@ -568,23 +629,23 @@ export function ReportsView() {
                       </div>
                       <fieldset className={styles.sections}>
                         <legend className="field-label">Incluir</legend>
-                        {(
-                          Object.keys(sectionLabels) as (keyof ReportSections)[]
-                        ).map((key) => (
-                          <label key={key}>
-                            <input
-                              type="checkbox"
-                              checked={sections[key]}
-                              onChange={(event) =>
-                                setSections((current) => ({
-                                  ...current,
-                                  [key]: event.target.checked,
-                                }))
-                              }
-                            />
-                            {sectionLabels[key]}
-                          </label>
-                        ))}
+                        {(Object.keys(sectionLabels) as SectionKey[]).map(
+                          (key) => (
+                            <label key={key}>
+                              <input
+                                type="checkbox"
+                                checked={sections[key] === true}
+                                onChange={(event) =>
+                                  setSections((current) => ({
+                                    ...current,
+                                    [key]: event.target.checked,
+                                  }))
+                                }
+                              />
+                              {sectionLabels[key]}
+                            </label>
+                          ),
+                        )}
                       </fieldset>
                       {invalidPeriod ? (
                         <p className={styles.error} role="alert">

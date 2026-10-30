@@ -83,3 +83,22 @@ test("an operator with invoices but no flights still appears", () => {
   assert.equal(rows[0].operator, "Otro");
   assert.equal(rows[0].perHa, null);
 });
+
+test("cost per hectare uses only the invoices that state an area, and says how many they are", () => {
+  const rows = operatorSummaries({
+    flights: [flight("a", "Norte"), flight("b", "Norte")],
+    findings: [],
+    invoices: [
+      invoice("i1", "a", "Norte", 850000, 400000, 25),
+      invoice("i2", "a", "Norte", 620000, 620000),
+      invoice("i3", "b", "Norte", 1000000, 0),
+    ],
+  });
+  const north = rows[0];
+  assert.equal(north.invoices, 3);
+  assert.equal(north.invoicesWithArea, 1);
+  // The money of the three invoices is billed, but only the first one enters the quotient.
+  assert.equal(north.billed, 2470000);
+  assert.equal(north.billedWithArea, 850000);
+  assert.equal(north.perHa, 850000 / 25);
+});

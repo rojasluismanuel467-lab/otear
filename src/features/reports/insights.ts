@@ -21,6 +21,8 @@ export interface InsightInput {
   checklistTotal: number;
   /** Signed documents and attachments that support the flights. */
   evidences?: Evidence[];
+  /** The company's word for a finding (see `useTerm`), lowercase; defaults to «hallazgo(s)». */
+  findingWord?: { singular: string; plural: string };
 }
 
 export interface ZoneInsight {
@@ -59,6 +61,8 @@ export interface SiteInsights {
     findings: number;
     reviewed: number;
     pending: number;
+    /** Candidates from the image assistant still waiting for a person; they are not counted above. */
+    suggestionsPending: number;
   };
   byZone: ZoneInsight[];
   timeline: TimelinePoint[];
@@ -76,6 +80,12 @@ export interface SiteInsights {
     /** Cost per hectare (km for roads) flown; null when no zone was measured. */
     perUnit: number | null;
     unit: "ha" | "km";
+    /**
+     * What `perUnit` divides: the invoices tied to a completed flight, over the area of the flights
+     * that have at least one such invoice (each flight adds its whole area). Flights without an
+     * invoice do not enter the denominator.
+     */
+    perUnitBasis: { invoices: number; flights: number; billed: number };
   };
 }
 
@@ -86,16 +96,21 @@ function money(value: number) {
   return `$ ${Math.round(value).toLocaleString("es-CO")}`;
 }
 
-export function computeInsights(input: InsightInput): SiteInsights {
-  const { site, flights, findings, invoices, documents, zoneMeasure } = input;
-  const completed = flights
-    .filter((flight) => flight.status === "completed")
-    .sort((a, b) => a.date.localeCompare(b.date));
-  const completedIds = new Set(completed.map((flight) => flight.id));
-  const reviewed = findings.filter((finding) => finding.status !== "pending");
-  const pending = findings.filter((finding) => finding.status === "pending");
-
-  const byZone: ZoneInsight[] = site.zones
+/**
+ * Findings of each zone, most first. Counts only what a person has seen or confirmed: pass the
+ * findings without the image assistant's unreviewed suggestions.
+ */
+export function findingsByZone(
+  site: Pick<Site, "zones">,
+  findings: Finding[],
+  flights: Flight[],
+): ZoneInsight[] {
+  const completedIds = new Set(
+    flights
+      .filter((flight) => flight.status === "completed")
+      .map((flight) => flight.id),
+  );
+  return site.zones
     .map((zone) => {
       const inZone = findings.filter((finding) => finding.zoneId === zone.id);
       return {
@@ -113,6 +128,30 @@ export function computeInsights(input: InsightInput): SiteInsights {
       };
     })
     .sort((a, b) => b.findings - a.findings);
+}
+
+/** Findings that count as the site's own: everything except unreviewed suggestions. */
+export function ownFindings(findings: Finding[]) {
+  return findings.filter(
+    (finding) => !(finding.suggestion && finding.status === "pending"),
+  );
+}
+
+export function computeInsights(input: InsightInput): SiteInsights {
+  const { site, flights, invoices, documents, zoneMeasure } = input;
+  // An unreviewed suggestion is not yet a finding of the site: it stays out of every count here.
+  const suggestionsPending = input.findings.filter(
+    (finding) => finding.suggestion && finding.status === "pending",
+  ).length;
+  const findings = ownFindings(input.findings);
+  const completed = flights
+    .filter((flight) => flight.status === "completed")
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const completedIds = new Set(completed.map((flight) => flight.id));
+  const reviewed = findings.filter((finding) => finding.status !== "pending");
+  const pending = findings.filter((finding) => finding.status === "pending");
+
+  const byZone = findingsByZone(site, findings, flights);
 
   const timeline = completed.map((flight) => ({
     flightId: flight.id,
@@ -143,19 +182,29 @@ export function computeInsights(input: InsightInput): SiteInsights {
   const billed = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
   const paid = invoices.reduce((sum, invoice) => sum + invoice.paid, 0);
   const unit: "ha" | "km" = site.sector === "roads" ? "km" : "ha";
-  const flown = completed.reduce(
+  const invoicedFlights = completed.filter((flight) =>
+    invoices.some((invoice) => invoice.flightId === flight.id),
+  );
+  const basisBilled = invoices
+    .filter((invoice) => completedIds.has(invoice.flightId))
+    .reduce((sum, invoice) => sum + invoice.total, 0);
+  const flown = invoicedFlights.reduce(
     (sum, flight) =>
       sum + flight.zoneIds.reduce((acc, id) => acc + (zoneMeasure[id] ?? 0), 0),
     0,
   );
 
+  const word = input.findingWord ?? {
+    singular: "hallazgo",
+    plural: "hallazgos",
+  };
   const attention: AttentionItem[] = [];
   const highPending = pending.filter((finding) => finding.priority === "high");
   if (highPending.length) {
     attention.push({
       id: "high-pending",
       tone: "danger",
-      text: `${highPending.length} ${highPending.length === 1 ? "hallazgo de prioridad alta sigue" : "hallazgos de prioridad alta siguen"} por revisar.`,
+      text: `${highPending.length} ${highPending.length === 1 ? `${word.singular} de prioridad alta sigue` : `${word.plural} de prioridad alta siguen`} por revisar.`,
       href: "/vuelos",
     });
   }
@@ -250,7 +299,7 @@ export function computeInsights(input: InsightInput): SiteInsights {
       attention.push({
         id: `rec-${zone.zoneId}`,
         tone: "info",
-        text: `${zone.name} reportó observaciones en ${zone.flightsWithFindings} vuelos distintos: conviene buscar la causa y no solo confirmarlas.`,
+        text: `${zone.name} reportó ${word.plural} en ${zone.flightsWithFindings} vuelos distintos: conviene buscar la causa y no solo confirmar cada uno.`,
         href: "/vuelos",
       });
     }
@@ -266,6 +315,7 @@ export function computeInsights(input: InsightInput): SiteInsights {
       findings: findings.length,
       reviewed: reviewed.length,
       pending: pending.length,
+      suggestionsPending,
     },
     byZone,
     timeline,
@@ -275,8 +325,15 @@ export function computeInsights(input: InsightInput): SiteInsights {
       billed,
       paid,
       perFlight: completed.length ? billed / completed.length : 0,
-      perUnit: flown > 0 ? billed / flown : null,
+      perUnit: flown > 0 ? basisBilled / flown : null,
       unit,
+      perUnitBasis: {
+        invoices: invoices.filter((invoice) =>
+          completedIds.has(invoice.flightId),
+        ).length,
+        flights: invoicedFlights.length,
+        billed: basisBilled,
+      },
     },
   };
 }
