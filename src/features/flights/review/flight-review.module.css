@@ -1,5 +1,7 @@
 .stack {
   display: grid;
+  /* Sin esto la columna crece hasta el ancho de las pestañas y desborda la página en tablet. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
 }
 .layout {
