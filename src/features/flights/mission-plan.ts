@@ -475,8 +475,8 @@ export function planMission(input: MissionInput): MissionPlan {
         ? endEarly(lines, input.endEarlyAt)
         : lines;
     paths = flown.map(([a, b]) => [a, b]);
-    if (input.sector === "construction") {
-      // A pass around the works, at a safe distance, for the façades.
+    if (input.sector === "construction" || input.sector === "mining") {
+      // A pass around the works (or the crest of the pit), at a safe distance, for the faces.
       const ring = offsetConvex(
         toHull(local.flatMap((zone) => zone.outline)),
         FACADE_STANDOFF_M,
@@ -512,7 +512,9 @@ export function planMission(input: MissionInput): MissionPlan {
 
   // Area only means something where the aircraft maps a surface: not along a road or a fence.
   const mapsArea =
-    input.sector === "agriculture" || input.sector === "construction";
+    input.sector === "agriculture" ||
+    input.sector === "construction" ||
+    input.sector === "mining";
   const polygons = mapsArea
     ? local.filter((zone) => isPolygon(zone.outline))
     : [];

@@ -375,8 +375,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="help-content">
                   <p>
                     Cambia de caso en la barra de arriba para explorar
-                    agricultura, carreteras, construcción y vigilancia con la
-                    misma base.
+                    agricultura, carreteras, construcción, minería y vigilancia
+                    con la misma base.
                   </p>
                   <ol>
                     <li>Prepara un vuelo y revisa su ruta.</li>

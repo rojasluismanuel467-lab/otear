@@ -208,11 +208,75 @@ const baseSites: Site[] = [
       },
     ],
   },
+  {
+    id: "mina-mulalo",
+    name: "Mina de caliza · Mulaló",
+    sector: "mining",
+    sectorLabel: "Minería",
+    location: "Mulaló, Yumbo, Valle del Cauca",
+    zoneLabel: "Bancos",
+    center: [3.64204, -76.47632],
+    imageUrl: "/images/aerial-road.jpg",
+    zones: [
+      {
+        id: "zone-mm-1",
+        name: "Banco norte",
+        description: "Arranque y cargue",
+        outline: [
+          [3.64847, -76.47729],
+          [3.64879, -76.47557],
+          [3.64847, -76.47407],
+          [3.64697, -76.47396],
+          [3.64568, -76.47407],
+          [3.64397, -76.47418],
+          [3.64397, -76.47836],
+          [3.64483, -76.47815],
+          [3.64654, -76.47772],
+          [3.64783, -76.4775],
+        ],
+      },
+      {
+        id: "zone-mm-2",
+        name: "Banco central",
+        description: "Perforación y voladura",
+        outline: [
+          [3.64397, -76.47836],
+          [3.64397, -76.47418],
+          [3.64269, -76.47407],
+          [3.6414, -76.47429],
+          [3.64055, -76.4745],
+          [3.63947, -76.47493],
+          [3.63947, -76.47922],
+          [3.64097, -76.47879],
+          [3.64269, -76.47858],
+        ],
+      },
+      {
+        id: "zone-mm-3",
+        name: "Banco sur",
+        description: "Rampa de acceso y acopio",
+        outline: [
+          [3.63947, -76.47922],
+          [3.63947, -76.47493],
+          [3.63883, -76.47407],
+          [3.63755, -76.47407],
+          [3.63626, -76.47429],
+          [3.63541, -76.47514],
+          [3.6353, -76.47643],
+          [3.63573, -76.47836],
+          [3.63669, -76.47943],
+          [3.63776, -76.47986],
+          [3.63883, -76.47954],
+        ],
+      },
+    ],
+  },
 ];
 
 const schedules: Record<string, Site["schedule"]> = {
   "obra-alameda": { start: "2026-06-01", end: "2027-02-15", targetLevels: 8 },
   "via-la-habana": { start: "2026-06-15", end: "2027-01-31" },
+  "mina-mulalo": { start: "2026-06-01", end: "2027-03-31" },
 };
 
 export const sites: Site[] = baseSites.map((site) => ({
@@ -246,6 +310,14 @@ const captureSeries: Partial<
     zones: [
       [20, 45, 70, 85, 100],
       [5, 15, 25, 25, 30],
+    ],
+  },
+  // Share of the volume planned for each bench that has been removed. The third bench stalls.
+  mining: {
+    zones: [
+      [28, 45, 60, 72, 80],
+      [12, 22, 30, 36, 40],
+      [4, 9, 12, 12, 13],
     ],
   },
   agriculture: {
@@ -442,12 +514,14 @@ const flightDrafts: Flight[] = sites.flatMap((site, index) => {
         "Seguimiento de intervención vial",
         "Avance de obra",
         "Inspección de perímetro",
+        "Levantamiento de bancos y taludes",
       ][index],
       objective: [
         "Revisar labores y localizar puntos por verificar en campo.",
         "Documentar pavimento, drenajes y taludes de los tramos intervenidos.",
         "Documentar el avance de los frentes y los puntos pendientes.",
         "Documentar el cerramiento y los accesos para revisión del responsable.",
+        "Medir el avance de cada banco, el volumen removido y el estado de los taludes.",
       ][index],
       date: "2026-10-24",
       time: "08:30",
@@ -573,6 +647,11 @@ const findingNames = {
     "Cerramiento por revisar",
     "Acceso por verificar",
     "Seguimiento de perímetro",
+  ],
+  mining: [
+    "Grieta en la cresta del talud",
+    "Agua empozada en el banco",
+    "Seguimiento de la rampa",
   ],
 };
 
@@ -1107,6 +1186,10 @@ const siteParties: Record<string, [string, string]> = {
   "parque-del-pacifico": [
     "Administración del parque (ejemplo)",
     "Copropiedad del parque (ejemplo)",
+  ],
+  "mina-mulalo": [
+    "Operación minera de caliza (ejemplo)",
+    "Titular del contrato de concesión (ejemplo)",
   ],
 };
 

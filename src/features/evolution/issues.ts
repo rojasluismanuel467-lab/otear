@@ -89,7 +89,11 @@ export function issuesFor(input: {
       ? current.values[id] - reference.values[id]
       : undefined;
 
-  if (site.sector === "construction" || site.sector === "roads") {
+  if (
+    site.sector === "construction" ||
+    site.sector === "roads" ||
+    site.sector === "mining"
+  ) {
     const target =
       site.sector === "construction" ? (site.schedule?.targetLevels ?? 8) : 100;
     const value =
@@ -145,7 +149,9 @@ export function issuesFor(input: {
               : []),
           ],
           advice:
-            "Revise qué frentes frenan el avance y si hay recursos sin usar.",
+            site.sector === "mining"
+              ? "Revise qué bancos frenan la excavación y si hay equipos sin usar."
+              : "Revise qué frentes frenan el avance y si hay recursos sin usar.",
         });
       }
     }
@@ -176,7 +182,9 @@ export function issuesFor(input: {
             : []),
         ],
         advice:
-          "Pregunte al responsable del frente qué lo detiene: material, cuadrilla, permisos o clima.",
+          site.sector === "mining"
+            ? "Pregunte al responsable del banco qué lo detiene: equipos, accesos, permisos o clima."
+            : "Pregunte al responsable del frente qué lo detiene: material, cuadrilla, permisos o clima.",
       });
     }
   } else if (site.sector === "agriculture") {

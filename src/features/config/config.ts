@@ -140,7 +140,8 @@ export type PresetId =
   | "agricultura"
   | "carreteras"
   | "construccion"
-  | "vigilancia";
+  | "vigilancia"
+  | "mineria";
 
 export interface CompanyConfig {
   version: 1;
@@ -374,6 +375,7 @@ export function validateConfig(
     "roads",
     "construction",
     "security",
+    "mining",
   ] as const) {
     const word = words[sector];
     if (typeof word === "string" && word.trim()) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   HardHat,
+  Pickaxe,
   Plus,
   Route,
   ShieldCheck,
@@ -23,6 +24,7 @@ const icons = {
   roads: Route,
   construction: HardHat,
   security: ShieldCheck,
+  mining: Pickaxe,
   other: Plus,
 } satisfies Record<ChoiceId, typeof Sprout>;
 

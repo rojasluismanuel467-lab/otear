@@ -255,3 +255,32 @@ test("no zones gives an empty plan instead of failing", () => {
   assert.deepEqual(plan.route, []);
   assert.equal(plan.photoCount, 0);
 });
+
+test("a pit is surveyed in lines and then circled along its crest, and its area is measured", () => {
+  const bench: Position[] = [
+    [3.64847, -76.47729],
+    [3.64879, -76.47557],
+    [3.64847, -76.47407],
+    [3.64697, -76.47396],
+    [3.64568, -76.47407],
+    [3.64397, -76.47418],
+    [3.64397, -76.47836],
+    [3.64483, -76.47815],
+    [3.64654, -76.47772],
+    [3.64783, -76.4775],
+  ];
+  const plan = planMission({
+    sector: "mining",
+    zones: [{ id: "north", outline: bench }],
+  });
+  assert.ok(plan.surveyPaths.length >= 3);
+  const loop = plan.surveyPaths[plan.surveyPaths.length - 1];
+  assert.deepEqual(
+    loop[0],
+    loop[loop.length - 1],
+    "the last pass is a closed loop",
+  );
+  loop.forEach((point) => assert.ok(!pointInPolygon(point, bench)));
+  assert.ok(plan.orderedHa > 20, "the bench is some tens of hectares");
+  assert.ok(plan.coveredHa / plan.orderedHa > 0.99);
+});

@@ -83,6 +83,18 @@ export const presets: Preset[] = [
       vuelos: "Rondas y evidencias",
     },
   },
+  {
+    id: "mineria",
+    label: "Minería a cielo abierto",
+    description:
+      "Habla de bancos, avance de la excavación y novedades de talud.",
+    terms: {
+      finding: { singular: "Novedad de talud", plural: "Novedades de talud" },
+      report: { singular: "Informe de avance", plural: "Informes de avance" },
+    },
+    modules: { evolucion: "Avance de la excavación" },
+    zoneWords: { mining: "Bancos" },
+  },
 ];
 
 /** Replaces the company's vocabulary and module names with the preset's; brand and licence stay. */

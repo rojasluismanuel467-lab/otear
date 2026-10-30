@@ -9,9 +9,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Hard scope limits:
 
 - Frontend-only validation demo with **synthetic** data. Do not build the Go backend, real ingestion/analysis/storage/sending, auth, or payments. Never present a simulation as real (the UI already says so, e.g. "Pago registrado solo en esta demo").
-- Multisector (agricultura, carreteras, construcción, vigilancia). The agro lote → vuelo → comparación → observación → informe flow is one scenario, not the core model.
+- Multisector (agricultura, carreteras, construcción, vigilancia, minería a cielo abierto). The agro lote → vuelo → comparación → observación → informe flow is one scenario, not the core model.
 - `docs/context/matriz-dorfman-provisional.md` is provisional; the GPS-less photo policy and "G6" are unresolved — don't resolve them silently.
-- Recurrence, urgent requests, packages and advisory are proposals to validate, not features to build. The landing (`features/landing/`) is multisector and sector-agnostic: agricultura, carreteras, construcción and vigilancia are only examples (`cases` in `landing-page.tsx`), followed by a «Su sector» card and an «A su medida» section (`customSteps`) saying any sector fits and new components can be made per sector. Keep that honest: vocabulary/campos propios are built; per-sector components (complementos) are a proposal, worded «Se construye con usted». Never ingenio-only.
+- Recurrence, urgent requests, packages and advisory are proposals to validate, not features to build. The landing (`features/landing/`) is multisector and sector-agnostic: agricultura, carreteras, construcción, minería and vigilancia are only examples (`cases` in `landing-page.tsx`), followed by a «Su sector» card and an «A su medida» section (`customSteps`) saying any sector fits and new components can be made per sector. Keep that honest: vocabulary/campos propios are built; per-sector components (complementos) are a proposal, worded «Se construye con usted». Never ingenio-only.
 
 ## Commands
 

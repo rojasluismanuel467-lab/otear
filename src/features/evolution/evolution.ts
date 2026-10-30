@@ -15,6 +15,13 @@ export function indicatorFor(sector: Sector): Indicator {
   if (sector === "construction" || sector === "roads") {
     return { kind: "progress", label: "Avance de obra", noun: "avance" };
   }
+  if (sector === "mining") {
+    return {
+      kind: "progress",
+      label: "Avance de la excavación",
+      noun: "avance",
+    };
+  }
   return { kind: "count", label: "Novedades por vuelo", noun: "novedades" };
 }
 
@@ -215,6 +222,12 @@ export function vigorColor(value: number) {
 }
 
 /** Pale blue-gray to terracotta for counts, from none to many. */
+/** Progress in percent, from pale to the brand blue: the more of the plan is done, the darker. */
+export function progressColor(percent: number) {
+  const t = Math.min(1, Math.max(0, percent / 100));
+  return `rgb(${lerp(226, 28, t)}, ${lerp(236, 111, t)}, ${lerp(241, 141, t)})`;
+}
+
 export function countColor(value: number, max: number) {
   const t = max > 0 ? Math.min(1, value / max) : 0;
   return `rgb(${lerp(226, 181, t)}, ${lerp(232, 101, t)}, ${lerp(237, 74, t)})`;

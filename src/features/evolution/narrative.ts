@@ -107,10 +107,13 @@ export function narrate(input: {
         text: `Frentes con poco avance en los últimos dos vuelos: ${stalled.map(name).join(", ")}.`,
       });
     }
-  } else if (site.sector === "roads") {
+  } else if (site.sector === "roads" || site.sector === "mining") {
+    const mining = site.sector === "mining";
     lines.push({
       tone: "info",
-      text: `Avance medio del tramo: ${number(current.mean, 0)} % al ${date(current.date)}.`,
+      text: mining
+        ? `Avance medio de la excavación: ${number(current.mean, 0)} % de lo planeado al ${date(current.date)}.`
+        : `Avance medio del tramo: ${number(current.mean, 0)} % al ${date(current.date)}.`,
     });
     if (site.schedule) {
       const expected = plannedAt(site.schedule, current.date);
@@ -134,7 +137,9 @@ export function narrate(input: {
     for (const id of stalledZones(upTo, zoneIds)) {
       lines.push({
         tone: "warning",
-        text: `${name(id)} casi no avanza: ${number(current.values[id], 0)} % y apenas se movió en los últimos dos vuelos. Está en ${phaseOf(current.values[id]).label.toLowerCase()}.`,
+        text: mining
+          ? `${name(id)} casi no avanza: ${number(current.values[id], 0)} % de lo planeado y apenas se movió en los últimos dos vuelos.`
+          : `${name(id)} casi no avanza: ${number(current.values[id], 0)} % y apenas se movió en los últimos dos vuelos. Está en ${phaseOf(current.values[id]).label.toLowerCase()}.`,
       });
     }
   } else if (site.sector === "agriculture") {

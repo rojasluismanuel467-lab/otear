@@ -44,6 +44,7 @@ const zoneSectors = [
   { sector: "roads", label: "Carreteras", placeholder: "Tramos" },
   { sector: "construction", label: "Construcción", placeholder: "Frentes" },
   { sector: "security", label: "Vigilancia", placeholder: "Zonas" },
+  { sector: "mining", label: "Minería", placeholder: "Bancos" },
 ] as const;
 const swatches = [
   "#1c6f8d",

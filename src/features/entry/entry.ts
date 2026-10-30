@@ -54,6 +54,18 @@ export const sectorChoices: SectorChoice[] = [
     example: { zone: "Sector norte", finding: "Cerramiento caído" },
   },
   {
+    id: "mining",
+    label: "Mina a cielo abierto",
+    demoLabel: "una mina",
+    preset: "mineria",
+    words: {
+      zones: "Bancos",
+      finding: "Novedad de talud",
+      report: "Informe de avance",
+    },
+    example: { zone: "Banco 2", finding: "Grieta en la cresta del talud" },
+  },
+  {
     id: "other",
     label: "Otro sector",
     demoLabel: "su operación",

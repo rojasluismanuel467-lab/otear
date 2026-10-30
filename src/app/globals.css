@@ -549,6 +549,10 @@ textarea {
   --case-bg: #e9e6f2;
   --case-fg: #54468a;
 }
+.sector-mining {
+  --case-bg: #efe6df;
+  --case-fg: #7a4a26;
+}
 .case-switcher {
   display: flex;
   align-items: center;

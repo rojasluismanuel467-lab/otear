@@ -7,6 +7,7 @@ import {
   Blocks,
   Check,
   HardHat,
+  Pickaxe,
   Plus,
   Route,
   ShieldCheck,
@@ -59,6 +60,13 @@ const cases = [
     Icon: HardHat,
   },
   {
+    sector: "Minería",
+    title: "Minas a cielo abierto",
+    line: "Mida el avance de cada banco frente al plan, vigile las crestas y los taludes en cada vuelo y deje constancia de cada novedad hasta que se atienda.",
+    tags: ["Bancos", "Avance", "Taludes"],
+    Icon: Pickaxe,
+  },
+  {
     sector: "Vigilancia",
     title: "Perímetros y predios",
     line: "Revise por sectores los cerramientos y accesos, compare un vuelo con el anterior y deje cada hallazgo con su evidencia y su responsable.",
@@ -69,7 +77,6 @@ const cases = [
 
 const otherSectors = [
   "Energía",
-  "Minería",
   "Forestal",
   "Puertos",
   "Inspección de activos",
@@ -204,9 +211,9 @@ export function LandingPage() {
             Un mismo núcleo, <span className="accent">cualquier</span> sector.
           </h2>
           <p className={styles.sectionSubtitle}>
-            Estos cuatro son ejemplos con proyecto de muestra en la demo, no los
+            Estos cinco son ejemplos con proyecto de muestra en la demo, no los
             límites del producto. El vocabulario cambia con su sector: lotes,
-            tramos, frentes, sectores o lo que usted use.
+            tramos, frentes, bancos, sectores o lo que usted use.
           </p>
         </header>
 
@@ -384,10 +391,10 @@ export function LandingPage() {
               <span className="accent">nada</span>.
             </h3>
             <p className={styles.demoStripText}>
-              Son datos sintéticos de cuatro proyectos de ejemplo (una hacienda,
-              una vía, una obra y un parque) para mostrar cómo se adapta a cada
-              sector. Programe un vuelo, marque hallazgos, compare en el tiempo
-              y firme un informe. Todo queda en su navegador.
+              Son datos sintéticos de cinco proyectos de ejemplo (una hacienda,
+              una vía, una obra, una mina y un parque) para mostrar cómo se
+              adapta a cada sector. Programe un vuelo, marque hallazgos, compare
+              en el tiempo y firme un informe. Todo queda en su navegador.
             </p>
             <Link
               href="/programacion/"
@@ -401,14 +408,14 @@ export function LandingPage() {
             <div className={styles.demoStatRow}>
               <span className={styles.demoStatLabel}>Proyectos de ejemplo</span>
               <span className={styles.demoStatValue}>
-                4 proyectos ·{" "}
-                <span className={styles.demoStatValueAccent}>4 sectores</span>
+                5 proyectos ·{" "}
+                <span className={styles.demoStatValueAccent}>5 sectores</span>
               </span>
             </div>
             <div className={styles.demoStatRow}>
               <span className={styles.demoStatLabel}>Vuelos registrados</span>
               <span className={styles.demoStatValue}>
-                26 vuelos ·{" "}
+                32 vuelos ·{" "}
                 <span className={styles.demoStatValueAccent}>2 operadores</span>
               </span>
             </div>
@@ -434,8 +441,8 @@ export function LandingPage() {
             <h3 id="contacto-title">Hablemos sin compromiso.</h3>
             <p>
               Estamos validando Otear empezando por agricultura, carreteras,
-              construcción y vigilancia, pero no es solo para ellos. Si su
-              sector no aparece, es justo la conversación que queremos tener:
+              construcción, minería y vigilancia, pero no es solo para ellos. Si
+              su sector no aparece, es justo la conversación que queremos tener:
               nos sentamos 30 minutos a entender su operación y le mostramos
               cómo encajaría y qué componentes haría falta crear.
             </p>

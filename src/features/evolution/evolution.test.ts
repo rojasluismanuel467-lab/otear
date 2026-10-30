@@ -3,9 +3,11 @@ import test from "node:test";
 import {
   buildCaptures,
   comparisonReliability,
+  indicatorFor,
   paceOf,
   phaseOf,
   plannedAt,
+  progressColor,
   stalledZones,
   sustainedDeclines,
   vigorColor,
@@ -134,4 +136,13 @@ test("buildCaptures keeps completed flights in date order and counts findings fo
     ["a", "b"],
   );
   assert.equal(captures[0].values.z1, 2);
+});
+
+test("mining reports its progress as a percentage of the plan", () => {
+  const indicator = indicatorFor("mining");
+  assert.equal(indicator.kind, "progress");
+  assert.equal(indicator.noun, "avance");
+  assert.equal(progressColor(0), progressColor(-20));
+  assert.equal(progressColor(100), progressColor(250));
+  assert.notEqual(progressColor(10), progressColor(90));
 });

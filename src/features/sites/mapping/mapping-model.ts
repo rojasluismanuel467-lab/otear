@@ -53,6 +53,13 @@ export const zoneUses: Record<Sector, string[]> = {
     "Acopio",
   ],
   security: ["Perímetro", "Acceso", "Bodega", "Parqueadero", "Zona verde"],
+  mining: [
+    "Banco en explotación",
+    "Vía de acarreo",
+    "Botadero",
+    "Acopio",
+    "Zona restaurada",
+  ],
 };
 
 const defaultAreaHa: Record<Sector, number> = {
@@ -60,6 +67,7 @@ const defaultAreaHa: Record<Sector, number> = {
   roads: 0,
   construction: 2.4,
   security: 18,
+  mining: 60,
 };
 
 /** "Lotes" → "Lote", "Sectores" → "Sector". */
@@ -368,6 +376,9 @@ export function sampleProduction(site: Site): string {
   }
   if (site.sector === "construction") {
     return "Frente norte; Cimentación; 0,8\nFrente central; Estructura; 1,1\nFrente sur; Vías internas; 0,5";
+  }
+  if (site.sector === "mining") {
+    return "Banco norte; Banco en explotación; 21\nBanco central; Banco en explotación; 18\nBanco sur; Vía de acarreo; 15\nBotadero; Botadero; 9";
   }
   if (site.sector === "security") {
     return "Perímetro; Perímetro; 6\nBodegas; Bodega; 4\nAccesos; Acceso; 3\nZona verde; Zona verde; 5";

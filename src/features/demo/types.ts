@@ -1,4 +1,5 @@
-export type Sector = "agriculture" | "roads" | "construction" | "security";
+export type Sector =
+  "agriculture" | "roads" | "construction" | "security" | "mining";
 export type Position = [number, number];
 
 export interface Zone {

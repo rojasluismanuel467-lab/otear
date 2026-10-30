@@ -16,6 +16,7 @@ import { formatDate } from "@/lib/format";
 import {
   buildCaptures,
   countColor,
+  progressColor,
   phaseOf,
   phases,
   plannedAt,
@@ -63,6 +64,8 @@ function valueText(site: Site, point: CapturePoint) {
     return `${number(levels)} ${levels === 1 ? "nivel" : "niveles"} construidos`;
   }
   if (site.sector === "roads") return `${number(point.mean, 0)} % de avance`;
+  if (site.sector === "mining")
+    return `${number(point.mean, 0)} % de la excavación planeada`;
   if (site.sector === "agriculture") return `Vigor medio ${fixed(point.mean)}`;
   const total = Object.values(point.values).reduce(
     (sum, value) => sum + value,
@@ -502,9 +505,11 @@ function MapStage({
         zone.id,
         site.sector === "roads"
           ? phaseOf(value).color
-          : site.sector === "agriculture"
-            ? vigorColor(value)
-            : countColor(value, max),
+          : site.sector === "mining"
+            ? progressColor(value)
+            : site.sector === "agriculture"
+              ? vigorColor(value)
+              : countColor(value, max),
       ];
     }),
   );
@@ -555,7 +560,9 @@ function Legend({ site }: { site: Site }) {
       ? "Color del lote: vigor, de rojizo (bajo) a azul (alto)."
       : site.sector === "security"
         ? "Color de la zona: más oscuro, más novedades."
-        : "Azul: obra nueva desde la fecha de comparación. Arrastre para girar.";
+        : site.sector === "mining"
+          ? "Color del banco: más oscuro, más excavado frente a lo planeado."
+          : "Azul: obra nueva desde la fecha de comparación. Arrastre para girar.";
   return <p className={styles.legendText}>{text}</p>;
 }
 
@@ -563,6 +570,8 @@ function chartTitle(site: Site) {
   if (site.sector === "construction")
     return "Niveles construidos frente a lo previsto";
   if (site.sector === "roads") return "Avance acumulado frente a lo previsto";
+  if (site.sector === "mining")
+    return "Avance de la excavación frente a lo previsto";
   if (site.sector === "agriculture") return "Vigor de cada lote en el tiempo";
   return "Novedades por zona en cada vuelo";
 }
@@ -581,7 +590,11 @@ function EvolutionChart({
   const end = captures[captures.length - 1].date;
   const cursor = captures[index].date;
 
-  if (site.sector === "construction" || site.sector === "roads") {
+  if (
+    site.sector === "construction" ||
+    site.sector === "roads" ||
+    site.sector === "mining"
+  ) {
     const target =
       site.sector === "construction" ? (site.schedule?.targetLevels ?? 8) : 100;
     const [start, finish] = site.schedule
@@ -621,7 +634,7 @@ function EvolutionChart({
         yDomain={[0, target]}
         cursor={cursor}
         format={(v) =>
-          site.sector === "roads" ? `${number(v, 0)} %` : number(v, 1)
+          site.sector === "construction" ? number(v, 1) : `${number(v, 0)} %`
         }
       />
     );

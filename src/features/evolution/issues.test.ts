@@ -114,3 +114,35 @@ test("findings of the flight become issues placed on the map and dismissed ones 
   assert.deepEqual(issues[0].position, [1, 2]);
   assert.equal(issues[0].tone, "danger");
 });
+
+test("mining measures progress in percent per bench and speaks of benches", () => {
+  const site = {
+    sector: "mining",
+    zones: [
+      { id: "a", outline: outline(0) },
+      { id: "b", outline: outline(5) },
+    ],
+    schedule: { start: "2026-01-01", end: "2026-07-01" },
+  } as unknown as Site;
+  const captures = [
+    point("2026-02-01", { a: 10, b: 5 }),
+    point("2026-03-01", { a: 20, b: 6 }),
+    point("2026-04-01", { a: 30, b: 6 }),
+  ];
+  const issues = issuesFor({
+    site,
+    captures,
+    index: 2,
+    referenceIndex: 0,
+    findings: [],
+    zoneNames: names,
+  });
+  const delay = issues.find((item) => item.kind === "delay");
+  assert.equal(delay?.tone, "danger");
+  assert.match(delay?.summary ?? "", /puntos por debajo/);
+  assert.match(delay?.advice ?? "", /bancos/);
+  const stalled = issues.find((item) => item.kind === "stalled");
+  assert.equal(stalled?.zoneId, "b");
+  assert.match(stalled?.advice ?? "", /banco/);
+  assert.ok(stalled?.position);
+});

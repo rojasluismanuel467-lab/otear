@@ -2,6 +2,7 @@
 
 import {
   HardHat,
+  Pickaxe,
   Route,
   ShieldCheck,
   Sprout,
@@ -15,10 +16,11 @@ const sectorIcons: Record<Sector, LucideIcon> = {
   roads: Route,
   construction: HardHat,
   security: ShieldCheck,
+  mining: Pickaxe,
 };
 
 /**
- * Cambio de caso de ejemplo, siempre visible en la barra superior: son solo cuatro
+ * Cambio de caso de ejemplo, siempre visible en la barra superior: son solo cinco
  * sectores, así que van todos a la vista y no detrás de un menú. Al elegir, un aviso
  * cuenta qué cambió (las palabras de la demo) para que el salto se entienda.
  */

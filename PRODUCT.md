@@ -8,7 +8,7 @@ web
 
 ## Users
 
-Responsables de operaciones, administradores y profesionales que necesitan planificar vuelos y consultar evidencia aérea. Sectores confirmados: agricultura, carreteras/interventoría, construcción y vigilancia. El caso agrícola tiene el respaldo inicial de una entrevista; los otros sectores son alcance solicitado, con demanda por validar.
+Responsables de operaciones, administradores y profesionales que necesitan planificar vuelos y consultar evidencia aérea. Sectores confirmados: agricultura, carreteras/interventoría, construcción y vigilancia; la minería a cielo abierto es un caso de ejemplo pedido para la demo. El caso agrícola tiene el respaldo inicial de una entrevista; los otros sectores son alcance solicitado, con demanda por validar.
 
 ## Product Purpose
 

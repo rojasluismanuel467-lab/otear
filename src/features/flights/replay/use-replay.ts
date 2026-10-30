@@ -57,7 +57,9 @@ export function useReplay(
 
   const preview = flight.status !== "completed";
   const measuresArea =
-    site.sector === "agriculture" || site.sector === "construction";
+    site.sector === "agriculture" ||
+    site.sector === "construction" ||
+    site.sector === "mining";
   const gsdCm = flight.log?.gsdCm ?? defaultSettings.gsdCm;
   const overlap = (flight.log?.overlapPct ?? 75) / 100;
   // The track only needs the findings' places, so changing their status does not rebuild it.
