@@ -153,29 +153,27 @@ export function useServices() {
           ctx,
         );
         if (!checked.ok) return checked;
-        const quote = request.quotes.find((item) => item.state === "chosen");
-        if (!quote || !request.flightId)
-          return { ok: false, error: "Falta la cotización o el vuelo." };
-        const billed = input.billedHa ?? area;
-        const total = Math.round(
-          request.unit === "ha" ? quote.price * billed : quote.price,
-        );
+        const plan = workflow.invoicePlan(request, {
+          orderedHa: area,
+          billedHa: input.billedHa,
+        });
+        if (!plan.ok) return plan;
         const invoiceId = addInvoice({
           siteId: site.id,
-          flightId: request.flightId,
+          flightId: plan.flightId,
           reference: `FV-2026-${String(Math.floor(Math.random() * 900) + 100)}`,
           description: request.title,
           operator: nameOf(request.operatorId),
-          total,
+          total: plan.total,
           paid: 0,
           dueDate: addDays(DEMO_DATE, 30),
           source: "manual",
-          ...(request.unit === "ha" ? { billedHa: billed } : {}),
+          ...(plan.billedHa !== undefined ? { billedHa: plan.billedHa } : {}),
         });
         return finish(
           workflow.invoice(
             request,
-            { invoiceId, billedHa: input.billedHa },
+            { invoiceId, billedHa: plan.billedHa },
             ctx,
           ),
           "Factura creada; está en Pagos y costos.",

@@ -217,6 +217,77 @@
   width: 16px;
   height: 16px;
 }
+.notice {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.confirm {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.confirm p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.roleLine {
+  font-weight: 650;
+}
+.zoneList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.zoneList li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.zoneList span {
+  color: var(--muted);
+  font-weight: 500;
+}
+.mapLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.roles {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.roles summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.roles ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
 .facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

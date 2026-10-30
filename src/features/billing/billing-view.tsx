@@ -17,7 +17,7 @@ import { PaymentDialog } from "./payment-dialog";
 import { AreaCheckCard } from "./area-check-card";
 import { coveredHaFor } from "@/features/services/links";
 import { revealDetail } from "@/lib/reveal-detail";
-import { checkArea, orderedHa } from "./coverage";
+import { areaValue, checkArea, orderedHa } from "./coverage";
 import { payReadiness } from "./readiness";
 import styles from "./billing.module.css";
 
@@ -113,16 +113,42 @@ export function BillingView() {
       ].join("\n")
     : "";
   const paidRatio = totals.total ? totals.paid / totals.total : 0;
+  // The service that produced the invoice, when there is one: it carries the zones, the hectares
+  // the operator declared and the price agreed, even if the service has no flight of its own.
+  const request = selectedInvoice
+    ? serviceRequests.find(
+        (item) =>
+          item.invoiceId === selectedInvoice.id ||
+          (flight !== undefined && item.flightId === flight.id),
+      )
+    : undefined;
+  const zoneIds = flight?.zoneIds ?? request?.zoneIds ?? [];
   const ordered =
-    flight && site.sector !== "roads"
-      ? orderedHa(site.zones, flight.zoneIds)
+    selectedInvoice && site.sector !== "roads"
+      ? orderedHa(site.zones, zoneIds)
       : 0;
+  const coveredHa = flight
+    ? coveredHaFor(flight, serviceRequests)
+    : request?.delivery?.coveredHa;
   const areaCheck =
-    selectedInvoice && flight && ordered > 0
+    selectedInvoice && ordered > 0
       ? checkArea({
           orderedHa: ordered,
-          coveredHa: coveredHaFor(flight, serviceRequests),
+          coveredHa,
           billedHa: selectedInvoice.billedHa,
+        })
+      : undefined;
+  const quotedPrice =
+    request?.unit === "ha"
+      ? request.quotes.find((item) => item.state === "chosen")?.price
+      : undefined;
+  const areaMoney =
+    selectedInvoice && areaCheck
+      ? areaValue({
+          coveredHa,
+          billedHa: selectedInvoice.billedHa,
+          invoiceTotal: selectedInvoice.total,
+          quotedPrice,
         })
       : undefined;
   const readiness = selectedInvoice
@@ -156,7 +182,7 @@ export function BillingView() {
           <div className="rail-sticky">
             <header className="master-rail-header">
               <h2 id="invoice-list-heading">Facturas del operador</h2>
-              <p>Consulta el soporte antes de registrar un pago.</p>
+              <p>Consulte el soporte antes de registrar un pago.</p>
             </header>
             <div
               className={styles.ledger}
@@ -250,7 +276,9 @@ export function BillingView() {
                               {status.label}
                             </StatusBadge>
                             <span className={styles.money}>
-                              {formatMoney(invoice.total - invoice.paid)}
+                              {invoice.total === invoice.paid
+                                ? `${formatMoney(invoice.total)} pagados`
+                                : `${formatMoney(invoice.total - invoice.paid)} por pagar`}
                             </span>
                           </span>
                         </span>
@@ -269,7 +297,7 @@ export function BillingView() {
                   }
                   description={
                     invoices.length
-                      ? "Cambia la búsqueda o el estado para volver a ver los soportes."
+                      ? "Cambie la búsqueda o el estado para volver a ver los soportes."
                       : "Este sitio no tiene facturas de ejemplo registradas."
                   }
                 />
@@ -348,6 +376,8 @@ export function BillingView() {
               <AreaCheckCard
                 key={`area-${selectedInvoice.id}`}
                 check={areaCheck}
+                value={areaMoney}
+                invoiceTotal={selectedInvoice.total}
                 zoneWord={site.zoneLabel}
                 onBilledChange={(billedHa) =>
                   updateInvoice(selectedInvoice.id, { billedHa })
@@ -467,7 +497,7 @@ export function BillingView() {
                     Historial de pagos · {selectedInvoice.reference}
                   </h3>
                   <p className="text-muted">
-                    Filtra por fecha de pago. El vencimiento de la factura y su
+                    Filtre por fecha de pago. El vencimiento de la factura y su
                     saldo no cambian.
                   </p>
                 </div>
@@ -555,8 +585,8 @@ export function BillingView() {
                   }
                   description={
                     invoicePayments.length
-                      ? "Amplía el intervalo o quita las fechas para consultar el historial completo."
-                      : "Puedes registrar un abono de ejemplo desde el detalle del cobro."
+                      ? "Amplíe el intervalo o quite las fechas para consultar el historial completo."
+                      : "Puede registrar un abono de ejemplo desde el detalle del cobro."
                   }
                 />
               )}
@@ -565,7 +595,7 @@ export function BillingView() {
         ) : (
           <div className={styles.detailEmpty}>
             <EmptyState
-              title="Elige una factura"
+              title="Elija una factura"
               description="Su detalle, soporte e historial de pagos aparecerán aquí."
             />
           </div>

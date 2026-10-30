@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Ruler } from "lucide-react";
-import type { AreaCheck } from "./coverage";
+import { formatMoney } from "@/lib/format";
+import { areaHeadline, type AreaCheck, type AreaValue } from "./coverage";
 import styles from "./area-check.module.css";
 
 const stateText = {
@@ -21,9 +22,14 @@ const ha = (value?: number) =>
 export function AreaCheckCard({
   check,
   zoneWord,
+  value,
+  invoiceTotal,
   onBilledChange,
 }: {
   check: AreaCheck;
+  /** The same difference in pesos, when the invoice or the service gives a price. */
+  value?: AreaValue;
+  invoiceTotal: number;
   /** Plural word for the zones, to say what was ordered («suertes», «lotes»). */
   zoneWord: string;
   onBilledChange: (value: number | undefined) => void;
@@ -44,6 +50,18 @@ export function AreaCheckCard({
           {stateText[check.state]}
         </span>
       </header>
+      <p className={styles.headline}>{areaHeadline(check)}</p>
+      {value && Math.abs(value.differenceHa) >= 0.05 && (
+        <p className={styles.value}>
+          Son unos <strong>{formatMoney(Math.abs(value.differenceCop))}</strong>{" "}
+          {value.differenceHa > 0 ? "de más" : "de menos"}, a{" "}
+          {formatMoney(Math.round(value.unitPrice))} por hectárea
+          {value.source === "quote"
+            ? " (el precio cotizado para este servicio)"
+            : " (el total de la factura entre sus hectáreas, porque falta el precio cotizado)"}
+          . Cifra de ejemplo.
+        </p>
+      )}
       <dl className={styles.numbers}>
         <div>
           <dt>Pedido</dt>
@@ -56,11 +74,11 @@ export function AreaCheckCard({
           <small>Según el registro de vuelo del operador</small>
         </div>
         <div>
-          <dt>Facturado</dt>
+          <dt>Facturado (la factura dice)</dt>
           <dd>
             <input
               className="field-input"
-              aria-label="Hectáreas facturadas"
+              aria-label="Hectáreas que dice la factura"
               inputMode="decimal"
               defaultValue={
                 check.billedHa === undefined
@@ -81,9 +99,18 @@ export function AreaCheckCard({
               }}
             />
           </dd>
-          <small>{error || "Lo que dice la factura"}</small>
+          <small>
+            {error || "Puede corregirla si la factura dice otra cosa"}
+          </small>
         </div>
       </dl>
+      {value?.expectedTotal !== undefined && value.totalGap !== undefined && (
+        <p className={styles.value} data-gap={Math.abs(value.totalGap) > 1}>
+          {Math.abs(value.totalGap) <= 1
+            ? `El total de la factura (${formatMoney(invoiceTotal)}) coincide con las hectáreas facturadas por el precio cotizado.`
+            : `Valor esperado: ${ha(check.billedHa)} facturadas × el precio cotizado = ${formatMoney(value.expectedTotal)}; la factura dice ${formatMoney(invoiceTotal)} (${value.totalGap > 0 ? "+" : "-"}${formatMoney(Math.abs(value.totalGap))}). Pida la explicación antes de pagar.`}
+        </p>
+      )}
       {check.messages.length > 0 && (
         <ul className={styles.messages}>
           {check.messages.map((message) => (
