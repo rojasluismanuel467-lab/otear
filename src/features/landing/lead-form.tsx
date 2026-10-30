@@ -103,7 +103,7 @@ export function LeadForm() {
             autoComplete="name"
             required
             defaultValue={lead?.name}
-            placeholder="Hernando Álvarez"
+            placeholder="Nombre y apellido"
           />
         </div>
 
@@ -140,11 +140,17 @@ export function LeadForm() {
           </datalist>
         </div>
 
+        <p className={styles.formNotice}>
+          Este paso no envía nada. En el siguiente se abre su WhatsApp o su
+          correo con el mensaje ya escrito, y usted lo envía. Esta página no
+          guarda ni recibe sus datos.
+        </p>
+
         <button
           type="submit"
           className={`${styles.linkBtn} ${styles.primary} ${styles.submit}`}
         >
-          Quiero una llamada
+          Continuar: preparar mi mensaje
         </button>
 
         {error && (
@@ -155,11 +161,6 @@ export function LeadForm() {
             {error}
           </div>
         )}
-
-        <p className={styles.formNotice}>
-          En el siguiente paso se abre su WhatsApp o su correo con el mensaje ya
-          escrito, y usted lo envía. Esta página no guarda ni recibe sus datos.
-        </p>
       </form>
     );
   }
@@ -266,6 +267,7 @@ export function LeadForm() {
           role="alert"
         >
           Todavía no hay un canal de contacto disponible en esta página.
+          Escríbanos a <a href="mailto:hola@otear.app">hola@otear.app</a>.
         </div>
       )}
 
