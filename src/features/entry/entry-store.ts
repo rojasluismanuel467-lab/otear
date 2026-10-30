@@ -36,8 +36,11 @@ export function writeEntry(entry: Entry | null) {
   listeners.forEach((listener) => listener());
 }
 
-/** The sector the visitor chose on the landing, if any. */
+/** The sector the visitor chose on the landing, if any (opening the demo from a button chooses nothing). */
 export function useEntry(): Entry | null {
   const raw = useSyncExternalStore(subscribe, readRaw, () => null);
-  return useMemo(() => parseEntry(raw), [raw]);
+  return useMemo(() => {
+    const entry = parseEntry(raw);
+    return entry?.unchosen ? null : entry;
+  }, [raw]);
 }
