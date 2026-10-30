@@ -53,40 +53,39 @@ const example = {
   overPct: "+5,7",
 };
 
+/** The featured case: the demo's most complete story (a hacienda). */
+const mainCase = {
+  sector: "Agricultura",
+  title: "Fincas e ingenios",
+  line: "Compare cada lote o suerte en el tiempo, vea dónde se estancó el cultivo y, antes de pagar al operador, contraste las hectáreas pedidas, las que él declara y las que facturó.",
+  tags: ["Lotes", "Evolución", "Hectáreas"],
+  Icon: Sprout,
+};
+
+/** The other four sectors with a sample project in the demo, as a compact list. */
 const cases = [
-  {
-    sector: "Agricultura",
-    title: "Fincas e ingenios",
-    line: "Compare cada lote o suerte en el tiempo, vea dónde se estancó el cultivo y, antes de pagar al operador, contraste las hectáreas pedidas, las que él declara y las que facturó.",
-    tags: ["Lotes", "Evolución", "Hectáreas"],
-    Icon: Sprout,
-  },
   {
     sector: "Carreteras",
     title: "Interventoría y mantenimiento vial",
     line: "Recorra la vía por tramos, deje constancia de cada vuelo, marque drenajes, taludes y deterioros y compárelos con la visita anterior. Seguirlos hasta cerrar cada medida correctiva es una propuesta: se construye con usted.",
-    tags: ["Tramos", "No conformidades", "Informe"],
     Icon: Route,
   },
   {
     sector: "Construcción",
     title: "Avance de obra",
     line: "Compare el avance de cada frente con lo planeado, revise cada fecha con el mismo encuadre y guarde los levantamientos por fecha.",
-    tags: ["Frentes", "Plan y real", "Levantamientos"],
     Icon: HardHat,
   },
   {
     sector: "Minería",
     title: "Minas a cielo abierto",
     line: "Mida el avance de cada banco frente al plan, vigile las crestas y los taludes en cada vuelo y deje constancia de cada novedad con su evidencia. Seguirla hasta que se atienda es una propuesta: se construye con usted.",
-    tags: ["Bancos", "Avance", "Taludes"],
     Icon: Pickaxe,
   },
   {
     sector: "Vigilancia",
     title: "Perímetros y predios",
     line: "Revise por sectores los cerramientos y accesos, compare un vuelo con el anterior y deje cada novedad con su evidencia y una tarea de revisión.",
-    tags: ["Sectores", "Evidencia", "Tareas"],
     Icon: ShieldCheck,
   },
 ];
@@ -141,7 +140,7 @@ const operatorColumns = [
   {
     title: "Lo que entrega y factura",
     items: [
-      "Registra el vuelo, entrega el resultado y factura.",
+      "Registra el vuelo y entrega el resultado en Servicios; quien contrata lo verifica y después usted factura.",
       "Las hectáreas que usted declara haber cubierto son las que se comparan con su factura. Otear no las mide con las imágenes.",
     ],
   },
@@ -156,6 +155,7 @@ const operatorColumns = [
 
 const today = [
   "Entrar a la demo sin registro, con vuelos, mapas, comparaciones, pagos y documentos de ejemplo.",
+  "Seguir un pedido de servicio de principio a fin: cotizaciones, asignación al operador, entrega y verificación de quien contrata.",
   "Ponerle a la demo las palabras, el color y el logo de su empresa.",
   "Ver lado a lado lo pedido, lo declarado y lo facturado, y firmar los documentos de soporte del vuelo (firma de ejemplo).",
 ];
@@ -164,7 +164,7 @@ const toDefine = [
   "Precio y forma de cobro: por definir, según su operación.",
   "Un piloto con sus propios vuelos: lo estamos definiendo y usted ayudaría a definirlo.",
   "De quién son los datos y cómo se sale de la plataforma: por definir.",
-  "Cómo entran sus vuelos: en la demo ya vienen cargados; la carga real (quién sube las fotos y cómo) está por construir. Otear todavía no analiza imágenes.",
+  "Cómo entran sus vuelos: el operador los entrega en Servicios y quien contrata los verifica. En la demo ya vienen cargados; la carga real de archivos está por construir. Otear todavía no analiza imágenes.",
 ];
 
 const proposals = [
@@ -223,9 +223,10 @@ export function LandingPage() {
               y lo que facturó.
             </p>
             <p className={styles.heroNote}>
-              <strong>Otear no hace los vuelos.</strong> Los sigue haciendo su
-              operador de dron, el que ya tiene o el que usted elija; Otear es
-              donde usted los reúne y los revisa.
+              <strong>Otear no hace los vuelos.</strong> Los hace su operador de
+              dron, el que ya tiene o el que usted elija, y es él quien los
+              entrega; Otear es donde usted los reúne, los verifica y los
+              compara.
             </p>
             <div className={styles.ctaRow}>
               <DemoLink className={`${styles.linkBtn} ${styles.primary}`}>
@@ -291,82 +292,119 @@ export function LandingPage() {
             </li>
           ))}
         </ol>
-
-        <aside className={styles.example} aria-labelledby="ejemplo-title">
-          <div className={styles.exampleHead}>
-            <h3 id="ejemplo-title">
-              Un caso de la demo: la hacienda de ejemplo
-            </h3>
-            <span className={styles.exampleBadge}>Cifras de ejemplo</span>
-          </div>
-          <dl className={styles.exampleNumbers}>
-            <div>
-              <dt>Se pidieron</dt>
-              <dd>{example.ordered} ha</dd>
-            </div>
-            <div>
-              <dt>El operador declara haber cubierto</dt>
-              <dd>{example.covered} ha</dd>
-              <small>{example.coveredPct} % de lo pedido</small>
-            </div>
-            <div>
-              <dt>Facturó</dt>
-              <dd>{example.billed} ha</dd>
-            </div>
-          </dl>
-          <p className={styles.exampleText}>
-            Antes de registrar el pago, Otear marca la diferencia: «Facturó{" "}
-            {example.over} ha más de las cubiertas ({example.overPct} %)». La
-            tolerancia de la demo es de 5 %.
-          </p>
-          <p className={styles.exampleNote}>
-            Cifras sintéticas de la demo, no de un cliente ni un ahorro real. La
-            hectárea cubierta la declara el operador; Otear no la mide con las
-            imágenes.
-          </p>
-          <Link href="/pagos/" className={styles.inlineLink}>
-            Verlo en la demo: Pagos, «Antes de pagar»{" "}
-            <ArrowRight size={14} aria-hidden />
-          </Link>
-        </aside>
       </section>
 
       <section className={styles.section} id="casos-de-uso">
         <header className={styles.sectionHead} data-flight-perch="head">
           <div className={styles.sectionLabel}>Ejemplos de uso</div>
           <h2 className={styles.sectionTitle}>
-            Una misma base, <span className="accent">cualquier</span> sector.
+            Empezamos por el campo. Sirve a{" "}
+            <span className="accent">cualquier</span> sector.
           </h2>
           <p className={styles.sectionSubtitle}>
-            Estos cinco son ejemplos con proyecto de muestra en la demo, no los
-            límites del producto. El vocabulario cambia con su sector: lotes,
-            tramos, frentes, bancos, sectores o lo que usted use.
+            La historia más completa de la demo es la de una hacienda. Otros
+            cuatro sectores también tienen proyecto de muestra, y ninguno es el
+            límite del producto: el vocabulario cambia con el suyo (lotes,
+            tramos, frentes, bancos, sectores o lo que use).
           </p>
         </header>
 
-        <div className={styles.casesRail}>
-          {cases.map(({ sector, title, line, tags, Icon }) => (
-            <article key={sector} className={styles.role}>
-              <div className={styles.roleInner}>
-                <div className={styles.caseHead}>
-                  <span className={styles.caseIcon} aria-hidden>
-                    <Icon size={18} />
-                  </span>
-                  <span className={styles.roleName}>{sector}</span>
-                </div>
-                <h3 className={styles.caseTitle}>{title}</h3>
-                <p className={styles.roleLine}>{line}</p>
-                <div className={styles.roleTags}>
-                  {tags.map((tag) => (
-                    <span key={tag} className={styles.roleTag}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+        <article
+          className={`${styles.example} ${styles.mainCase}`}
+          aria-labelledby="caso-principal-title"
+          data-flight-clear
+        >
+          <div className={styles.mainCaseCopy}>
+            <div className={styles.caseHead}>
+              <span className={styles.caseIcon} aria-hidden>
+                <mainCase.Icon size={18} />
+              </span>
+              <span className={styles.roleName}>
+                {mainCase.sector} · caso principal
+              </span>
+            </div>
+            <h3 id="caso-principal-title" className={styles.mainCaseTitle}>
+              {mainCase.title}: la hacienda de ejemplo
+            </h3>
+            <p className={styles.roleLine}>{mainCase.line}</p>
+            <div className={styles.roleTags}>
+              {mainCase.tags.map((tag) => (
+                <span key={tag} className={styles.roleTag}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.mainCaseFigures}>
+            <div className={styles.exampleHead}>
+              <h4>Pedido, cubierto y facturado</h4>
+              <span className={styles.exampleBadge}>Cifras de ejemplo</span>
+            </div>
+            <dl className={styles.exampleNumbers}>
+              <div>
+                <dt>Se pidieron</dt>
+                <dd>{example.ordered} ha</dd>
               </div>
-            </article>
-          ))}
-          <article className={`${styles.role} ${styles.caseOpen}`}>
+              <div>
+                <dt>El operador declara haber cubierto</dt>
+                <dd>{example.covered} ha</dd>
+                <small>{example.coveredPct} % de lo pedido</small>
+              </div>
+              <div>
+                <dt>Facturó</dt>
+                <dd>{example.billed} ha</dd>
+              </div>
+            </dl>
+            <p className={styles.exampleText}>
+              Antes de registrar el pago, Otear marca la diferencia: «Facturó{" "}
+              {example.over} ha más de las cubiertas ({example.overPct} %)». La
+              tolerancia de la demo es de 5 %.
+            </p>
+            <p className={styles.exampleNote}>
+              Cifras sintéticas de la demo, no de un cliente ni un ahorro real.
+              La hectárea cubierta la declara el operador; Otear no la mide con
+              las imágenes.
+            </p>
+            <div className={styles.sectionActions}>
+              <Link href="/pagos/" className={styles.inlineLink}>
+                Verlo en la demo: Pagos, «Antes de pagar»{" "}
+                <ArrowRight size={14} aria-hidden />
+              </Link>
+              <Link href="/evolucion/" className={styles.inlineLink}>
+                Evolución del cultivo <ArrowRight size={14} aria-hidden />
+              </Link>
+            </div>
+          </div>
+        </article>
+
+        <h3 className={styles.otherCasesTitle}>
+          También con proyecto de muestra en la demo
+        </h3>
+        <div className={styles.otherCases}>
+          <ul
+            className={`${styles.role} ${styles.compactCases}`}
+            data-flight-clear
+          >
+            {cases.map(({ sector, title, line, Icon }) => (
+              <li key={sector} className={styles.compactCase}>
+                <span className={styles.caseIcon} aria-hidden>
+                  <Icon size={18} />
+                </span>
+                <div>
+                  <div className={styles.compactCaseName}>
+                    <span className={styles.roleName}>{sector}</span>
+                    <span className={styles.compactCaseTitle}>{title}</span>
+                  </div>
+                  <p className={styles.compactCaseLine}>{line}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <article
+            className={`${styles.role} ${styles.caseOpen}`}
+            data-flight-clear
+          >
             <div className={styles.roleInner}>
               <div className={styles.caseHead}>
                 <span className={styles.caseIcon} aria-hidden>
@@ -518,7 +556,8 @@ export function LandingPage() {
               tiempo y firme un documento de soporte. Lo que haga se borra al
               recargar la página; solo los nombres que elija en Configuración se
               quedan en este navegador. Los vuelos de ejemplo ya vienen
-              cargados: subir vuelos reales todavía no existe.
+              cargados: en la práctica los entrega el operador, y la carga real
+              de archivos todavía no existe.
             </p>
             <DemoLink className={`${styles.linkBtn} ${styles.primary}`}>
               Abrir la demo <ArrowRight size={16} aria-hidden />
@@ -590,7 +629,7 @@ export function LandingPage() {
       </section>
 
       <section className={styles.contact} id="contacto">
-        <div className={styles.contactInner}>
+        <div className={styles.contactInner} data-flight-clear>
           <div className={styles.contactIntro}>
             <h3 id="contacto-title">Hablemos sin compromiso.</h3>
             <p>
@@ -612,7 +651,8 @@ export function LandingPage() {
               </li>
               <li>
                 <Check size={16} aria-hidden /> No le pedimos cambiar de
-                operador de dron: Otear no presta vuelos.
+                operador de dron: Otear no presta vuelos. Los entrega el
+                operador y usted los verifica.
               </li>
               <li>
                 <Check size={16} aria-hidden /> Si no le cuadra, le pasamos
