@@ -2,10 +2,15 @@ import type { Position } from "../../demo/types";
 import { lineLengthKm, toLocalMeters } from "../../../lib/geo.ts";
 
 /**
- * Chainage (PK, abscisa) of road stretches, derived from the geometry. The seeded roads carry no
- * chainage, so the stretches are counted from 0+000 at the first point of the first one, in list
- * order: a convention of the example, not a reference to any real contract.
+ * Chainage (PK, abscisa) of road stretches. A stretch that carries its own `chainage` (the example
+ * roads do) keeps it; the others are counted from 0+000 along the geometry, in list order. Either way
+ * it is a convention of the example, not a reference to any real contract.
  */
+type StretchLike = {
+  id: string;
+  outline: Position[];
+  chainage?: { startM: number; endM: number };
+};
 
 /** 1,4 km → "1+400". */
 export function formatChainage(km: number) {
@@ -27,12 +32,18 @@ export interface ChainageRange {
 
 /** Start and end chainage of each stretch, one after another from 0+000. */
 export function chainageRanges(
-  zones: { id: string; outline: Position[] }[],
+  zones: StretchLike[],
   startKm = 0,
 ): ChainageRange[] {
   let cursor = startKm;
   return zones.map((zone) => {
     const lengthKm = lineLengthKm(zone.outline);
+    if (zone.chainage) {
+      const fromKm = zone.chainage.startM / 1000;
+      const toKm = zone.chainage.endM / 1000;
+      cursor = toKm;
+      return { zoneId: zone.id, fromKm, toKm, lengthKm };
+    }
     const range = {
       zoneId: zone.id,
       fromKm: cursor,
@@ -55,7 +66,7 @@ export function rangeText(range: Pick<ChainageRange, "fromKm" | "toKm">) {
  */
 export function chainageOf(
   point: Position,
-  zones: { id: string; outline: Position[] }[],
+  zones: StretchLike[],
   startKm = 0,
 ): { km: number; zoneId: string; offsetM: number } | undefined {
   const usable = zones.filter((zone) => zone.outline.length >= 2);
@@ -66,6 +77,7 @@ export function chainageOf(
   let before = startKm * 1000;
   for (const zone of usable) {
     const xy = toLocalMeters(zone.outline, origin);
+    if (zone.chainage) before = zone.chainage.startM;
     let along = 0;
     for (let i = 1; i < xy.length; i += 1) {
       const [ax, ay] = xy[i - 1];
@@ -98,10 +110,7 @@ export function chainageOf(
 }
 
 /** "PK 0+420" for a point, or undefined when the axis is not known. */
-export function chainageLabel(
-  point: Position,
-  zones: { id: string; outline: Position[] }[],
-) {
+export function chainageLabel(point: Position, zones: StretchLike[]) {
   const found = chainageOf(point, zones);
   return found ? `PK ${formatChainage(found.km)}` : undefined;
 }

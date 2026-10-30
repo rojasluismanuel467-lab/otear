@@ -536,7 +536,7 @@ export function LandingPage() {
             <div className={styles.demoStatRow}>
               <span className={styles.demoStatLabel}>Vuelos registrados</span>
               <span className={styles.demoStatValue}>
-                32 vuelos ·{" "}
+                35 vuelos ·{" "}
                 <span className={styles.demoStatValueAccent}>2 operadores</span>
               </span>
             </div>

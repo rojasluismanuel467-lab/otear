@@ -44,3 +44,27 @@ test("a point projects onto the axis and says which stretch it falls on", () => 
   assert.ok(found && found.offsetM < 20);
   assert.equal(chainageOf([0, 0], []), undefined);
 });
+
+test("a stretch that carries its own chainage keeps it", () => {
+  const zones = [
+    {
+      id: "a",
+      outline: [
+        [4.0, -75.0],
+        [4.0, -74.99],
+      ] as [number, number][],
+      chainage: { startM: 12000, endM: 12400 },
+    },
+    {
+      id: "b",
+      outline: [
+        [4.0, -74.99],
+        [4.0, -74.98],
+      ] as [number, number][],
+    },
+  ];
+  const ranges = chainageRanges(zones);
+  assert.equal(rangeText(ranges[0]), "PK 12+000 – 12+400");
+  // The next stretch without its own chainage continues from where the last one ended.
+  assert.equal(ranges[1].fromKm, 12.4);
+});

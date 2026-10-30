@@ -1,5 +1,6 @@
 "use client";
 
+import { chainageLabel } from "@/features/sites/mapping/chainage";
 import { sourceLabel, isSuggested } from "@/features/agents/image-candidates";
 import { useState } from "react";
 import { Button } from "@heroui/react";
@@ -166,8 +167,12 @@ export function FlightReport({
   const zoneName = (finding: Finding) =>
     site.zones.find((zone) => zone.id === finding.zoneId)?.name ??
     "Sin asignar";
-  const coordinates = (finding: Finding) =>
-    `${finding.position[0].toFixed(5)}, ${finding.position[1].toFixed(5)}`;
+  const coordinates = (finding: Finding) => {
+    const raw = `${finding.position[0].toFixed(5)}, ${finding.position[1].toFixed(5)}`;
+    const pk =
+      kind === "line" ? chainageLabel(finding.position, site.zones) : undefined;
+    return pk ? `${pk} (${raw})` : raw;
+  };
   const reportText = [
     "OTEAR — INFORME DEL VUELO (BORRADOR DE DEMOSTRACIÓN)",
     "Datos de ejemplo. No es un informe técnico de una operación real.",

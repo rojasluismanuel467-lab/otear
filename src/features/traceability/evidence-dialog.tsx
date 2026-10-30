@@ -125,6 +125,7 @@ function EvidenceBody({
     stored?.kind === "attachment" ? "attach" : "draft",
   );
   const [signing, setSigning] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const [signer, setSigner] = useState({
     name: "",
     documentId: "",
@@ -669,17 +670,33 @@ function EvidenceBody({
           <Printer size={16} aria-hidden="true" />
           Imprimir o guardar PDF
         </Button>
-        {stored && (
-          <Button
-            variant="ghost"
-            onPress={() => {
-              removeEvidence(stored.id);
-              onClose();
-            }}
-          >
+        {stored && !confirmRemove && (
+          <Button variant="ghost" onPress={() => setConfirmRemove(true)}>
             <Trash2 size={16} aria-hidden="true" />
             Eliminar
           </Button>
+        )}
+        {stored && confirmRemove && (
+          <div role="group" aria-label="Confirmar eliminación">
+            <p>
+              {evidenceState(stored).validRoles.length
+                ? `Este documento tiene firmas de ${evidenceState(stored).validRoles.join(", ")}. Al eliminarlo se pierden el documento, las firmas y su historial de esta demostración.`
+                : "Se elimina el documento y su historial de esta demostración."}
+            </p>
+            <Button
+              variant="danger"
+              onPress={() => {
+                removeEvidence(stored.id);
+                onClose();
+              }}
+            >
+              <Trash2 size={16} aria-hidden="true" />
+              Sí, eliminar
+            </Button>
+            <Button variant="ghost" onPress={() => setConfirmRemove(false)}>
+              Cancelar
+            </Button>
+          </div>
         )}
       </div>
     </div>

@@ -374,26 +374,47 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Modal.Body>
                 <div className="help-content">
                   <p>
-                    Cambia de caso en la barra de arriba para explorar
-                    agricultura, carreteras, construcción, minería y vigilancia
-                    con la misma base.
+                    Son datos de ejemplo. Cambie de caso en la barra de arriba
+                    para ver agricultura, carreteras, construcción, minería y
+                    vigilancia con la misma base. Para entender qué hace Otear,
+                    siga estos tres pasos:
                   </p>
                   <ol>
-                    <li>Prepara un vuelo y revisa su ruta.</li>
                     <li>
-                      Abre un registro para consultar evidencia y hallazgos.
+                      <Link
+                        href="/evolucion"
+                        onClick={() => setHelpOpen(false)}
+                      >
+                        Evolución
+                      </Link>
+                      : compare cada zona en el tiempo y vea cuál va peor y
+                      desde cuándo.
                     </li>
-                    <li>Registra pagos de ejemplo y revisa documentos.</li>
+                    <li>
+                      <Link href="/pagos" onClick={() => setHelpOpen(false)}>
+                        Pagos, «Antes de pagar»
+                      </Link>
+                      : contraste lo pedido, lo que declara el operador y lo
+                      facturado.
+                    </li>
+                    <li>
+                      <Link href="/informes" onClick={() => setHelpOpen(false)}>
+                        Informes
+                      </Link>
+                      : lo visto y lo decidido, en un resumen para la junta o la
+                      interventoría.
+                    </li>
                   </ol>
                   <p>
-                    Los cambios que hagas se conservan al navegar y se reinician
-                    al recargar la página, o ahora mismo con «Reiniciar
+                    Lo que usted haga se conserva mientras navega y se borra al
+                    recargar la página, o ahora mismo con «Reiniciar
                     demostración».
                   </p>
                   <p>
                     Clima, coordenadas, documentos y registros son muestras. Las
-                    fotos son ilustrativas y no corresponden al lugar del mapa.
-                    No se envía información ni se ejecutan operaciones reales.
+                    fotos son ilustrativas y no corresponden al lugar del mapa
+                    (solo el mapa de fondo es real, y necesita internet). No se
+                    envía información ni se ejecutan operaciones reales.
                   </p>
                 </div>
               </Modal.Body>
