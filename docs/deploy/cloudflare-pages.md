@@ -20,6 +20,24 @@ Guía para publicar `otear.app` como sitio estático gratuito, usando el export 
    - **Node version:** `22` (Variable de entorno `NODE_VERSION=22`).
 5. **Deploy**. El primer build demora 2–4 min. Al terminar queda publicado en `otear.pages.dev`.
 
+## 2b. Despliegue automático con GitHub Actions (el que usa este proyecto)
+
+El proyecto `otear` se creó con subida directa (`wrangler pages deploy`), y Cloudflare no permite pasar un proyecto así a integración con Git. En su lugar, `.github/workflows/deploy.yml` hace en cada push a `main`: `npm run check`, `npm test`, `npm run build` y `wrangler pages deploy`. Si algo falla, no se publica. El build corre en el runner desde git, así que `public/models/dji/` (ignorado por licencia) nunca se publica.
+
+Configuración única, en GitHub → repo → **Settings** → **Secrets and variables** → **Actions**:
+
+| Tipo | Nombre | Valor |
+|---|---|---|
+| Secret | `CLOUDFLARE_API_TOKEN` | token de Cloudflare con el permiso **Account → Cloudflare Pages → Edit** (dash.cloudflare.com → My Profile → API Tokens → Create Token) |
+| Secret | `CLOUDFLARE_ACCOUNT_ID` | ID de su cuenta (Workers & Pages → panel derecho) |
+| Variable | `NEXT_PUBLIC_WHATSAPP_NUMBER` | número con indicativo, solo dígitos |
+| Variable | `NEXT_PUBLIC_CONTACT_EMAIL` | correo de contacto (ej. `hola@otear.app`) |
+| Variable | `NEXT_PUBLIC_BOOKING_URL` | opcional |
+
+Las variables `NEXT_PUBLIC_*` van como **Variables** y no como Secrets porque quedan visibles en la página. Se fijan al construir: para cambiarlas, edite la variable y vuelva a correr el flujo (**Actions** → **Run workflow**).
+
+Despliegue manual de emergencia: `npm run build` desde un clon limpio y `npx wrangler pages deploy out --project-name otear --branch main`.
+
 ## 3. Conectar `otear.app`
 
 1. En el proyecto de Pages → **Custom domains** → **Set up a custom domain** → escribe `otear.app` → **Continue** → **Activate**.

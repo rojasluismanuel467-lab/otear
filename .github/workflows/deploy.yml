@@ -1,0 +1,54 @@
+name: Desplegar en Cloudflare Pages
+
+# Cada push a main revisa, construye y publica el sitio estático en Cloudflare Pages.
+# Necesita en GitHub → Settings → Secrets and variables → Actions:
+#   Secrets:   CLOUDFLARE_API_TOKEN (permiso «Cloudflare Pages: Edit»), CLOUDFLARE_ACCOUNT_ID
+#   Variables: NEXT_PUBLIC_WHATSAPP_NUMBER, NEXT_PUBLIC_CONTACT_EMAIL (opcional: NEXT_PUBLIC_BOOKING_URL)
+# Las variables NEXT_PUBLIC_* quedan visibles en la página, por eso no son secretos.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cloudflare-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Revisar tipos, lint y formato
+        run: npm run check
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Construir
+        run: npm run build
+        env:
+          NEXT_PUBLIC_WHATSAPP_NUMBER: ${{ vars.NEXT_PUBLIC_WHATSAPP_NUMBER }}
+          NEXT_PUBLIC_CONTACT_EMAIL: ${{ vars.NEXT_PUBLIC_CONTACT_EMAIL }}
+          NEXT_PUBLIC_BOOKING_URL: ${{ vars.NEXT_PUBLIC_BOOKING_URL }}
+
+      - name: Publicar en Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.156.0"
+          command: pages deploy out --project-name=otear --branch=main --commit-hash=${{ github.sha }}
