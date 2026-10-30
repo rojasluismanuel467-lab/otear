@@ -71,6 +71,9 @@
   --text-lead: clamp(17px, 1.5vw, 19px);
   --text-body: 16px;
   --text-small: 14px;
+  /* Notas que dicen de dónde sale una cifra clave, y leyendas: legibles a distancia de escritorio (hipótesis N-09, a probar con personas de 55 años o más). El piso de 12 px queda para créditos y etiquetas realmente secundarias. */
+  --text-note: 14px;
+  --text-caption: 13px;
   --measure-lead: 42ch;
   --measure-body: 46ch;
 }
@@ -337,9 +340,9 @@ textarea {
   display: flex;
   align-items: center;
   gap: 11px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 550;
-  color: #4f585e;
+  color: #3b454c;
   border: 1px solid transparent;
   border-radius: 12px;
   transition:
@@ -421,8 +424,8 @@ textarea {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 12px;
-  color: #4f585e;
+  font-size: var(--text-caption);
+  color: #3b454c;
   width: 100%;
   min-height: 40px;
   padding: 0 10px;
@@ -465,7 +468,7 @@ textarea {
 }
 .profile-row strong {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .profile-row div > span {
   display: block;
@@ -542,7 +545,7 @@ textarea {
   align-items: center;
   gap: 12px;
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--muted);
 }
 .topbar-location strong {
@@ -873,7 +876,7 @@ textarea {
   min-width: 0;
 }
 .field-label {
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-weight: 650;
   color: #424f59;
   display: block;
@@ -887,7 +890,7 @@ textarea {
   border: 1px solid #d8dee3;
   border-radius: 9px;
   background: #fafbfc;
-  font-size: 12px;
+  font-size: var(--text-note);
   color: #32414c;
   transition:
     border-color 160ms,
@@ -969,7 +972,7 @@ textarea {
 }
 .data-table td {
   padding: 17px 18px;
-  font-size: 12px;
+  font-size: var(--text-caption);
   border-bottom: 1px solid #e9edf0;
 }
 .data-table tr:last-child td {
@@ -1065,7 +1068,7 @@ textarea {
   line-height: 1.35;
 }
 .empty-state p {
-  font-size: 12px;
+  font-size: var(--text-note);
   max-width: 45ch;
 }
 /* The detail that scrolls into view after picking an item in a stacked list clears the top bar. */
@@ -1383,8 +1386,8 @@ textarea {
   padding: 8px 11px;
   border-radius: 8px;
   background: #ffffffed;
-  font-size: 12px;
-  color: #4c6170;
+  font-size: var(--text-caption);
+  color: #3f5361;
   box-shadow: 0 2px 8px #33442110;
 }
 .map-legend i {
@@ -1398,8 +1401,8 @@ textarea {
   right: 12px;
   /* Sits above the inset credit line (22 px tall + 10 px margin). */
   bottom: 44px;
-  font-size: 12px;
-  color: #435562;
+  font-size: var(--text-caption);
+  color: #3a4c58;
   background: #ffffffe3;
   padding: 3px 5px;
   border-radius: 5px;
@@ -1418,7 +1421,7 @@ textarea {
   border-radius: 10px;
   padding: 9px;
   box-shadow: 0 4px 18px #33442118;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .map-edit-controls > span {
   margin-right: auto;
