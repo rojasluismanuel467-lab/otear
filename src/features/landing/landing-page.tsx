@@ -56,8 +56,8 @@ const example = {
 /** The featured case: the demo's most complete story (a hacienda). */
 const mainCase = {
   sector: "Agricultura",
-  title: "Fincas e ingenios",
-  line: "Compare cada lote o suerte en el tiempo, vea dónde se estancó el cultivo y, antes de pagar al operador, contraste las hectáreas pedidas, las que él declara y las que facturó.",
+  title: "Fincas y plantaciones",
+  line: "Compare cada lote en el tiempo, vea dónde se estancó el cultivo y, antes de pagar al operador, contraste las hectáreas pedidas, las que él declara y las que facturó.",
   tags: ["Lotes", "Evolución", "Hectáreas"],
   Icon: Sprout,
 };
@@ -244,8 +244,12 @@ export function LandingPage() {
               <span>Sin registro</span>
               <span>Datos de ejemplo: nada es real</span>
               <span>Los mapas necesitan internet</span>
-              <span>En validación: aún sin piloto</span>
+              <span>En validación: aún sin prueba con un cliente</span>
             </div>
+            <Link href="#estado" className={styles.inlineLink}>
+              Qué hay hoy, qué falta y qué se acuerda con usted{" "}
+              <ArrowRight size={14} aria-hidden />
+            </Link>
           </div>
 
           {/* The aircraft is drawn by <DroneFlight /> on a fixed layer; it first
@@ -604,8 +608,9 @@ export function LandingPage() {
             Qué hay hoy y <span className="accent">qué falta</span>.
           </h2>
           <p className={styles.sectionSubtitle}>
-            Otear está en validación: todavía no hay un piloto en operación.
-            Esto es lo que ya puede probar y lo que se acuerda con usted.
+            Otear está en validación: todavía no hay una prueba con los vuelos
+            de un cliente. Esto es lo que ya puede probar y lo que se acuerda
+            con usted.
           </p>
         </header>
 
