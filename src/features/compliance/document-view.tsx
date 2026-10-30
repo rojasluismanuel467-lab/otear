@@ -130,12 +130,12 @@ export function DocumentView() {
     );
     if (!target) return;
     if (!/\.(pdf|jpe?g|png)$/i.test(file.name)) {
-      setFileError("Elige un archivo PDF, JPG o PNG.");
+      setFileError("Elija un archivo PDF, JPG o PNG.");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
       setFileError(
-        "El archivo supera 10 MB. Elige uno más pequeño para esta demo.",
+        "El archivo supera 10 MB. Elija uno más pequeño para esta demo.",
       );
       return;
     }
@@ -154,7 +154,7 @@ export function DocumentView() {
     if (document.validUntil && document.validUntil < DEMO_DATE) {
       updateDocument(document.id, { status: "expired" });
       announce(
-        "La fecha declarada ya venció respecto al 25 de octubre de 2026, fecha de referencia de la demo. Revisa y actualiza los datos antes de registrar la revisión.",
+        "La fecha declarada ya venció respecto al 25 de octubre de 2026, fecha de referencia de la demo. Revise y actualice los datos antes de registrar la revisión.",
       );
       return;
     }
@@ -215,8 +215,8 @@ export function DocumentView() {
             </h2>
             <p>
               {attention.length
-                ? "Consulta estos soportes con el responsable de la operación."
-                : "Puedes consultar los soportes y revisar sus fechas declaradas."}
+                ? "Consulte estos soportes con el responsable de la operación."
+                : "Puede consultar los soportes y revisar sus fechas declaradas."}
             </p>
           </div>
         </div>
@@ -358,7 +358,7 @@ export function DocumentView() {
             ) : (
               <EmptyState
                 title="No encontramos esos documentos"
-                description="Prueba con otro sujeto, estado o texto de búsqueda."
+                description="Pruebe con otro sujeto, estado o texto de búsqueda."
               />
             )}
             <div className={styles.railFooter}>
@@ -476,7 +476,7 @@ export function DocumentView() {
                 />
               </label>
               <p className={styles.smallNote}>
-                Deja el campo vacío si la fecha no está declarada. El cambio
+                Deje el campo vacío si la fecha no está declarada. El cambio
                 requiere una nueva revisión.
               </p>
               <Button
@@ -501,12 +501,29 @@ export function DocumentView() {
         ) : (
           <div className={styles.detailEmpty}>
             <EmptyState
-              title="Selecciona un soporte"
+              title="Seleccione un soporte"
               description="El detalle estará disponible al encontrar documentos con los filtros."
             />
           </div>
         )}
       </section>
+      <details className={styles.explain}>
+        <summary>¿Qué garantiza una firma o una huella digital aquí?</summary>
+        <p>
+          En los documentos que se redactan y firman en la demo (por ejemplo, en
+          la lista de preparación del vuelo), la <strong>huella digital</strong>{" "}
+          es un código calculado con el contenido del documento. Si alguien
+          cambia una letra, el código cambia y las firmas anteriores quedan sin
+          validez: sirve para notar que algo se modificó después de firmar.
+        </p>
+        <p>
+          No es un sello de tiempo certificado ni una firma con certificado
+          digital. El nombre lo escribe quien firma y la hora la toma el equipo
+          de esa persona, así que ante un tercero (un auditor, una interventoría
+          o un juez) no prueba por sí sola quién firmó ni cuándo. Su valor legal
+          está pendiente de validar con asesoría jurídica.
+        </p>
+      </details>
       <p className="demo-note">
         Demostración · archivos, fechas y estados son de ejemplo. Los cambios se
         pierden al reiniciar. No sustituye la revisión del responsable ni

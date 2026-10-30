@@ -91,3 +91,17 @@
   line-height: 1.5;
   color: var(--muted);
 }
+.headline {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 700;
+  line-height: 1.45;
+}
+.value {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.value[data-gap="true"] {
+  color: var(--danger);
+}

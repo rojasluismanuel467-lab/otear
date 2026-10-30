@@ -157,7 +157,7 @@ test("payReadiness needs the signed delivery note, acknowledgement and acceptanc
   assert.equal(partial.items.find((item) => item.id === "accepted")?.ok, false);
 });
 
-import { checkArea, orderedHa } from "./coverage.ts";
+import { areaHeadline, areaValue, checkArea, orderedHa } from "./coverage.ts";
 
 test("ordered area adds up the polygons of the flight's zones and ignores lines", () => {
   const square: [number, number][] = [
@@ -202,4 +202,32 @@ test("area check compares billed with covered and says what is missing", () => {
   const partial = checkArea({ orderedHa: 240, coveredHa: 180, billedHa: 180 });
   assert.equal(partial.state, "match");
   assert.ok(partial.messages.some((text) => text.includes("75")));
+});
+
+test("the area check says it first and puts the difference in pesos with the quoted price", () => {
+  const over = checkArea({ orderedHa: 28, coveredHa: 26.4, billedHa: 27.9 });
+  assert.ok(areaHeadline(over).startsWith("Facturó 1,5 ha más"));
+  const quoted = areaValue({
+    coveredHa: 26.4,
+    billedHa: 27.9,
+    invoiceTotal: 850000,
+    quotedPrice: 3500,
+  })!;
+  assert.equal(quoted.source, "quote");
+  assert.equal(quoted.differenceCop, Math.round(1.5 * 3500));
+  assert.equal(quoted.expectedTotal, Math.round(27.9 * 3500));
+  assert.equal(quoted.totalGap, 850000 - Math.round(27.9 * 3500));
+  const implied = areaValue({
+    coveredHa: 20,
+    billedHa: 25,
+    invoiceTotal: 100000,
+  })!;
+  assert.equal(implied.source, "invoice");
+  assert.equal(implied.unitPrice, 4000);
+  assert.equal(implied.expectedTotal, undefined);
+  assert.equal(
+    areaValue({ billedHa: 10, invoiceTotal: 5 }),
+    undefined,
+    "without covered hectares there is nothing to compare",
+  );
 });

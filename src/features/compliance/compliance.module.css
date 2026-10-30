@@ -463,3 +463,18 @@
     transition: none;
   }
 }
+.explain {
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.explain summary {
+  font-weight: 650;
+  color: var(--accent);
+  cursor: pointer;
+}
+.explain p {
+  margin-top: 10px;
+}
