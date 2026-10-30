@@ -30,8 +30,8 @@ Configuración única, en GitHub → repo → **Settings** → **Secrets and var
 |---|---|---|
 | Secret | `CLOUDFLARE_API_TOKEN` | token de Cloudflare con el permiso **Account → Cloudflare Pages → Edit** (dash.cloudflare.com → My Profile → API Tokens → Create Token) |
 | Secret | `CLOUDFLARE_ACCOUNT_ID` | ID de su cuenta (Workers & Pages → panel derecho) |
-| Variable | `NEXT_PUBLIC_WHATSAPP_NUMBER` | número con indicativo, solo dígitos |
-| Variable | `NEXT_PUBLIC_CONTACT_EMAIL` | correo de contacto (ej. `hola@otear.app`) |
+| Variable o Secret | `NEXT_PUBLIC_WHATSAPP_NUMBER` | número con indicativo, solo dígitos |
+| Variable o Secret | `NEXT_PUBLIC_CONTACT_EMAIL` | correo de contacto (ej. `hola@otear.app`) |
 | Variable | `NEXT_PUBLIC_BOOKING_URL` | opcional |
 
 Las variables `NEXT_PUBLIC_*` van como **Variables** y no como Secrets porque quedan visibles en la página. Se fijan al construir: para cambiarlas, edite la variable y vuelva a correr el flujo (**Actions** → **Run workflow**).

@@ -3,8 +3,8 @@ name: Desplegar en Cloudflare Pages
 # Cada push a main revisa, construye y publica el sitio estático en Cloudflare Pages.
 # Necesita en GitHub → Settings → Secrets and variables → Actions:
 #   Secrets:   CLOUDFLARE_API_TOKEN (permiso «Cloudflare Pages: Edit»), CLOUDFLARE_ACCOUNT_ID
-#   Variables: NEXT_PUBLIC_WHATSAPP_NUMBER, NEXT_PUBLIC_CONTACT_EMAIL (opcional: NEXT_PUBLIC_BOOKING_URL)
-# Las variables NEXT_PUBLIC_* quedan visibles en la página, por eso no son secretos.
+#   Variables (o Secrets): NEXT_PUBLIC_WHATSAPP_NUMBER, NEXT_PUBLIC_CONTACT_EMAIL (opcional: NEXT_PUBLIC_BOOKING_URL)
+# Los valores NEXT_PUBLIC_* quedan visibles en la página; el flujo acepta cualquiera de los dos lugares.
 
 on:
   push:
@@ -38,12 +38,24 @@ jobs:
       - name: Pruebas
         run: npm test
 
+      - name: Comprobar canales de contacto
+        # Sin WhatsApp ni correo, el formulario de la landing no tendría cómo enviar:
+        # mejor no publicar que reemplazar un sitio que funciona por uno sin contacto.
+        run: |
+          if [ -z "$NEXT_PUBLIC_WHATSAPP_NUMBER" ] && [ -z "$NEXT_PUBLIC_CONTACT_EMAIL" ]; then
+            echo "::error::Defina NEXT_PUBLIC_WHATSAPP_NUMBER o NEXT_PUBLIC_CONTACT_EMAIL (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+        env:
+          NEXT_PUBLIC_WHATSAPP_NUMBER: ${{ vars.NEXT_PUBLIC_WHATSAPP_NUMBER || secrets.NEXT_PUBLIC_WHATSAPP_NUMBER }}
+          NEXT_PUBLIC_CONTACT_EMAIL: ${{ vars.NEXT_PUBLIC_CONTACT_EMAIL || secrets.NEXT_PUBLIC_CONTACT_EMAIL }}
+
       - name: Construir
         run: npm run build
         env:
-          NEXT_PUBLIC_WHATSAPP_NUMBER: ${{ vars.NEXT_PUBLIC_WHATSAPP_NUMBER }}
-          NEXT_PUBLIC_CONTACT_EMAIL: ${{ vars.NEXT_PUBLIC_CONTACT_EMAIL }}
-          NEXT_PUBLIC_BOOKING_URL: ${{ vars.NEXT_PUBLIC_BOOKING_URL }}
+          NEXT_PUBLIC_WHATSAPP_NUMBER: ${{ vars.NEXT_PUBLIC_WHATSAPP_NUMBER || secrets.NEXT_PUBLIC_WHATSAPP_NUMBER }}
+          NEXT_PUBLIC_CONTACT_EMAIL: ${{ vars.NEXT_PUBLIC_CONTACT_EMAIL || secrets.NEXT_PUBLIC_CONTACT_EMAIL }}
+          NEXT_PUBLIC_BOOKING_URL: ${{ vars.NEXT_PUBLIC_BOOKING_URL || secrets.NEXT_PUBLIC_BOOKING_URL }}
 
       - name: Publicar en Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
