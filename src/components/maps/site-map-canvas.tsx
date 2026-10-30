@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import L from "leaflet";
 import {
   Crosshair,
@@ -16,6 +22,7 @@ import type { SiteMapProps } from "./site-map";
 import { BasemapSwitch, useBasemap } from "./basemap-switch";
 import { createBasemap, overlayStyle } from "./basemaps";
 import { mountReplay } from "./replay-layer";
+import { unflownLines } from "./unflown-lines";
 import type { Replay } from "@/features/flights/replay/use-replay";
 
 /** Routes with more turning points than this show only their take-off point on the map. */
@@ -65,6 +72,11 @@ export default function MapCanvas({
   const map = useRef<L.Map | null>(null);
   const [tileError, setTileError] = useState(false);
   const basemap = useBasemap();
+  // Lines the operator ended without flying; drawn apart from the route (and not while editing it).
+  const unflown = useMemo(
+    () => (editable ? [] : unflownLines({ site, flight })),
+    [editable, site, flight],
+  );
 
   useEffect(() => {
     if (!container.current) return;
@@ -153,6 +165,22 @@ export default function MapCanvas({
         className: "zone-map-label",
       });
     });
+    unflown.forEach((line) => {
+      // Dashed and in another colour: the colour is not the only signal.
+      L.polyline(line, {
+        color: style.casing,
+        weight: 4.5,
+        opacity: 0.5,
+        interactive: false,
+      }).addTo(layer);
+      L.polyline(line, {
+        color: style.unflown,
+        weight: 2.25,
+        dashArray: "3 6",
+        interactive: false,
+        className: "flight-route-unflown",
+      }).addTo(layer);
+    });
     if (flight?.route.length) {
       // A survey packs its lines a few pixels apart: thinner strokes keep them apart.
       const dense = flight.route.length > MAX_NUMBERED_POINTS;
@@ -215,6 +243,7 @@ export default function MapCanvas({
     onFindingSelect,
     basemap,
     editable,
+    unflown,
   ]);
 
   const replayOpen = replay?.open;
@@ -319,6 +348,23 @@ export default function MapCanvas({
         </span>
         <i />
         {site.zoneLabel}
+        {unflown.length > 0 && (
+          <span className="map-legend-unflown">
+            <svg width="22" height="6" viewBox="0 0 22 6" aria-hidden="true">
+              <line
+                x1="1"
+                y1="3"
+                x2="21"
+                y2="3"
+                stroke="currentColor"
+                strokeWidth="2.25"
+                strokeDasharray="3 5"
+                strokeLinecap="round"
+              />
+            </svg>
+            Sin volar, según el operador
+          </span>
+        )}
       </div>
       <span className="map-example-label">Geometrías de ejemplo</span>
       {tileError && (

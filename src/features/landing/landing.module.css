@@ -687,14 +687,6 @@
   gap: 16px;
 }
 
-/* Cuatro columnas dejaban ~228 px de texto (29 caracteres por línea, cinco líneas por tarjeta);
-   dos por fila dan una medida de lectura de 55–65 caracteres. */
-.casesRail {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
 .caseHead {
   display: flex;
   align-items: center;
@@ -876,8 +868,9 @@
   gap: 8px 16px;
 }
 
-.exampleHead h3 {
-  font-size: 20px;
+.exampleHead h3,
+.exampleHead h4 {
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--foreground);
@@ -946,6 +939,112 @@
 
 .example .inlineLink {
   justify-self: start;
+}
+
+/* Caso principal (agricultura): texto del caso a la izquierda, cifras de ejemplo a la derecha. */
+.mainCase {
+  margin-top: 0;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 32px 40px;
+  align-items: start;
+}
+
+.mainCaseCopy,
+.mainCaseFigures {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  min-width: 0;
+}
+
+.mainCaseCopy .caseHead {
+  margin-bottom: 0;
+}
+
+.mainCaseCopy .roleLine {
+  margin-bottom: 0;
+}
+
+.mainCaseTitle {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--foreground);
+  text-wrap: balance;
+}
+
+.mainCaseCopy .roleTags {
+  margin-top: 0;
+}
+
+.mainCaseFigures .sectionActions {
+  margin-top: 0;
+}
+
+/* Los otros cuatro sectores: una sola lista compacta junto a «Su sector». */
+.otherCasesTitle {
+  margin: 40px 0 16px;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+
+.otherCases {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.compactCases {
+  list-style: none;
+  margin: 0;
+  display: grid;
+  align-content: start;
+  gap: 0;
+  padding: 8px 24px;
+}
+
+.compactCase {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px 0;
+}
+
+.compactCase + .compactCase {
+  border-top: 1px solid var(--border);
+}
+
+.compactCaseName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  margin-bottom: 4px;
+}
+
+.compactCaseName .roleName {
+  margin-bottom: 0;
+}
+
+.compactCaseTitle {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--foreground);
+}
+
+.compactCaseLine {
+  font-size: var(--text-small);
+  line-height: 1.55;
+  color: var(--foreground);
+  text-wrap: pretty;
+  margin: 0;
+  max-width: none;
 }
 
 /* --- "su sector" open card + inline links --- */
@@ -1468,6 +1567,11 @@ a.channel:focus-visible {
     gap: 40px;
   }
 
+  .mainCase,
+  .otherCases {
+    grid-template-columns: 1fr;
+  }
+
   .droneWrap {
     --bleed: 0px;
     max-height: 56vh;
@@ -1514,7 +1618,6 @@ a.channel:focus-visible {
 
   .rolesRail,
   .rolesRailTwo,
-  .casesRail,
   .exampleNumbers {
     grid-template-columns: 1fr;
   }

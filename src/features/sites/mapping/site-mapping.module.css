@@ -133,11 +133,20 @@
     0 1px 2px color-mix(in srgb, var(--overlay) 8%, transparent),
     0 10px 24px -12px color-mix(in srgb, var(--overlay) 28%, transparent);
 }
+/* El número de la zona, en un color neutro: los colores de la gráfica de Evolución significan otra cosa. */
 .zoneRow i {
-  width: 14px;
-  height: 14px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   flex-shrink: 0;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  font-feature-settings: "tnum";
+  color: var(--accent-soft-foreground);
+  background: var(--accent-soft);
 }
 .zoneRow strong {
   display: block;
@@ -347,11 +356,17 @@
     color-mix(in srgb, var(--overlay) 30%, transparent);
 }
 .swatch {
-  width: 22px;
-  height: 22px;
-  margin-top: 12px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 10px;
   border-radius: 50%;
-  border: 3px solid #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-feature-settings: "tnum";
+  color: var(--accent-soft-foreground);
+  background: var(--accent-soft);
   box-shadow: 0 0 0 1px var(--border);
 }
 .editFields {

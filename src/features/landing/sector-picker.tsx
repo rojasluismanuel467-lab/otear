@@ -49,7 +49,7 @@ export function SectorPicker() {
       id="pruebelo"
       aria-labelledby="picker-title"
     >
-      <div className={styles.panel} data-cursor-theme="dark">
+      <div className={styles.panel} data-cursor-theme="dark" data-flight-clear>
         <div className={styles.controls}>
           <span className={styles.tag}>Pruébelo con su sector</span>
           <h2 id="picker-title" className={styles.title}>

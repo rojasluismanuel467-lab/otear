@@ -25,6 +25,10 @@ import {
 const SLOT = "[data-drone-slot]";
 /** Page elements the route passes by: «head» is a section heading, «home» the footer logo. */
 const PERCH = "[data-flight-perch]";
+/** Reading areas (the sector picker, the contact form): the aircraft fades while it is over them. */
+const CLEAR = "[data-flight-clear]";
+/** How visible it stays over a reading area. */
+const CLEARED_OPACITY = 0.1;
 
 /** Tilt of the camera from straight down, so the aircraft keeps some volume. */
 const TILT = (24 * Math.PI) / 180;
@@ -208,6 +212,8 @@ export function mountFlight(
   };
 
   let route: Waypoint[] = [];
+  let clearZones: Element[] = [];
+  let visibility = 1;
   let arrivalStart: number | null = null;
   let arrivalDone = reducedMotion || window.scrollY > 160;
   let arrivalFrom = { x: 0, y: 0 };
@@ -224,6 +230,7 @@ export function mountFlight(
     camera.bottom = -height / 2;
     camera.updateProjectionMatrix();
     route = measureRoute(width, height);
+    clearZones = Array.from(document.querySelectorAll(CLEAR));
     // Arrives from the side of the screen where the hero's aircraft sits.
     arrivalFrom = {
       x: (route[0]?.x ?? width / 2) < width / 2 ? -width * 0.14 : width * 1.14,
@@ -284,6 +291,28 @@ export function mountFlight(
       size *= 0.7 + 0.3 * eased;
       if (progress >= 1) arrivalDone = true;
     }
+
+    // Over a reading area the aircraft fades instead of covering the text. Only the
+    // opacity changes: the route and the heading are the same.
+    let covering = false;
+    if (arrivalDone) {
+      const reach = size * 0.3;
+      covering = clearZones.some((zone) => {
+        const box = zone.getBoundingClientRect();
+        return (
+          x > box.left - reach &&
+          x < box.right + reach &&
+          y > box.top - reach &&
+          y < box.bottom + reach
+        );
+      });
+    }
+    const wantedVisibility = covering ? CLEARED_OPACITY : 1;
+    visibility = reducedMotion
+      ? wantedVisibility
+      : visibility +
+        (wantedVisibility - visibility) * (1 - Math.exp(-delta * 7));
+    renderer.domElement.style.opacity = visibility.toFixed(3);
 
     // Heading follows the real motion on screen; the wing banks into the turn.
     if (previous && delta > 0 && !reducedMotion) {

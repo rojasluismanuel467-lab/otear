@@ -51,6 +51,8 @@ export function overlayStyle(id: BasemapId) {
         zone: "#ffffff",
         fillOpacity: 0.16,
         route: "#ffd166",
+        // Lines the operator declares not flown: pink-red and dashed, apart from the route's yellow.
+        unflown: "#ff5d8f",
         casing: "#10242c",
         coverage: "#5eead4",
         trail: "#ff7a3d",
@@ -59,6 +61,7 @@ export function overlayStyle(id: BasemapId) {
         zone: "#4a8fae",
         fillOpacity: 0.13,
         route: "#1c6f8d",
+        unflown: "#b4233f",
         casing: "#ffffff",
         coverage: "#1c6f8d",
         trail: "#c2410c",
