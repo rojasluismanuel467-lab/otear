@@ -240,7 +240,7 @@ La simulación funciona en **Resumen** y en **Observaciones**, con el mismo relo
 
 **Pendiente o limitado:**
 
-- El dibujo de las familias genéricas (compacto, industrial, aspersión, ala fija) es más simple que el de la Viper.
+- Las familias genéricas (compacto, industrial, aspersión, ala fija) se pulieron para acercarse a la Viper: pintura con barniz, brazos cónicos con articulación, motores con anillo de luz, hélices con torsión y desenfoque, cardán con lentes, patines con patas y tren de aterrizaje con pies de goma; el aspersor lleva tanque transparente con líquido, mangueras y atomizadores, y el ala fija es un ala volante con flecha, alerones y alerillas. Siguen siendo ilustrativas y sin marca, y quedan algo menos detalladas que la Viper, que lleva el logo y el nombre en las alas.
 - En construcción la huella de las fotos (111 m) es más grande que el lote y la cobertura pintada tapa más que la obra; con un GSD menor se vería más ajustada.
 - El regreso al punto de despegue cruza los lotes en línea recta.
 - No hay lectura de trazas reales ni huella SHA-256 de la traza (mejoras 4 y 5 de la lista); siguen como propuesta.
