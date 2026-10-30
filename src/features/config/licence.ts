@@ -1,6 +1,6 @@
 /**
  * How much of the product a company can adapt depends on its licence. The plans are
- * examples to show the model: names, limits and prices are for the owner to decide.
+ * examples to show the model: names, limits and prices are not defined yet: they are agreed with each customer.
  */
 export type PlanId = "base" | "pro" | "enterprise";
 
@@ -56,7 +56,7 @@ export const featureLabels: Record<
   },
   addons: {
     label: "Complementos",
-    detail: "Instalar extensiones aprobadas por el propietario del software.",
+    detail: "Piezas propias de su sector, construidas con usted.",
     available: false,
   },
 };
