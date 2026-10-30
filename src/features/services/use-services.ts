@@ -4,6 +4,7 @@ import { orderedHa } from "@/features/billing/coverage";
 import { useDemo } from "@/features/demo/demo-context";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import type { Party, ServiceRequest } from "@/features/demo/types";
+import { aircraftForOperator } from "./links";
 import * as workflow from "./workflow";
 
 type Outcome =
@@ -12,16 +13,18 @@ type Outcome =
 export type ActionInput =
   | { id: "quote"; price: number; startDate: string; note: string }
   | { id: "decline"; note: string }
-  | { id: "assign"; operatorId: string }
+  | { id: "assign"; operatorId: string; reason?: string }
   | { id: "schedule"; date: string; time: string; pilot: string }
   | {
       id: "deliver";
-      coveredHa: number;
+      /** Only for a service priced per hectare. */
+      coveredHa?: number;
       deliverables: string[];
       note: string;
       durationMin?: number;
       photoCount?: number;
     }
+  | ({ id: "reply" } & workflow.ReplyInput)
   | { id: "verify"; result: "accepted" | "disputed"; note: string }
   | { id: "invoice"; billedHa?: number }
   | { id: "cancel"; note: string };
@@ -42,6 +45,7 @@ export function useServices() {
     parties,
     actor,
     flights,
+    aircraft,
     serviceRequests,
     saveServiceRequest,
     addFlight,
@@ -71,7 +75,7 @@ export function useServices() {
   }
 
   function act(request: ServiceRequest, input: ActionInput): Outcome {
-    const area = orderedHa(site.zones, request.zoneIds);
+    const area = orderedHa(site.zones, request.zoneIds, site.sector);
     switch (input.id) {
       case "quote":
         return finish(
@@ -85,7 +89,7 @@ export function useServices() {
         );
       case "assign":
         return finish(
-          workflow.assign(request, input.operatorId, ctx),
+          workflow.assign(request, input.operatorId, ctx, input.reason),
           `Servicio asignado a ${nameOf(input.operatorId)}.`,
         );
       case "schedule": {
@@ -98,6 +102,12 @@ export function useServices() {
         const zones = site.zones.filter((zone) =>
           request.zoneIds.includes(zone.id),
         );
+        // The aircraft its operator has flown in the example fleet; without one it stays «Por definir».
+        const craft = aircraftForOperator(
+          nameOf(request.operatorId),
+          flights,
+          aircraft,
+        );
         const flightId = addFlight({
           siteId: site.id,
           title: request.title,
@@ -108,7 +118,8 @@ export function useServices() {
           pilot: input.pilot.trim() || "Por definir",
           operator: nameOf(request.operatorId),
           manager: nameOf(request.requestedBy),
-          drone: "Por definir",
+          drone: craft?.label ?? "Por definir",
+          ...(craft ? { aircraftId: craft.id } : {}),
           zoneIds: request.zoneIds,
           route: zones.flatMap((zone) => zone.outline),
           duration: 0,
@@ -132,19 +143,40 @@ export function useServices() {
             ...(input.durationMin ? { duration: input.durationMin } : {}),
             ...(input.photoCount ? { photoCount: input.photoCount } : {}),
             date: flight && flight.date > DEMO_DATE ? DEMO_DATE : flight?.date,
-            log: flight?.log
-              ? { ...flight.log, coveredHa: input.coveredHa }
-              : undefined,
+            log:
+              flight?.log && result.request.delivery?.coveredHa !== undefined
+                ? {
+                    ...flight.log,
+                    coveredHa: result.request.delivery.coveredHa,
+                  }
+                : undefined,
           });
         }
         return finish(result, "Entrega registrada; queda por verificar.");
+      }
+      case "reply": {
+        const result = workflow.reply(request, input, ctx);
+        // An accepted adjustment changes the hectares the flight record says were covered.
+        if (result.ok && input.kind === "adjusted" && request.flightId) {
+          const flight = flights.find((item) => item.id === request.flightId);
+          if (flight?.log)
+            updateFlight(request.flightId, {
+              log: { ...flight.log, coveredHa: input.adjustedHa },
+            });
+        }
+        return finish(
+          result,
+          input.kind === "adjusted"
+            ? "Ajuste aceptado; el cliente verifica de nuevo."
+            : "Respuesta enviada; el cliente verifica de nuevo.",
+        );
       }
       case "verify":
         return finish(
           workflow.verify(request, input, ctx),
           input.result === "accepted"
             ? "Entrega aceptada; el operador ya puede facturar."
-            : "Se pidió corregir la entrega.",
+            : "Se pidió ajustar la entrega; el operador puede responder.",
         );
       case "invoice": {
         const checked = workflow.invoice(

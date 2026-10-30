@@ -9,6 +9,7 @@ import { QuoteAdvisor } from "@/features/agents/quote-advisor";
 import {
   DEFAULT_TOLERANCE_PCT,
   orderedHa as sumOrderedHa,
+  orderedKm as sumOrderedKm,
 } from "@/features/billing/coverage";
 import { useTerm } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
@@ -67,9 +68,11 @@ function waitingFor(
       case "scheduled":
         return `${name(request.operatorId)} debe volar y registrar la entrega.`;
       case "delivered":
-        return `${name(request.requestedBy)} debe verificar la entrega.`;
+        return request.disputeReply
+          ? `${name(request.operatorId)} respondió a su reclamo. Léalo y verifique de nuevo la entrega.`
+          : `${name(request.requestedBy)} debe verificar la entrega.`;
       case "disputed":
-        return `${name(request.operatorId)} debe corregir y volver a entregar.`;
+        return `${name(request.operatorId)} debe responder (aceptar el ajuste o sostener lo entregado) o corregir y volver a entregar.`;
       default:
         return `${name(request.operatorId)} puede facturar.`;
     }
@@ -92,9 +95,11 @@ function waitingFor(
     case "scheduled":
       return "Le toca volar y registrar la entrega.";
     case "delivered":
-      return `Entrega registrada${request.delivery ? ` el ${formatDate(request.delivery.deliveredOn)}` : ""}. Falta que ${name(request.requestedBy)} la verifique.`;
+      return request.disputeReply
+        ? `Su respuesta quedó enviada el ${formatDate(request.disputeReply.on)}. Falta que ${name(request.requestedBy)} verifique de nuevo la entrega.`
+        : `Entrega registrada${request.delivery ? ` el ${formatDate(request.delivery.deliveredOn)}` : ""}. Falta que ${name(request.requestedBy)} la verifique.`;
     case "disputed":
-      return `${name(request.requestedBy)} pidió corregir la entrega. Corríjala y vuelva a entregarla.`;
+      return `${name(request.requestedBy)} pidió ajustar la entrega. Usted puede responder (aceptar el ajuste o sostener lo entregado, con una nota) o corregirla y volver a entregarla.`;
     default:
       return "La entrega fue aceptada. Le toca facturar.";
   }
@@ -119,11 +124,15 @@ function eventsFor(
           text: `${name(event.by)} pidió el servicio e invitó a ${request.invited.length} operadores, entre ellos usted.`,
         },
       ];
-    if (event.type === "assigned" && request.operatorId !== operatorId)
+    if (event.type === "assigned")
+      // The reason for the choice is the buyer's: the operator chosen reads the step, not the why.
       return [
         {
           ...event,
-          text: `${name(event.by)} asignó el servicio a otro operador.`,
+          text:
+            request.operatorId !== operatorId
+              ? `${name(event.by)} asignó el servicio a otro operador.`
+              : `${name(event.by)} asignó el servicio a ${name(request.operatorId)}.`,
         },
       ];
     return [event];
@@ -144,13 +153,16 @@ export function RequestDetail({
   const [openAction, setOpenAction] = useState<workflow.ActionId | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [assignError, setAssignError] = useState("");
+  const [reason, setReason] = useState("");
   const asOperator = actor.role === "operator";
   const operatorId = asOperator ? actor.id : undefined;
   const actions = workflow.availableActions(request, actor.role, operatorId);
   const direct = actions.filter((action) => action.id !== "assign");
   const canAssign = actions.some((action) => action.id === "assign");
   const canAct = canAssign || direct.some((action) => action.id !== "cancel");
-  const ordered = sumOrderedHa(site.zones, request.zoneIds);
+  const ordered = sumOrderedHa(site.zones, request.zoneIds, site.sector);
+  const roads = site.sector === "roads";
+  const orderedKm = roads ? sumOrderedKm(site.zones, request.zoneIds) : 0;
   const measures = measureZones(
     site.zones,
     request.zoneIds,
@@ -181,6 +193,7 @@ export function RequestDetail({
     : "sin asignar";
   const seesDelivery = request.delivery && !assignedToOther;
   const agreed = request.quotes.find((quote) => quote.state === "chosen");
+  const covered = request.delivery?.coveredHa;
 
   function run(input: ActionInput) {
     const result = act(request, input);
@@ -191,11 +204,12 @@ export function RequestDetail({
   }
 
   function confirmAssign(id: string) {
-    const failure = run({ id: "assign", operatorId: id });
+    const failure = run({ id: "assign", operatorId: id, reason });
     if (failure) setAssignError(failure);
     else {
       setAssignError("");
       setConfirming(null);
+      setReason("");
     }
   }
 
@@ -302,8 +316,14 @@ export function RequestDetail({
           </dd>
         </div>
         <div>
-          <dt>Área pedida</dt>
-          <dd>{ordered > 0 ? hectares(ordered) : "Por tramo"}</dd>
+          <dt>{roads ? "Longitud pedida" : "Área pedida"}</dt>
+          <dd>
+            {roads
+              ? `${measures.length} ${measures.length === 1 ? "tramo" : "tramos"} · ${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(orderedKm)} km`
+              : ordered > 0
+                ? hectares(ordered)
+                : "Por zona"}
+          </dd>
         </div>
         <div>
           <dt>Ventana</dt>
@@ -335,6 +355,12 @@ export function RequestDetail({
             <dd>
               {assignedToOther ? "Otro operador" : nameOf(request.operatorId)}
             </dd>
+          </div>
+        )}
+        {request.assignReason && !asOperator && (
+          <div>
+            <dt>Motivo de la elección</dt>
+            <dd>{request.assignReason}</dd>
           </div>
         )}
       </dl>
@@ -417,6 +443,7 @@ export function RequestDetail({
                               variant="secondary"
                               onPress={() => {
                                 setAssignError("");
+                                setReason("");
                                 setConfirming(quote.operatorId);
                               }}
                             >
@@ -451,6 +478,23 @@ export function RequestDetail({
                 fecha, como «No fue seleccionada». No se envía nada fuera de la
                 demo.
               </p>
+              <label className="form-field">
+                <span className="field-label">
+                  Motivo de la elección (opcional)
+                </span>
+                <input
+                  className="field-input"
+                  maxLength={workflow.MAX_REASON_LENGTH}
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  placeholder="Ej. el precio más bajo y buen historial en este sitio"
+                />
+                <span className="text-muted">
+                  Queda en la solicitud y en el informe consolidado, para
+                  explicar después por qué eligió a este operador. El operador
+                  no lo ve.
+                </span>
+              </label>
               {assignError && (
                 <p className={styles.error} role="alert">
                   {assignError}
@@ -483,34 +527,37 @@ export function RequestDetail({
           <h3 id="delivery-title">
             Entrega del {formatDate(request.delivery.deliveredOn)}
           </h3>
-          <p className={styles.deliveryNote}>
-            {nameOf(request.operatorId)} dice haber cubierto{" "}
-            <strong>{hectares(request.delivery.coveredHa)}</strong>
-            {ordered > 0 && ` de las ${hectares(ordered)} pedidas`}.
-            {request.delivery.note ? ` ${request.delivery.note}` : ""}
-          </p>
-          {ordered > 0 && (
+          {covered !== undefined ? (
+            <p className={styles.deliveryNote}>
+              {nameOf(request.operatorId)} dice haber cubierto{" "}
+              <strong>{hectares(covered)}</strong>
+              {ordered > 0 && ` de las ${hectares(ordered)} pedidas`}.
+              {request.delivery.note ? ` ${request.delivery.note}` : ""}
+            </p>
+          ) : (
+            <p className={styles.deliveryNote}>
+              {nameOf(request.operatorId)} registró la entrega.
+              {request.delivery.note ? ` ${request.delivery.note}` : ""}
+            </p>
+          )}
+          {covered !== undefined && ordered > 0 && (
             <div
               className={styles.bar}
               style={
                 {
-                  "--share": Math.min(1, request.delivery.coveredHa / ordered),
+                  "--share": Math.min(1, covered / ordered),
                 } as React.CSSProperties
               }
-              data-low={request.delivery.coveredHa / ordered < 0.95}
+              data-low={covered / ordered < 0.95}
               role="img"
-              aria-label={`Cubierto: ${Math.round((request.delivery.coveredHa / ordered) * 100)} % de lo pedido`}
+              aria-label={`Cubierto: ${Math.round((covered / ordered) * 100)} % de lo pedido`}
             />
           )}
-          {request.unit === "ha" && agreed && (
+          {request.unit === "ha" && agreed && covered !== undefined && (
             <p className={styles.deliveryNote}>
               Al precio cotizado ({formatMoney(agreed.price)} por hectárea),{" "}
-              {hectares(request.delivery.coveredHa)} son{" "}
-              <strong>
-                {formatMoney(
-                  Math.round(agreed.price * request.delivery.coveredHa),
-                )}
-              </strong>
+              {hectares(covered)} son{" "}
+              <strong>{formatMoney(Math.round(agreed.price * covered))}</strong>
               .{" "}
               {request.status === "verified" || request.status === "invoiced"
                 ? "Con esa cifra se aceptó la entrega."
@@ -518,6 +565,13 @@ export function RequestDetail({
               Si se factura más, Pagos lo marca cuando la diferencia pasa de{" "}
               {DEFAULT_TOLERANCE_PCT} %; esa tolerancia aún no se acuerda en el
               pedido (por definir). Cifras de ejemplo.
+            </p>
+          )}
+          {request.unit === "flight" && agreed && (
+            <p className={styles.deliveryNote}>
+              Este servicio se cobra por vuelo completo:{" "}
+              {formatMoney(agreed.price)} según la cotización elegida (cifra de
+              ejemplo).
             </p>
           )}
           <ul>
@@ -534,20 +588,48 @@ export function RequestDetail({
               <CircleCheck size={15} aria-hidden="true" />{" "}
               {request.verification.result === "accepted"
                 ? "Aceptada"
-                : "Devuelta para corregir"}{" "}
+                : "Devuelta para ajustar"}{" "}
               el {formatDate(request.verification.on)}
               {request.verification.note
                 ? `: ${request.verification.note}`
                 : "."}
             </p>
           )}
-          {request.status === "verified" ||
-          request.status === "invoiced" ? null : (
-            <p className="text-muted">
-              Esta es una cifra declarada por el operador; Otear no la mide con
-              las imágenes.
-            </p>
+          {request.disputeReply && (
+            <div className={styles.reply}>
+              <h4>
+                {asOperator
+                  ? "Su respuesta"
+                  : `Respuesta de ${nameOf(request.operatorId)}`}
+              </h4>
+              <p>
+                {request.disputeReply.kind === "adjusted"
+                  ? `Aceptó el ajuste el ${formatDate(request.disputeReply.on)}: las hectáreas cubiertas pasan de ${hectares(request.disputeReply.previousHa ?? 0)} a ${hectares(request.disputeReply.adjustedHa ?? 0)}, y esa es la cifra que puede facturar.`
+                  : `Sostiene lo entregado (${formatDate(request.disputeReply.on)}).`}
+                {request.disputeReply.note
+                  ? ` «${request.disputeReply.note}»`
+                  : ""}
+              </p>
+              {request.disputeReply.supportFiles.length > 0 && (
+                <>
+                  <p className="text-muted">Archivos de soporte anotados:</p>
+                  <ul>
+                    {request.disputeReply.supportFiles.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
           )}
+          {covered !== undefined &&
+            request.status !== "verified" &&
+            request.status !== "invoiced" && (
+              <p className="text-muted">
+                Esta es una cifra declarada por el operador; Otear no la mide
+                con las imágenes.
+              </p>
+            )}
         </section>
       )}
 

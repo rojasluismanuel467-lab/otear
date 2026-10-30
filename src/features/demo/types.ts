@@ -342,6 +342,19 @@ export interface ServiceEvent {
   text: string;
 }
 
+export interface DisputeReply {
+  /** «adjusted»: accepts the adjustment (fewer hectares); «upheld»: stands by what it delivered. */
+  kind: "adjusted" | "upheld";
+  note: string;
+  /** File names noted as support, as in a delivery: nothing is uploaded in the demo. */
+  supportFiles: string[];
+  on: string;
+  by: string;
+  /** Only when adjusted: the hectares declared before and after the adjustment. */
+  previousHa?: number;
+  adjustedHa?: number;
+}
+
 export interface ServiceRequest {
   id: string;
   siteId: string;
@@ -362,8 +375,14 @@ export interface ServiceRequest {
   quotes: ServiceQuote[];
   operatorId?: string;
   flightId?: string;
+  /** Why the requester chose this operator, in a few words; optional, seen by whoever contracts. */
+  assignReason?: string;
   delivery?: {
-    coveredHa: number;
+    /**
+     * Hectares the operator says it covered. Only for services priced per hectare: a service priced
+     * per flight (a road has length, not area) leaves it empty and the screens do not show it.
+     */
+    coveredHa?: number;
     deliveredOn: string;
     note: string;
     deliverables: string[];
@@ -374,6 +393,8 @@ export interface ServiceRequest {
     on: string;
     by: string;
   };
+  /** The operator's answer to a dispute: it stays visible to whoever verifies the delivery again. */
+  disputeReply?: DisputeReply;
   invoiceId?: string;
   createdOn: string;
   events: ServiceEvent[];

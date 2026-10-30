@@ -12,8 +12,9 @@ import type { OperatorSummary } from "./operators.ts";
  * What was decided, in order, for the consolidated report: each service request with its quotes,
  * the one chosen, the delivery, the check and the invoice, plus the plans an assistant proposed
  * and a person approved, and the hectares ordered, declared and billed per operator.
- * Everything comes from the session's state; the quote's reason is not stored by the demo, so
- * the text says so instead of inventing one.
+ * Everything comes from the session's state; the reason for choosing a quote is whatever the person
+ * wrote when assigning (it is optional), and when they wrote none the text says so instead of
+ * inventing one.
  */
 
 export interface DecisionInput {
@@ -75,6 +76,9 @@ export function serviceDecisionLines(input: DecisionInput): string[] {
   const { site, parties, zoneMeasure } = input;
   const name = (id: string | undefined) =>
     parties.find((party) => party.id === id)?.name ?? "Sin nombre";
+  // Who acted, as a name; a value that is not a known party is already a name (older records).
+  const who = (id: string) =>
+    parties.find((party) => party.id === id)?.name ?? id;
   const roads = site.sector === "roads";
   const requests = input.requests
     .filter((request) => requestInPeriod(request, input.period))
@@ -120,7 +124,7 @@ export function serviceDecisionLines(input: DecisionInput): string[] {
       : `${number(ordered)} ha`;
     const unitText = request.unit === "ha" ? "por ha" : "por vuelo";
     lines.push(
-      `- ${request.title} (${kindText[request.kind]}) · ${statusText[request.status]} · pedido el ${date(request.createdOn)} por ${request.requestedBy}`,
+      `- ${request.title} (${kindText[request.kind]}) · ${statusText[request.status]} · pedido el ${date(request.createdOn)} por ${who(request.requestedBy)}`,
       `  Qué se pidió: ${zoneNames || "sin zonas"} · ${orderedText} · entre el ${date(request.windowStart)} y el ${date(request.windowEnd)}` +
         (request.maxPrice
           ? ` · tope ${money(request.maxPrice)} ${unitText}`
@@ -147,19 +151,38 @@ export function serviceDecisionLines(input: DecisionInput): string[] {
           (request.unit === "ha" && !roads
             ? ` (${money(total)} para ${orderedText})`
             : "") +
-          `. El motivo de la elección no queda registrado en la demo.`,
+          (request.assignReason
+            ? `. Motivo de la elección: ${request.assignReason}.`
+            : `. Sin motivo anotado al elegir (es opcional).`),
       );
     }
     if (request.delivery) {
       lines.push(
-        roads
+        request.delivery.coveredHa === undefined
           ? `  Entrega: ${name(request.operatorId)} entregó el ${date(request.delivery.deliveredOn)}.`
           : `  Entrega: ${name(request.operatorId)} declaró ${number(request.delivery.coveredHa)} ha cubiertas el ${date(request.delivery.deliveredOn)} (cifra declarada por el operador, no medida por Otear).`,
       );
     }
     if (request.verification) {
       lines.push(
-        `  Verificación: ${request.verification.result === "accepted" ? "aceptada" : "en disputa"} el ${date(request.verification.on)} por ${request.verification.by}.`,
+        `  Verificación: ${request.verification.result === "accepted" ? "aceptada" : "en disputa"} el ${date(request.verification.on)} por ${who(request.verification.by)}` +
+          (request.verification.result === "disputed" &&
+          request.verification.note
+            ? `: ${request.verification.note}.`
+            : "."),
+      );
+    }
+    const answer = request.disputeReply;
+    if (answer) {
+      lines.push(
+        `  Respuesta del operador a la disputa (${date(answer.on)}): ` +
+          (answer.kind === "adjusted"
+            ? `aceptó el ajuste, de ${number(answer.previousHa ?? 0)} a ${number(answer.adjustedHa ?? 0)} ha`
+            : "sostuvo lo entregado") +
+          (answer.note ? `. ${answer.note}` : "") +
+          (answer.supportFiles.length
+            ? ` Soportes anotados: ${answer.supportFiles.join(", ")}.`
+            : ""),
       );
     }
     const invoice = input.invoices.find(

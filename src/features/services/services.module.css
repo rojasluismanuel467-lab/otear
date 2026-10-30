@@ -363,6 +363,28 @@
   font-size: 13px;
   line-height: 1.55;
 }
+/* La respuesta del operador a un reclamo queda junto a él, con el mismo peso visual. */
+.reply {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+}
+.reply h4 {
+  margin: 0;
+  font-size: var(--heading-group, 14px);
+  font-weight: 700;
+}
+.reply p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.reply ul {
+  margin: 0;
+}
 .bar {
   height: 8px;
   border-radius: 999px;

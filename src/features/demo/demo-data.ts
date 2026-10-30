@@ -1757,8 +1757,8 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
           on: "2026-10-14",
         },
       ],
+      assignReason: "La cotización más baja de las dos.",
       delivery: {
-        coveredHa: 0,
         deliveredOn: "2026-10-24",
         note: "Cobertura completa.",
         deliverables: ["Ortomosaico (GeoTIFF)", "Fotografías originales (JPG)"],
@@ -1800,7 +1800,7 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
           manager,
           "manager",
           "assigned",
-          `${siteParties[site.id][0]} asignó el servicio a AeroVisión del Valle.`,
+          `${siteParties[site.id][0]} asignó el servicio a AeroVisión del Valle. Motivo: La cotización más baja de las dos.`,
         ),
         ev(
           5,
@@ -2009,7 +2009,6 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
         },
       ],
       delivery: {
-        coveredHa: 0,
         deliveredOn: "2026-10-24",
         note: "Quedó una franja sin cubrir por viento.",
         deliverables: [
@@ -2078,15 +2077,129 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
               .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0) * 10,
           ) / 10;
     // The delivery says what the flight record says, so Servicios and Pagos show the same hectares.
-    const orderedFirst = polygonHa(first.zoneIds);
-    const coveredFirst = flight1?.log?.coveredHa;
-    first.delivery!.coveredHa =
-      coveredFirst ?? (Math.round(orderedFirst * 0.94 * 10) / 10 || 1);
-    if (coveredFirst !== undefined && orderedFirst - coveredFirst >= 0.5) {
-      first.delivery!.note = `Quedaron ${formatHa(orderedFirst - coveredFirst)} ha sin cubrir; está en el registro del vuelo.`;
+    // Only services priced by hectare declare any: a road has length and a fence is flown as a loop.
+    if (unit === "ha") {
+      const orderedFirst = polygonHa(first.zoneIds);
+      const coveredFirst = flight1?.log?.coveredHa;
+      first.delivery!.coveredHa =
+        coveredFirst ?? (Math.round(orderedFirst * 0.94 * 10) / 10 || 1);
+      if (coveredFirst !== undefined && orderedFirst - coveredFirst >= 0.5) {
+        first.delivery!.note = `Quedaron ${formatHa(orderedFirst - coveredFirst)} ha sin cubrir; está en el registro del vuelo.`;
+      }
+      fourth.delivery!.coveredHa =
+        Math.round(polygonHa(fourth.zoneIds) * 0.88 * 10) / 10 || 1;
     }
-    fourth.delivery!.coveredHa =
-      Math.round(polygonHa(fourth.zoneIds) * 0.88 * 10) / 10 || 1;
-    return [first, second, third, fourth];
+    // A delivery the buyer returned, so the operator's answer can be tried: it declared almost
+    // everything, the buyer counts less. Hectares are the zone's own; the tariff is the example one.
+    if (site.sector !== "agriculture") return [first, second, third, fourth];
+    const disputedZone = site.zones[1] ?? site.zones[site.zones.length - 1];
+    const disputedOrdered = polygonHa([disputedZone.id]);
+    const declaredHa = Math.round(disputedOrdered * 0.98 * 10) / 10;
+    const countedHa = Math.round(disputedOrdered * 0.9 * 10) / 10;
+    const fifth: ServiceRequest = {
+      ...base,
+      id: `service-${site.id}-5`,
+      kind: "monitoring",
+      title: `Seguimiento del ${disputedZone.name}`,
+      description: `Recorrido de control de ${disputedZone.name} antes del seguimiento del mes.`,
+      zoneIds: [disputedZone.id],
+      requestedBy: manager,
+      windowStart: "2026-10-14",
+      windowEnd: "2026-10-21",
+      maxPrice: price(4500),
+      status: "disputed",
+      operatorId: OPERATOR_B,
+      createdOn: "2026-10-08",
+      assignReason: "La cotización más baja de las dos.",
+      quotes: [
+        {
+          operatorId: OPERATOR_B,
+          price: price(3500),
+          startDate: "2026-10-16",
+          note: "",
+          state: "chosen",
+          on: "2026-10-09",
+        },
+        {
+          operatorId: OPERATOR_A,
+          price: price(3700),
+          startDate: "2026-10-15",
+          note: "",
+          state: "declined",
+          on: "2026-10-09",
+        },
+      ],
+      delivery: {
+        coveredHa: declaredHa,
+        deliveredOn: "2026-10-21",
+        note: "Recorrido completo según el registro de vuelo.",
+        deliverables: ["Ortomosaico (GeoTIFF)", "Registro de vuelo (CSV)"],
+      },
+      verification: {
+        result: "disputed",
+        note: `En la ortofoto la franja del costado norte no aparece volada: cuento unas ${formatHa(declaredHa - countedHa)} ha menos de las declaradas. Pido facturar solo lo cubierto.`,
+        on: "2026-10-22",
+        by: manager,
+      },
+      events: [
+        ev(
+          41,
+          "2026-10-08",
+          manager,
+          "manager",
+          "requested",
+          `${siteParties[site.id][0]} pidió el servicio e invitó a AeroVisión del Valle y Drones del Pacífico (ejemplo).`,
+        ),
+        ev(
+          42,
+          "2026-10-09",
+          OPERATOR_B,
+          "operator",
+          "quoted",
+          `Drones del Pacífico (ejemplo) cotizó ${money(3500)}, desde el 2026-10-16.`,
+        ),
+        ev(
+          43,
+          "2026-10-09",
+          OPERATOR_A,
+          "operator",
+          "quoted",
+          `AeroVisión del Valle cotizó ${money(3700)}, desde el 2026-10-15.`,
+        ),
+        ev(
+          44,
+          "2026-10-10",
+          manager,
+          "manager",
+          "assigned",
+          `${siteParties[site.id][0]} asignó el servicio a Drones del Pacífico (ejemplo). Motivo: La cotización más baja de las dos.`,
+        ),
+        ev(
+          45,
+          "2026-10-10",
+          OPERATOR_B,
+          "operator",
+          "scheduled",
+          "Drones del Pacífico (ejemplo) programó el vuelo para el 2026-10-20.",
+        ),
+        ev(
+          46,
+          "2026-10-21",
+          OPERATOR_B,
+          "operator",
+          "delivered",
+          `Drones del Pacífico (ejemplo) entregó: dice haber cubierto ${formatHa(declaredHa)} ha y entregó Ortomosaico (GeoTIFF), Registro de vuelo (CSV).`,
+        ),
+        ev(
+          47,
+          "2026-10-22",
+          manager,
+          "manager",
+          "disputed",
+          `${siteParties[site.id][0]} pidió ajustar la entrega: En la ortofoto la franja del costado norte no aparece volada: cuento unas ${formatHa(declaredHa - countedHa)} ha menos de las declaradas. Pido facturar solo lo cubierto.`,
+        ),
+      ],
+    };
+    return [first, second, third, fourth, fifth];
   },
 );
