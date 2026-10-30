@@ -28,6 +28,8 @@ import { formatDate } from "@/lib/format";
 import { EvidenceGallery } from "./evidence-gallery";
 import { FlightReport } from "./flight-report";
 import { revealDetail } from "@/lib/reveal-detail";
+import { ReplayBar } from "../replay/replay-bar";
+import { useReplay } from "../replay/use-replay";
 import styles from "./flight-review.module.css";
 
 const flightLabels = {
@@ -106,9 +108,20 @@ function FlightContent({ flight }: { flight: Flight }) {
   const selectedFinding =
     flightFindings.find((finding) => finding.id === selectedFindingId) ??
     flightFindings[0];
+  const replay = useReplay(flight, site, flightFindings);
   const zoneNames = site.zones
     .filter((zone) => flight.zoneIds.includes(zone.id))
     .map((zone) => zone.name);
+
+  /** Choosing a finding while the replay is open takes it to the moment the aircraft passes it. */
+  function pickFinding(id: string) {
+    setSelectedFindingId(id);
+    const moment = replay.track.events.find((event) => event.findingId === id);
+    if (replay.open && moment) {
+      replay.playback.pause();
+      replay.playback.seek(moment.t);
+    }
+  }
 
   function openFinding(id: string) {
     setSelectedFindingId(id);
@@ -198,6 +211,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                 findings={flightFindings}
                 selectedFindingId={selectedFinding?.id}
                 onFindingSelect={openFinding}
+                replay={replay}
               />
               {flightFindings.length > 0 && (
                 <Button
@@ -211,6 +225,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                 </Button>
               )}
             </section>
+            <ReplayBar replay={replay} />
             <dl className={`surface ${styles.facts}`}>
               <div>
                 <dt>Operador</dt>
@@ -320,8 +335,10 @@ function FlightContent({ flight }: { flight: Flight }) {
                     flight={flight}
                     findings={flightFindings}
                     selectedFindingId={selectedFinding?.id}
-                    onFindingSelect={setSelectedFindingId}
+                    onFindingSelect={pickFinding}
+                    replay={replay}
                   />
+                  <ReplayBar replay={replay} />
                   <div
                     className={styles.findingList}
                     aria-label="Observaciones del vuelo"
@@ -332,7 +349,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                         className={`${styles.findingRow} ${selectedFinding?.id === finding.id ? styles.selectedRow : ""}`}
                         aria-pressed={selectedFinding?.id === finding.id}
                         key={finding.id}
-                        onClick={() => setSelectedFindingId(finding.id)}
+                        onClick={() => pickFinding(finding.id)}
                       >
                         <span className={styles.findingNumber}>
                           {index + 1}

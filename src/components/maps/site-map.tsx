@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { Finding, Flight, Position, Site } from "@/features/demo/types";
+import type { Replay } from "@/features/flights/replay/use-replay";
 
 export interface SiteMapProps {
   site: Site;
@@ -11,6 +12,8 @@ export interface SiteMapProps {
   onFindingSelect?: (id: string) => void;
   editable?: boolean;
   onRouteChange?: (route: Position[]) => void;
+  /** When given, the map offers «Simulación» and draws the replay while it is open. */
+  replay?: Replay;
 }
 
 const MapCanvas = dynamic(() => import("./site-map-canvas"), {

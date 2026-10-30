@@ -1,11 +1,55 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import L from "leaflet";
-import { Crosshair, Layers2, MapPin, Plus, Undo2 } from "lucide-react";
+import {
+  Crosshair,
+  Layers2,
+  MapPin,
+  Pause,
+  Play,
+  Plus,
+  Undo2,
+  X,
+} from "lucide-react";
 import type { SiteMapProps } from "./site-map";
 import { BasemapSwitch, useBasemap } from "./basemap-switch";
 import { createBasemap, overlayStyle } from "./basemaps";
+import { mountReplay } from "./replay-layer";
+import type { Replay } from "@/features/flights/replay/use-replay";
+
+/** Routes with more turning points than this show only their take-off point on the map. */
+const MAX_NUMBERED_POINTS = 14;
+
+/** Play and pause on the map itself, so the controls below it need not be in view. */
+function MapReplayPlay({ replay }: { replay: Replay }) {
+  const state = useSyncExternalStore(
+    replay.playback.subscribe,
+    replay.playback.getState,
+    replay.playback.getState,
+  );
+  if (replay.reducedMotion) return null;
+  const label = state.playing
+    ? "Pausar"
+    : state.ended
+      ? "Repetir"
+      : "Reproducir";
+  return (
+    <button
+      type="button"
+      className="map-replay-play"
+      aria-label={label}
+      title={label}
+      onClick={() => replay.playback.toggle()}
+    >
+      {state.playing ? (
+        <Pause size={18} aria-hidden="true" />
+      ) : (
+        <Play size={18} aria-hidden="true" />
+      )}
+    </button>
+  );
+}
 
 export default function MapCanvas({
   site,
@@ -15,6 +59,7 @@ export default function MapCanvas({
   onFindingSelect,
   editable,
   onRouteChange,
+  replay,
 }: SiteMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -109,30 +154,38 @@ export default function MapCanvas({
       });
     });
     if (flight?.route.length) {
+      // A survey packs its lines a few pixels apart: thinner strokes keep them apart.
+      const dense = flight.route.length > MAX_NUMBERED_POINTS;
       // A dark or white casing keeps the route readable over fields and over pale streets.
       L.polyline(flight.route, {
         color: style.casing,
-        weight: 7,
+        weight: dense ? 4 : 7,
         opacity: 0.55,
         interactive: false,
       }).addTo(layer);
       L.polyline(flight.route, {
         color: style.route,
-        weight: 3,
+        weight: dense ? 1.75 : 3,
         dashArray: flight.status === "completed" ? undefined : "7 7",
         className: "flight-route-line",
       }).addTo(layer);
-      flight.route.forEach((position, index) =>
-        L.marker(position, {
-          icon: L.divIcon({
-            className: "route-point-icon",
-            html: `<span>${index + 1}</span>`,
-            iconSize: [25, 25],
-            iconAnchor: [12, 12],
-          }),
-        })
-          .addTo(layer)
-          .bindTooltip(`Punto ${index + 1}`),
+      // A survey has dozens of turning points: numbering each one buries the map, so only the
+      // take-off and landing point is marked unless the route is short or being edited.
+      const compact = flight.route.length > MAX_NUMBERED_POINTS && !editable;
+      (compact ? flight.route.slice(0, 1) : flight.route).forEach(
+        (position, index) =>
+          L.marker(position, {
+            icon: L.divIcon({
+              className: "route-point-icon",
+              html: `<span>${compact ? "D" : index + 1}</span>`,
+              iconSize: [25, 25],
+              iconAnchor: [12, 12],
+            }),
+          })
+            .addTo(layer)
+            .bindTooltip(
+              compact ? "Despegue y aterrizaje" : `Punto ${index + 1}`,
+            ),
       );
     }
     findings?.forEach((finding, index) => {
@@ -142,7 +195,7 @@ export default function MapCanvas({
         keyboard: true,
         icon: L.divIcon({
           className: `finding-map-icon ${active ? "is-active" : ""}`,
-          html: `<span>${index + 1}</span>`,
+          html: `<span data-finding-id="${finding.id}">${index + 1}</span>`,
           iconSize: [34, 34],
           iconAnchor: [17, 17],
         }),
@@ -154,7 +207,41 @@ export default function MapCanvas({
     return () => {
       layer.remove();
     };
-  }, [site, flight, findings, selectedFindingId, onFindingSelect, basemap]);
+  }, [
+    site,
+    flight,
+    findings,
+    selectedFindingId,
+    onFindingSelect,
+    basemap,
+    editable,
+  ]);
+
+  const replayOpen = replay?.open;
+  const replayTrack = replay?.track;
+  const replayPlayback = replay?.playback;
+  const replayAircraft = replay?.aircraft;
+  const replayKind = replay?.flightKind;
+  useEffect(() => {
+    const instance = map.current;
+    if (!instance || !replay || !replayOpen) return;
+    const style = overlayStyle(basemap);
+    return mountReplay(instance, replay, {
+      trail: style.trail,
+      casing: style.casing,
+      coverage: style.coverage,
+    });
+    // `replay` is rebuilt on every render; what changes the drawing is listed here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    site,
+    basemap,
+    replayOpen,
+    replayTrack,
+    replayPlayback,
+    replayAircraft,
+    replayKind,
+  ]);
 
   useEffect(() => {
     const instance = map.current;
@@ -187,6 +274,26 @@ export default function MapCanvas({
         <span>{site.location}</span>
       </div>
       <BasemapSwitch value={basemap} />
+      {replay?.open && <MapReplayPlay replay={replay} />}
+      {replay && (
+        <button
+          type="button"
+          className="map-replay-toggle"
+          aria-pressed={replay.open}
+          onClick={replay.toggle}
+        >
+          {replay.open ? (
+            <X size={15} aria-hidden="true" />
+          ) : (
+            <Play size={15} aria-hidden="true" />
+          )}
+          {replay.open
+            ? "Cerrar simulación"
+            : replay.preview
+              ? "Vista previa del vuelo"
+              : "Simulación"}
+        </button>
+      )}
       <button
         className="map-center-control"
         aria-label="Centrar mapa en el sitio"
