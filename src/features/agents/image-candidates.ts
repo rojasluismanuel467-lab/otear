@@ -1,5 +1,9 @@
 import type { Finding, FindingSuggestion, Flight } from "../demo/types";
 import { compareWithHistory } from "../reports/insights.ts";
+import {
+  defaultFindingWords,
+  type FindingWords,
+} from "../flights/finding-words.ts";
 
 /**
  * Helpers for the findings that the image assistant proposes. In the demo the candidates are
@@ -20,16 +24,25 @@ export const confidenceLabels = {
   low: "Confianza baja",
 } as const;
 
-/** The source line of a finding, which follows the suggestion through its review. */
-export function sourceLabel(finding: Finding): string {
-  if (!isSuggested(finding)) return finding.source;
+/**
+ * The source line of a finding, which follows the suggestion through its review. The seeded
+ * operator line starts with a fixed word; when the company has its own word for a finding, that
+ * first word is replaced so the same thing is not called two names on one screen.
+ */
+export function sourceLabel(finding: Finding, words?: FindingWords): string {
+  if (!isSuggested(finding)) {
+    const seeded = "Observación del operador";
+    return words && finding.source.startsWith(seeded)
+      ? `${words.Singular} del operador${finding.source.slice(seeded.length)}`
+      : finding.source;
+  }
   if (finding.status === "confirmed") {
-    return "Sugerencia de IA · confirmada por una persona (ejemplo)";
+    return "Sugerencia automática · confirmada por una persona (ejemplo)";
   }
   if (finding.status === "dismissed") {
-    return "Sugerencia de IA · descartada por una persona (ejemplo)";
+    return "Sugerencia automática · descartada por una persona (ejemplo)";
   }
-  return "Sugerencia de IA · sin revisar (ejemplo)";
+  return "Sugerencia automática · sin revisar (ejemplo)";
 }
 
 export interface SuggestionStats {
@@ -114,13 +127,16 @@ export function photoRangeText(
 }
 
 /** What to do before acting on it, when the candidate is weak or the stakes are high. */
-export function caution(finding: Suggested): string | null {
+export function caution(
+  finding: Suggested,
+  words: FindingWords = defaultFindingWords,
+): string | null {
   const { confidence } = finding.suggestion;
   if (confidence === "low" && finding.priority === "high") {
     return "Prioridad alta con confianza baja: verifíquelo en sitio antes de decidir.";
   }
   if (confidence === "low") {
-    return "Confianza baja: trátelo como una pista, no como un hallazgo.";
+    return `Confianza baja: trátelo como una pista, no como ${words.a} ${words.singular}.`;
   }
   return null;
 }

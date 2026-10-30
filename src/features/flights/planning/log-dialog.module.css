@@ -38,3 +38,33 @@
     grid-template-columns: 1fr;
   }
 }
+.batteries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.batteries label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.batteries span {
+  display: grid;
+  line-height: 1.3;
+}
+.batteries small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.warn {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--alert-warning-ink);
+}

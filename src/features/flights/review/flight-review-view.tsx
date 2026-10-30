@@ -17,12 +17,20 @@ import {
   X,
 } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
-import { useModuleTitle, useTerm } from "@/features/config/use-config";
+import { useModuleTitle } from "@/features/config/use-config";
 import { CustomFieldsPanel } from "@/features/config/custom-fields-panel";
 import type { Finding, Flight } from "@/features/demo/types";
 import { SiteMap } from "@/components/maps/site-map";
 import { FlightTimeline } from "../flight-timeline";
 import { PageHeading } from "@/components/ui/page-heading";
+import {
+  measureOutline,
+  outlineKindFor,
+} from "@/features/sites/mapping/mapping-model";
+import { agree, type FindingWords } from "../finding-words";
+import { countsText, findingCounts, loggedConditions } from "../flight-brief";
+import { ExampleNotice } from "../example-notice";
+import { useFindingWords } from "../use-finding-words";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate } from "@/lib/format";
@@ -46,21 +54,22 @@ const flightLabels = {
   scheduled: "Programado",
   cancelled: "Cancelado",
 };
-const findingLabels = {
-  pending: "Por verificar",
-  confirmed: "Confirmado · demo",
-  dismissed: "Descartado · demo",
-};
-const suggestedLabels = {
-  pending: "Por revisar",
-  confirmed: "Confirmado · demo",
-  dismissed: "Descartado · demo",
-};
-const filterLabels: Record<ReviewFilter, string> = {
-  all: "Todas",
-  suggested: "Sugeridas por IA",
-  operator: "Del operador",
-};
+/** Status of a finding in the person's own word, as a short badge. */
+function statusText(finding: Finding, words: FindingWords) {
+  if (finding.status === "pending") {
+    return isSuggested(finding) ? "Sugerencia por revisar" : "Por verificar";
+  }
+  return finding.status === "confirmed"
+    ? `${agree(words, "Confirmado", "Confirmada")} · demo`
+    : `${agree(words, "Descartado", "Descartada")} · demo`;
+}
+function filterLabelsFor(words: FindingWords): Record<ReviewFilter, string> {
+  return {
+    all: agree(words, "Todos", "Todas"),
+    suggested: "Sugerencias automáticas",
+    operator: "Del operador",
+  };
+}
 const priorityLabels = {
   high: "Prioridad alta",
   medium: "Prioridad media",
@@ -69,6 +78,7 @@ const priorityLabels = {
 
 export function FlightReviewView() {
   const moduleTitle = useModuleTitle("vuelos");
+  const words = useFindingWords();
   const { site, flights, selectedFlightId, selectFlight } = useDemo();
   const flight =
     flights.find((item) => item.id === selectedFlightId) ?? flights[0];
@@ -79,8 +89,9 @@ export function FlightReviewView() {
     <>
       <PageHeading
         title={moduleTitle}
-        description="Revisa la entrega, conecta observaciones y prepara el siguiente paso."
+        description={`Revise la entrega, confirme los ${words.plural} y prepare el siguiente paso. El informe de cada vuelo está en su pestaña «Informe del vuelo».`}
       />
+      <ExampleNotice />
       {flight ? (
         <div className={styles.layout}>
           <aside className={styles.rail}>
@@ -109,7 +120,7 @@ export function FlightReviewView() {
         <EmptyState
           level={2}
           title="Aún no hay vuelos en este sitio"
-          description="Los vuelos que prepares aparecerán aquí junto con su contexto."
+          description="Los vuelos que prepare aparecerán aquí junto con su contexto."
         />
       )}
     </>
@@ -117,7 +128,8 @@ export function FlightReviewView() {
 }
 
 function FlightContent({ flight }: { flight: Flight }) {
-  const t = useTerm();
+  const words = useFindingWords();
+  const filterLabels = filterLabelsFor(words);
   const { site, flights, findings, updateFinding, updateFlight, setNotice } =
     useDemo();
   const [activeTab, setActiveTab] = useState("summary");
@@ -130,6 +142,16 @@ function FlightContent({ flight }: { flight: Flight }) {
     flightFindings.find((finding) => finding.id === selectedFindingId) ??
     flightFindings[0];
   const hasSuggestions = flightFindings.some(isSuggested);
+  const counts = findingCounts(flightFindings);
+  const conditions = loggedConditions(flight.log);
+  const kind = outlineKindFor(site.sector);
+  const orderedHa =
+    kind === "polygon"
+      ? site.zones
+          .filter((zone) => flight.zoneIds.includes(zone.id))
+          .reduce((sum, zone) => sum + measureOutline(kind, zone.outline), 0)
+      : 0;
+  const coveredHa = flight.log?.coveredHa;
   const shownFindings = filterFindings(flightFindings, filter);
   const replay = useReplay(flight, site, flightFindings);
   const zoneNames = site.zones
@@ -155,12 +177,12 @@ function FlightContent({ flight }: { flight: Flight }) {
     updateFinding(finding.id, { status });
     setNotice(
       status === "pending"
-        ? "Observación devuelta a pendiente en esta sesión."
+        ? `${words.Singular} ${agree(words, "devuelto", "devuelta")} a pendiente en esta sesión.`
         : isSuggested(finding)
           ? status === "confirmed"
-            ? "Sugerencia confirmada como observación suya, solo en esta demo. No es una revisión técnica real."
+            ? `Sugerencia confirmada: ahora es ${words.a} ${words.singular} ${agree(words, "suyo", "suya")}, solo en esta demo. No es una revisión técnica real.`
             : "Sugerencia descartada solo en esta demo. El asistente no aprende de esta respuesta."
-          : `Observación ${status === "confirmed" ? "confirmada" : "descartada"} solo en esta demo. No es una revisión técnica real.`,
+          : `${words.Singular} ${status === "confirmed" ? agree(words, "confirmado", "confirmada") : agree(words, "descartado", "descartada")} solo en esta demo. No es una revisión técnica real.`,
     );
   }
 
@@ -212,7 +234,7 @@ function FlightContent({ flight }: { flight: Flight }) {
             </Tabs.Tab>
             <Tabs.Tab id="findings">
               <Flag size={17} aria-hidden="true" />
-              {t("finding", "plural")}
+              {words.Plural}
               {flightFindings.length > 0 && (
                 <span className={styles.tabCount}>{flightFindings.length}</span>
               )}
@@ -220,7 +242,7 @@ function FlightContent({ flight }: { flight: Flight }) {
             </Tabs.Tab>
             <Tabs.Tab id="report">
               <FileText size={17} aria-hidden="true" />
-              Informe
+              Informe del vuelo
               <Tabs.Indicator />
             </Tabs.Tab>
           </Tabs.List>
@@ -247,7 +269,9 @@ function FlightContent({ flight }: { flight: Flight }) {
                   onPress={() => setActiveTab("findings")}
                 >
                   Revisar {flightFindings.length}{" "}
-                  {flightFindings.length === 1 ? "hallazgo" : "hallazgos"}
+                  {flightFindings.length === 1 ? words.singular : words.plural}
+                  {counts.suggestedPending > 0 &&
+                    ` (${counts.suggestedPending} ${counts.suggestedPending === 1 ? "es una sugerencia" : "son sugerencias"} sin revisar)`}
                   <ArrowRight size={16} aria-hidden="true" />
                 </Button>
               )}
@@ -274,6 +298,37 @@ function FlightContent({ flight }: { flight: Flight }) {
                 <dt>{site.zoneLabel}</dt>
                 <dd>{zoneNames.join(" · ") || "Sin asignar"}</dd>
               </div>
+              {flight.status === "completed" && (
+                <>
+                  <div>
+                    <dt>{words.Plural}</dt>
+                    <dd>{countsText(counts, words)}</dd>
+                  </div>
+                  <div>
+                    <dt>Clima, según la bitácora</dt>
+                    <dd>{conditions.weather}</dd>
+                  </div>
+                  <div>
+                    <dt>Autorización, según la bitácora</dt>
+                    <dd>{conditions.authorization}</dd>
+                  </div>
+                  {coveredHa !== undefined && orderedHa > 0 && (
+                    <div>
+                      <dt>Cubierto, según el operador</dt>
+                      <dd>
+                        {new Intl.NumberFormat("es-CO", {
+                          maximumFractionDigits: 1,
+                        }).format(coveredHa)}{" "}
+                        de{" "}
+                        {new Intl.NumberFormat("es-CO", {
+                          maximumFractionDigits: 1,
+                        }).format(orderedHa)}{" "}
+                        ha pedidas
+                      </dd>
+                    </div>
+                  )}
+                </>
+              )}
             </dl>
             <CustomFieldsPanel
               key={flight.id}
@@ -295,11 +350,20 @@ function FlightContent({ flight }: { flight: Flight }) {
                 </h3>
                 <p>
                   {flight.status === "completed"
-                    ? "Revisa las observaciones del operador y decide qué necesita una verificación en sitio."
-                    : "Este registro conserva lo previsto. No tiene fotografías ni hallazgos de una operación realizada."}
+                    ? `Revise los ${words.plural} del operador y las sugerencias automáticas, y decida cuáles necesitan una verificación en sitio. El informe del vuelo ya reúne lo que importa para quien no estuvo.`
+                    : "Este registro conserva lo previsto. No tiene fotografías ni resultados de una operación realizada."}
                 </p>
               </div>
               <div className={styles.nextActions}>
+                {flight.status === "completed" && (
+                  <Button
+                    variant="primary"
+                    onPress={() => setActiveTab("report")}
+                  >
+                    Ver el informe del vuelo
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </Button>
+                )}
                 <Button
                   variant="secondary"
                   onPress={() =>
@@ -309,7 +373,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                   }
                 >
                   {flight.status === "completed"
-                    ? "Abrir observaciones"
+                    ? `Abrir ${words.plural}`
                     : "Ver borrador de contexto"}
                   <ArrowRight size={16} aria-hidden="true" />
                 </Button>
@@ -321,8 +385,8 @@ function FlightContent({ flight }: { flight: Flight }) {
             </section>
           </div>
           <p className="demo-note">
-            Datos sintéticos. El mapa, la ejecución y las observaciones son
-            ejemplos para explorar el producto; no prueban una operación real.
+            Datos de ejemplo. La ruta, la ejecución y los {words.plural} son
+            inventados para explorar el producto; no prueban una operación real.
           </p>
         </Tabs.Panel>
 
@@ -338,11 +402,11 @@ function FlightContent({ flight }: { flight: Flight }) {
         <Tabs.Panel id="findings" className={styles.panel}>
           {flightFindings.length === 0 ? (
             <EmptyState
-              title="Este vuelo no tiene hallazgos"
+              title={`Este vuelo no tiene ${words.plural}`}
               description={
                 flight.status === "completed"
-                  ? "No hay observaciones asociadas a esta entrega de ejemplo."
-                  : "Un vuelo programado no tiene hallazgos de ejecución. Revisa un vuelo completado para explorar el recorrido."
+                  ? `No hay ${words.plural} asociados a esta entrega de ejemplo.`
+                  : `Un vuelo programado no tiene ${words.plural} de ejecución. Revise un vuelo completado para explorar el recorrido.`
               }
             />
           ) : (
@@ -362,7 +426,8 @@ function FlightContent({ flight }: { flight: Flight }) {
                     <div>
                       <h3>Ubica lo que falta verificar</h3>
                       <p className="text-muted">
-                        Elige un punto en el mapa o su observación en la lista.
+                        Elija un punto en el mapa o {words.the} {words.singular}{" "}
+                        en la lista.
                       </p>
                     </div>
                   </div>
@@ -378,7 +443,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                   {hasSuggestions && (
                     <div
                       className="segmented-control"
-                      aria-label="Quién propuso la observación"
+                      aria-label={`Quién propuso ${words.the} ${words.singular}`}
                     >
                       {(["all", "suggested", "operator"] as const).map(
                         (value) => (
@@ -396,7 +461,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                   )}
                   <div
                     className={styles.findingList}
-                    aria-label="Observaciones del vuelo"
+                    aria-label={`${words.Plural} del vuelo`}
                   >
                     {shownFindings.map((finding) => (
                       <button
@@ -419,16 +484,13 @@ function FlightContent({ flight }: { flight: Flight }) {
                                 (zone) => zone.id === finding.zoneId,
                               )?.name
                             }{" "}
-                            ·{" "}
-                            {isSuggested(finding)
-                              ? suggestedLabels[finding.status]
-                              : findingLabels[finding.status]}
+                            · {statusText(finding, words)}
                           </small>
                         </span>
                         {isSuggested(finding) ? (
                           <Sparkles
                             size={16}
-                            aria-label="Sugerido por IA"
+                            aria-label="Sugerencia automática"
                             role="img"
                           />
                         ) : (
@@ -438,7 +500,8 @@ function FlightContent({ flight }: { flight: Flight }) {
                     ))}
                     {!shownFindings.length && (
                       <p className="text-muted">
-                        Ninguna observación coincide con este filtro.
+                        Ningun{words.feminine ? "a" : "o"} {words.singular}{" "}
+                        coincide con este filtro.
                       </p>
                     )}
                   </div>
@@ -446,11 +509,11 @@ function FlightContent({ flight }: { flight: Flight }) {
                 {selectedFinding && (
                   <section
                     className={`surface ${styles.findingDetail}`}
-                    aria-label="Detalle del hallazgo seleccionado"
+                    aria-label={`Detalle ${agree(words, "del", "de la")} ${words.singular} ${agree(words, "seleccionado", "seleccionada")}`}
                   >
                     <Image
                       src={selectedFinding.imageUrl}
-                      alt={`Fotografía ilustrativa para la observación ${selectedFinding.title.toLowerCase()}; no es evidencia del sitio`}
+                      alt={`Fotografía ilustrativa para ${words.the} ${words.singular} ${selectedFinding.title.toLowerCase()}; no es evidencia del sitio`}
                       width={900}
                       height={600}
                       unoptimized
@@ -466,9 +529,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                                 : "neutral"
                           }
                         >
-                          {isSuggested(selectedFinding)
-                            ? suggestedLabels[selectedFinding.status]
-                            : findingLabels[selectedFinding.status]}
+                          {statusText(selectedFinding, words)}
                         </StatusBadge>
                         <span className={styles.priority}>
                           {priorityLabels[selectedFinding.priority]}
@@ -477,7 +538,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                       <h3>{selectedFinding.title}</h3>
                       <p>{selectedFinding.description}</p>
                       <p className={styles.source}>
-                        {sourceLabel(selectedFinding)}
+                        {sourceLabel(selectedFinding, words)}
                       </p>
                       {isSuggested(selectedFinding) && (
                         <SuggestionDetail
@@ -497,7 +558,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                       />
                       <p className="demo-note">
                         {isSuggested(selectedFinding)
-                          ? "Imagen ilustrativa y sugerencia de ejemplo: en producción la propondría un modelo. Confirmar la convierte en una observación suya; descartarla no entrena al asistente. Estos botones ensayan una decisión humana."
+                          ? `Imagen ilustrativa y sugerencia escrita a mano como ejemplo: esta demo no analiza fotos. Confirmar la convierte en ${words.a} ${words.singular} ${agree(words, "suyo", "suya")}; descartarla no entrena al asistente. Estos botones ensayan una decisión humana.`
                           : "Imagen ilustrativa. Estos botones ensayan una decisión humana; no diagnostican ni validan una inspección real."}
                       </p>
                       <div className={styles.reviewActions}>
@@ -538,7 +599,7 @@ function FlightContent({ flight }: { flight: Flight }) {
                         <p>
                           {selectedFinding.taskAssigned
                             ? "Tarea de verificación añadida a esta sesión. No se notificó a ninguna persona."
-                            : "Puedes añadir una tarea local para solicitar una comprobación en sitio."}
+                            : "Puede registrar una tarea para pedir la verificación en sitio. En esta demo no se envía a nadie."}
                         </p>
                         <Button
                           variant="outline"
@@ -555,8 +616,8 @@ function FlightContent({ flight }: { flight: Flight }) {
                         >
                           <ClipboardCheck size={16} aria-hidden="true" />
                           {selectedFinding.taskAssigned
-                            ? "Retirar tarea local"
-                            : "Añadir tarea de revisión"}
+                            ? "Quitar la tarea de verificación"
+                            : "Añadir tarea de verificación"}
                         </Button>
                       </div>
                     </div>
@@ -566,11 +627,13 @@ function FlightContent({ flight }: { flight: Flight }) {
               <div className={styles.assistanceNote}>
                 <FileText size={21} aria-hidden="true" />
                 <p>
-                  <strong>La fuente acompaña a cada observación.</strong> Las
-                  del operador y las sugeridas por IA se distinguen, y ninguna
-                  es un diagnóstico. En esta demo las sugerencias son ejemplos
-                  escritos a mano: no se ejecutó ningún modelo ni una revisión
-                  profesional.
+                  <strong>
+                    La fuente acompaña a {words.the} {words.singular}.
+                  </strong>{" "}
+                  Los del operador y las sugerencias automáticas se distinguen,
+                  y ninguno es un diagnóstico. En esta demo las sugerencias son
+                  ejemplos escritos a mano: ningún programa revisó las fotos ni
+                  hubo una revisión profesional.
                 </p>
               </div>
             </>
@@ -584,7 +647,7 @@ function FlightContent({ flight }: { flight: Flight }) {
             findings={flightFindings}
             onDownload={() =>
               setNotice(
-                "Borrador .txt descargado en tu dispositivo. Contiene datos de demostración y no se envió a terceros.",
+                "Borrador .txt descargado en su dispositivo. Contiene datos de demostración y no se envió a terceros.",
               )
             }
           />

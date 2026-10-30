@@ -31,7 +31,7 @@ export function CeilingHint({
   const ceiling = suggestedCeiling(reference.price);
   return (
     <div className={styles.hint}>
-      <AiBadge />
+      <AiBadge>Sugerencia automática · ejemplo</AiBadge>
       <p>
         Antes se acordó{" "}
         {reference.low === reference.high

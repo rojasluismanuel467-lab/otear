@@ -1,6 +1,7 @@
 import { AiBadge } from "@/components/ui/ai-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { Finding, Flight } from "@/features/demo/types";
+import { useFindingWords } from "@/features/flights/use-finding-words";
 import {
   caution,
   confidenceLabels,
@@ -22,14 +23,15 @@ export function SuggestionDetail({
   findings: Finding[];
   flights: Flight[];
 }) {
+  const words = useFindingWords();
   const { suggestion } = finding;
   const photos = photoRangeText(suggestion, flight.photoCount);
   const past = historyNote(finding, findings, flights);
-  const warning = caution(finding);
+  const warning = caution(finding, words);
   return (
     <div className={styles.detail}>
       <div className={styles.badges}>
-        <AiBadge />
+        <AiBadge>Sugerencia automática · ejemplo</AiBadge>
         <StatusBadge
           tone={suggestion.confidence === "low" ? "warning" : "neutral"}
         >
