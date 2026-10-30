@@ -202,8 +202,28 @@
   color: var(--sky);
 }
 
+.operatorLine {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #c7d6de;
+}
+
+/* Un enlace dentro de una frase: sigue en la misma línea. */
+.operatorLink {
+  font-weight: 600;
+  color: #e3eef3;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.operatorLink:hover {
+  color: var(--sky);
+}
+
 .primary:focus-visible,
-.secondary:focus-visible {
+.secondary:focus-visible,
+.operatorLink:focus-visible {
   outline: 3px solid #a2d1e4;
   outline-offset: 3px;
 }
