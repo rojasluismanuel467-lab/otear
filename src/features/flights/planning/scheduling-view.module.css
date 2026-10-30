@@ -419,6 +419,40 @@
   min-height: 36px;
   padding-inline: 10px;
 }
+.proposalNote {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  background: var(--accent-soft);
+}
+.origin {
+  margin-top: 10px;
+  font-size: 13px;
+}
+.origin summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  cursor: pointer;
+  min-height: 44px;
+}
+.origin summary > span {
+  color: var(--muted);
+}
+.origin ul {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+  padding-left: 18px;
+  list-style: disc;
+  color: var(--muted);
+  line-height: 1.55;
+}
 .formHelp {
   color: var(--muted);
   font-size: 12px;
@@ -520,5 +554,22 @@
   .calendarCollapse,
   .calendarToggle svg:last-child {
     transition: none;
+  }
+}
+
+.droneField {
+  grid-column: 1 / -1;
+}
+.droneRow {
+  display: flex;
+  gap: 8px;
+}
+.droneRow input {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 520px) {
+  .droneRow {
+    flex-direction: column;
   }
 }

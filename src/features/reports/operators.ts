@@ -70,8 +70,9 @@ export function operatorSummaries(input: {
     summary.hours += flight.duration / 60;
     if (!summary.lastFlight || flight.date > summary.lastFlight)
       summary.lastFlight = flight.date;
+    // Suggestions from the image assistant are not the operator's observations.
     for (const finding of input.findings.filter(
-      (item) => item.flightId === flight.id,
+      (item) => item.flightId === flight.id && !item.suggestion,
     )) {
       summary.findings += 1;
       if (finding.status === "confirmed") summary.confirmed += 1;

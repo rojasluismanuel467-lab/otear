@@ -38,13 +38,13 @@ El cuerpo es 14 px: por eso el grupo es el mínimo para un encabezado y nada por
 
 Tokens `--text-*` y `--measure-*` en `globals.css`. El ancho se limita en `ch`; Instrument Sans es angosta (1 ch ≈ 1,5 caracteres), así que se calibró midiendo en el navegador. Criterio y fuentes en `docs/UX_GUIDELINES.md` («Texto de lectura»).
 
-| Papel | Token | Valor | Interlineado | Ancho (caracteres por línea) |
-| --- | --- | --- | --- | --- |
-| Línea de apoyo (bajo un titular de landing, hero) | `--text-lead` + `--measure-lead` | 17–19 px, 42ch | 1,6 | ~62–66 |
-| Cuerpo de lectura (tarjetas, pasos, contacto) | `--text-body` + `--measure-body` | 16 px, 46ch | 1,6 | ~68–72 |
-| Ayuda y detalle | `--text-small` | 14 px | 1,5 | ≤ `--measure-body` |
-| Notas y avisos que son frases | — | 13 px mínimo | 1,5–1,6 | ≤ `--measure-body` |
-| Etiquetas y datos sueltos | — | 12 px | 1,4 | — |
+| Papel                                             | Token                            | Valor          | Interlineado | Ancho (caracteres por línea) |
+| ------------------------------------------------- | -------------------------------- | -------------- | ------------ | ---------------------------- |
+| Línea de apoyo (bajo un titular de landing, hero) | `--text-lead` + `--measure-lead` | 17–19 px, 42ch | 1,6          | ~62–66                       |
+| Cuerpo de lectura (tarjetas, pasos, contacto)     | `--text-body` + `--measure-body` | 16 px, 46ch    | 1,6          | ~68–72                       |
+| Ayuda y detalle                                   | `--text-small`                   | 14 px          | 1,5          | ≤ `--measure-body`           |
+| Notas y avisos que son frases                     | —                                | 13 px mínimo   | 1,5–1,6      | ≤ `--measure-body`           |
+| Etiquetas y datos sueltos                         | —                                | 12 px          | 1,4          | —                            |
 
 En la app todo `p` recibe `max-width: var(--measure-body)` por defecto (`:where(p)`, especificidad cero).
 
@@ -65,6 +65,17 @@ Programación: calendario/lista y mapa protagonista; preparación de un vuelo en
 ## Entrega
 
 Datos de demostración permanentes y cambios de sesión explícitos. Selección compartida de proyecto/sector. Responsive: sidebar pasa a navegación compacta; columnas se apilan y los controles permanecen disponibles. Los medios de muestra son ilustrativos y no representan capturas técnicas del lugar mostrado en el mapa.
+
+## Avisos
+
+Un aviso de página (banner) es persistente, opaco y no se descarta mientras el problema siga abierto. Usar la clase `.alert-banner` con `data-tone="warning|danger|calm"` y los tokens `--alert-*` de `globals.css`; el módulo solo pone la disposición.
+
+- **Gravedad en tres niveles.** Ámbar (conviene atender), rojo (hay algo vencido o bloqueante) y azul tranquilo (sin pendientes). El tono del aviso es el del peor elemento que contiene.
+- **Contraste medido.** Texto sobre fondo ≥ 8:1; barra lateral e ícono ≥ 3:1 sobre el fondo (WCAG 1.4.11); etiqueta pequeña sobre blanco ≥ 4,5:1. Si se cambia un token, recalcular.
+- **El color nunca va solo (WCAG 1.4.1).** Cada aviso lleva ícono de forma distinta por gravedad, un título con el conteo y, en los elementos de la lista, una forma además del color (rombo, punto, círculo vacío) y su etiqueta escrita.
+- **Orden por gravedad**, de mayor a menor. Título de una línea que dice cuántos y qué; una frase de siguiente paso; la nota legal aparte, bajo un filete.
+- **Semántica.** Un aviso presente al cargar es una región con nombre (`aria-labelledby`), no `role="alert"`. Reservar `role="alert"` para lo urgente que aparece sin que la persona haya actuado y `role="status"` para confirmaciones; no mover el foco.
+- **Cuándo no.** Una confirmación breve va en el aviso temporal (`notice`); un error de un campo va junto al campo; no usar un banner para decorar.
 
 ## Textura de carta
 

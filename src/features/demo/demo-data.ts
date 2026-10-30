@@ -16,7 +16,9 @@ import type {
   Evidence,
   MaintenanceRecord,
   PartMark,
+  Sector,
   Finding,
+  FindingSuggestion,
   Flight,
   FlightDocument,
   Invoice,
@@ -713,9 +715,266 @@ const historyFindings: Finding[] = sites.flatMap((site) =>
   ),
 );
 
+/**
+ * What the image assistant would propose after going through the photos of a flight, per sector.
+ * They are examples written by hand, not the output of a model. Each says what it saw, what in the
+ * photos led to it and what a photo cannot tell; wording describes what is visible and avoids
+ * naming a cause. The second candidate is deliberately weak, so the review flow shows a caution.
+ */
+const imageCandidates: Record<
+  Sector,
+  {
+    title: string;
+    description: string;
+    priority: Finding["priority"];
+    suggestion: Omit<FindingSuggestion, "agent" | "photoSpan">;
+    photoSpan: [number, number];
+  }[]
+> = {
+  agriculture: [
+    {
+      title: "Falla en el surco",
+      description: "Un tramo del surco sin plantas, con el suelo a la vista.",
+      priority: "medium",
+      photoSpan: [0.28, 0.31],
+      suggestion: {
+        confidence: "high",
+        evidence: [
+          "Hueco sin plantas de unos 12 m en una línea continua.",
+          "Se ve en tres fotos seguidas con traslape.",
+        ],
+        limits:
+          "Desde una foto no se distingue una falla de siembra de un daño o de un suelo distinto; hay que verlo en el lote.",
+      },
+    },
+    {
+      title: "Zona de color distinto",
+      description: "Un parche más claro que el cultivo que lo rodea.",
+      priority: "low",
+      photoSpan: [0.64, 0.64],
+      suggestion: {
+        confidence: "low",
+        evidence: ["Una mancha más clara en una sola foto."],
+        limits:
+          "El color cambia con la luz y la hora del vuelo; una foto no basta. Contrástelo con el vigor del lote en Evolución.",
+      },
+    },
+  ],
+  roads: [
+    {
+      title: "Posible grieta en la calzada",
+      description: "Una línea oscura que sigue el carril.",
+      priority: "high",
+      photoSpan: [0.4, 0.43],
+      suggestion: {
+        confidence: "medium",
+        evidence: [
+          "Línea oscura continua de unos 8 m a lo largo del carril.",
+          "Visible en dos fotos seguidas.",
+        ],
+        limits:
+          "No mide ancho ni profundidad: una grieta superficial y una estructural se ven parecidas desde el aire.",
+      },
+    },
+    {
+      title: "Posible agua estancada junto a la vía",
+      description: "Una superficie con reflejo distinto junto a la berma.",
+      priority: "medium",
+      photoSpan: [0.7, 0.7],
+      suggestion: {
+        confidence: "low",
+        evidence: ["Superficie con reflejo distinto en una sola foto."],
+        limits:
+          "Puede ser humedad, sombra o un charco pasajero; no indica si el drenaje falla.",
+      },
+    },
+  ],
+  construction: [
+    {
+      title: "Posible acopio fuera del área",
+      description: "Una pila de material fuera del límite marcado.",
+      priority: "medium",
+      photoSpan: [0.35, 0.38],
+      suggestion: {
+        confidence: "medium",
+        evidence: [
+          "Pila de material de unos 6 m fuera del límite marcado.",
+          "Visible en dos fotos.",
+        ],
+        limits:
+          "No identifica el material ni si un permiso lo autoriza en ese lugar.",
+      },
+    },
+    {
+      title: "Posible elemento sobresaliente en la losa",
+      description: "Un objeto alargado que sale del borde de la losa.",
+      priority: "high",
+      photoSpan: [0.6, 0.6],
+      suggestion: {
+        confidence: "low",
+        evidence: ["Objeto alargado en el borde de la losa, en una sola foto."],
+        limits:
+          "Puede ser acero de espera previsto en el diseño; solo la obra lo confirma.",
+      },
+    },
+  ],
+  security: [
+    {
+      title: "Posible abertura en el cerramiento",
+      description: "Una interrupción en la línea de la malla.",
+      priority: "high",
+      photoSpan: [0.45, 0.48],
+      suggestion: {
+        confidence: "medium",
+        evidence: [
+          "Interrupción en la malla de unos 3 m.",
+          "Visible en tres fotos seguidas.",
+        ],
+        limits: "No distingue un daño de una puerta o un acceso previsto.",
+      },
+    },
+    {
+      title: "Objeto junto al perímetro",
+      description: "Un objeto de forma irregular pegado a la cerca.",
+      priority: "low",
+      photoSpan: [0.72, 0.72],
+      suggestion: {
+        confidence: "low",
+        evidence: ["Un objeto irregular junto a la cerca, en una sola foto."],
+        limits:
+          "No identifica personas ni vehículos, y no es un sistema de alarma.",
+      },
+    },
+  ],
+  mining: [
+    {
+      title: "Línea oscura cerca de la cresta del talud",
+      description: "Una línea más oscura y continua junto al borde del banco.",
+      priority: "high",
+      photoSpan: [0.2, 0.23],
+      suggestion: {
+        confidence: "medium",
+        evidence: [
+          "Línea oscura de unos 25 m, paralela al borde del banco.",
+          "Se ve en tres fotos seguidas con traslape.",
+        ],
+        limits:
+          "Desde una foto no se distingue una grieta de una sombra o de una cuneta; hay que verla en el banco, con un geotecnista.",
+      },
+    },
+    {
+      title: "Mancha oscura en el piso del banco",
+      description: "Una zona más oscura y lisa, de contorno irregular.",
+      priority: "low",
+      photoSpan: [0.66, 0.66],
+      suggestion: {
+        confidence: "low",
+        evidence: ["Una mancha más oscura en una sola foto."],
+        limits:
+          "Puede ser agua, material húmedo o una sombra. Compárela con la fecha anterior antes de decidir.",
+      },
+    },
+  ],
+};
+
+const suggestedSource = (status: Finding["status"]) =>
+  status === "confirmed"
+    ? "Sugerencia de IA · confirmada por una persona (ejemplo)"
+    : status === "dismissed"
+      ? "Sugerencia de IA · descartada por una persona (ejemplo)"
+      : "Sugerencia de IA · sin revisar (ejemplo)";
+
+function suggestedFinding(
+  site: Site,
+  flightId: string,
+  id: string,
+  candidate: number,
+  zoneIndex: number,
+  status: Finding["status"],
+  shift = 0,
+): Finding {
+  const item = imageCandidates[site.sector][candidate];
+  const zone = site.zones[zoneIndex % site.zones.length];
+  return {
+    id,
+    siteId: site.id,
+    flightId,
+    zoneId: zone.id,
+    title: item.title,
+    description: item.description,
+    priority: item.priority,
+    status,
+    position: findingPosition(
+      site,
+      zone,
+      0.45 + candidate * 0.2 + shift,
+      0.55 - candidate * 0.15,
+    ),
+    imageUrl: site.imageUrl,
+    source: suggestedSource(status),
+    taskAssigned: false,
+    suggestion: {
+      agent: "image",
+      ...item.suggestion,
+      photoSpan: item.photoSpan,
+    },
+  };
+}
+
+/**
+ * Candidates on the latest flight, and three earlier ones already reviewed so the assistant has a
+ * track record to show. They sit in the zones that the next-flight assistant has on the agenda.
+ */
+const suggestedFindings: Finding[] = sites.flatMap((site) => [
+  suggestedFinding(
+    site,
+    `flight-${site.id}-01`,
+    `finding-${site.id}-ai-1`,
+    0,
+    2,
+    "pending",
+  ),
+  suggestedFinding(
+    site,
+    `flight-${site.id}-01`,
+    `finding-${site.id}-ai-2`,
+    1,
+    0,
+    "pending",
+  ),
+  suggestedFinding(
+    site,
+    `flight-${site.id}-04`,
+    `finding-${site.id}-h4-ai`,
+    0,
+    2,
+    "confirmed",
+    0.02,
+  ),
+  suggestedFinding(
+    site,
+    `flight-${site.id}-05`,
+    `finding-${site.id}-h5-ai`,
+    1,
+    0,
+    "dismissed",
+    0.02,
+  ),
+  suggestedFinding(
+    site,
+    `flight-${site.id}-06`,
+    `finding-${site.id}-h6-ai`,
+    0,
+    2,
+    "confirmed",
+    0.04,
+  ),
+]);
+
 export const initialFindings: Finding[] = [
   ...currentFindings,
   ...historyFindings,
+  ...suggestedFindings,
 ];
 
 const historyInvoices: Invoice[] = sites.flatMap((site, siteIndex) =>

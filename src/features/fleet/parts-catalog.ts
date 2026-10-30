@@ -1218,6 +1218,18 @@ const catalogs: Record<string, ModelCatalog> = {
     generic: true,
     parts: multirotor,
   },
+  hexacopter: {
+    id: "hexacopter",
+    name: "Hexacóptero (genérico)",
+    generic: true,
+    parts: multirotor,
+  },
+  "heavy-lift": {
+    id: "heavy-lift",
+    name: "Multirrotor de carga pesada (genérico)",
+    generic: true,
+    parts: multirotor,
+  },
   sprayer: {
     id: "sprayer",
     name: "Multirrotor de aspersión (genérico)",
@@ -1227,6 +1239,12 @@ const catalogs: Record<string, ModelCatalog> = {
   "fixed-wing": {
     id: "fixed-wing",
     name: "Ala fija (genérico)",
+    generic: true,
+    parts: fixedWing,
+  },
+  vtol: {
+    id: "vtol",
+    name: "Ala fija VTOL (genérico)",
     generic: true,
     parts: fixedWing,
   },

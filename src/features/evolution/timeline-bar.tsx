@@ -23,7 +23,8 @@ export function TimelineBar({
   onSelect: (index: number) => void;
   onTogglePlay: () => void;
 }) {
-  const list = useRef<HTMLOListElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const span = Math.max(dates.length - 1, 1);
 
   // On narrow screens the stops scroll sideways: keep the selected one in view (centred) as it
   // changes, including while playing. Only the list moves, never the page.
@@ -62,35 +63,55 @@ export function TimelineBar({
           <Play size={18} aria-hidden="true" />
         )}
       </button>
-      <ol ref={list} className={styles.stops} aria-label="Vuelos en el tiempo">
-        {dates.map((date, i) => (
-          <li key={date} data-past={i <= index ? "true" : undefined}>
-            <button
-              type="button"
-              aria-pressed={i === index}
-              data-reference={
-                i === referenceIndex && i !== index ? "true" : undefined
-              }
-              onClick={() => onSelect(i)}
-            >
-              <span className={styles.node}>
-                {counts[i] > 0 && <b aria-hidden="true">{counts[i]}</b>}
-              </span>
-              <span className={styles.stopDate}>
-                {formatDate(date, { day: "numeric", month: "short" })}
-              </span>
-              <span className={styles.srOnly}>
-                {counts[i] === 0
-                  ? "sin problemas"
-                  : `${counts[i]} ${counts[i] === 1 ? "problema" : "problemas"}`}
-                {i === referenceIndex && i !== index
-                  ? ", fecha de comparación"
-                  : ""}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ol>
+      <div ref={list} className={styles.stopsScroll}>
+        <div
+          className={styles.stopsTrack}
+          style={
+            {
+              "--count": dates.length,
+              "--progress": Math.min(index / span, 1),
+            } as React.CSSProperties
+          }
+        >
+          {/* One line under all the stops; its fill grows to the selected date, so moving
+              between dates reads as progress along a path rather than separate segments. */}
+          <span className={styles.track} aria-hidden="true" />
+          <ol className={styles.stops} aria-label="Vuelos en el tiempo">
+            {dates.map((date, i) => (
+              <li key={date} data-past={i <= index ? "true" : undefined}>
+                <button
+                  type="button"
+                  aria-pressed={i === index}
+                  title={
+                    i === referenceIndex && i !== index
+                      ? "Fecha de comparación"
+                      : undefined
+                  }
+                  data-reference={
+                    i === referenceIndex && i !== index ? "true" : undefined
+                  }
+                  onClick={() => onSelect(i)}
+                >
+                  <span className={styles.node}>
+                    {counts[i] > 0 && <b aria-hidden="true">{counts[i]}</b>}
+                  </span>
+                  <span className={styles.stopDate}>
+                    {formatDate(date, { day: "numeric", month: "short" })}
+                  </span>
+                  <span className={styles.srOnly}>
+                    {counts[i] === 0
+                      ? "sin problemas"
+                      : `${counts[i]} ${counts[i] === 1 ? "problema" : "problemas"}`}
+                    {i === referenceIndex && i !== index
+                      ? ", fecha de comparación"
+                      : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
     </div>
   );
 }

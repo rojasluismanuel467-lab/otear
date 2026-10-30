@@ -122,10 +122,10 @@
   background: var(--danger);
 }
 .attention li[data-tone="warning"] i {
-  background: #c28b2c;
+  background: var(--alert-warning-bar);
 }
 .attention li[data-tone="info"] i {
-  background: #3f7f9c;
+  background: var(--alert-calm-bar);
 }
 .attention a {
   color: var(--accent);
@@ -185,7 +185,7 @@
 }
 .stack i[data-state="pending"],
 .legend span[data-state="pending"]::before {
-  background: #c28b2c;
+  background: var(--alert-warning-bar);
 }
 .stack i[data-state="dismissed"],
 .legend span[data-state="dismissed"]::before {

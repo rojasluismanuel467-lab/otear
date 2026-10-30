@@ -1,0 +1,69 @@
+/* Candidatos del asistente de imágenes: franja de resumen y detalle junto a los botones de revisión. */
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  border-radius: 20px;
+}
+.summaryText {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  min-width: 0;
+}
+.summaryTitle {
+  font-size: var(--text-body);
+  font-weight: 700;
+  line-height: 1.35;
+}
+.summaryHint {
+  font-size: var(--text-small);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.detail {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 45%, transparent);
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.detail h4 {
+  margin-top: 4px;
+  font-size: var(--heading-group);
+  font-weight: 700;
+}
+.detail ul {
+  display: grid;
+  gap: 4px;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: var(--text-small);
+  line-height: 1.55;
+}
+.detail p {
+  font-size: var(--text-small);
+  line-height: 1.6;
+}
+.caution {
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: var(--alert-warning-ink);
+  background: var(--alert-warning-wash);
+}
+
+@media (max-width: 800px) {
+  .summary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

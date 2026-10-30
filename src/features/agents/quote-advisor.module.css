@@ -1,0 +1,135 @@
+/* Lectura de las cotizaciones: para quien contrata, dentro del detalle de la solicitud. */
+.advisor {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 40%, transparent);
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.head h3 {
+  font-size: var(--heading-group);
+  font-weight: 700;
+}
+.lead,
+.plain {
+  font-size: var(--text-small);
+  line-height: 1.6;
+}
+.verdict {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: var(--text-small);
+  line-height: 1.55;
+}
+.verdict[data-kind="leader"] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+.verdict ul {
+  display: grid;
+  gap: 4px;
+  padding-left: 18px;
+  list-style: disc;
+}
+.verdict p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.quotes {
+  display: grid;
+  gap: 10px;
+}
+.quotes > li {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.quoteHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 14px;
+  font-size: var(--text-small);
+}
+.quoteHead span {
+  color: var(--muted);
+}
+.notes {
+  display: grid;
+  gap: 5px;
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+.notes li {
+  display: grid;
+  grid-template-columns: 15px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+.notes svg {
+  margin-top: 3px;
+}
+.notes [data-tone="good"] svg {
+  color: #3d7a5a;
+}
+.notes [data-tone="warn"] svg {
+  color: #9c6a14;
+}
+.notes [data-tone="info"] svg {
+  color: var(--muted);
+}
+.questions {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.questions h4 {
+  font-size: var(--heading-group);
+  font-weight: 700;
+}
+.questions ul {
+  display: grid;
+  gap: 4px;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: var(--text-small);
+  line-height: 1.55;
+}
+.questions small {
+  color: var(--muted);
+}
+.how {
+  font-size: var(--text-small);
+}
+.how summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 650;
+}
+.how p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hint {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  font-size: var(--text-small);
+  line-height: 1.55;
+}

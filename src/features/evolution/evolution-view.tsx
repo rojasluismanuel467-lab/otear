@@ -11,7 +11,7 @@ import { ParcelMap } from "@/components/maps/parcel-map";
 import { zonePalette } from "@/components/maps/zone-palette";
 import { useDemo } from "@/features/demo/demo-context";
 import { useModuleTitle } from "@/features/config/use-config";
-import type { Site } from "@/features/demo/types";
+import type { Position, Site } from "@/features/demo/types";
 import { formatDate } from "@/lib/format";
 import {
   buildCaptures,
@@ -482,6 +482,9 @@ function buildingMarker(
   return { id: issue.id, x, level, tone: issue.tone, label: issue.title };
 }
 
+/** One shared empty outline: a fresh `[]` per render would redraw every zone and cut the fade. */
+const noOutline: Position[] = [];
+
 function MapStage({
   site,
   current,
@@ -517,7 +520,7 @@ function MapStage({
     <ParcelMap
       siteName={site.name}
       center={site.center}
-      outline={[]}
+      outline={noOutline}
       outlineKind={site.sector === "roads" ? "line" : "polygon"}
       zones={site.zones}
       zoneColors={colors}

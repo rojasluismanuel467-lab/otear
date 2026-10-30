@@ -32,8 +32,9 @@ export function payReadiness(input: {
   area?: AreaCheck;
 }): { items: ReadinessItem[]; ready: boolean } {
   const { invoice, flight, documents, evidences } = input;
+  // Only what the operator reported holds up payment; assistant suggestions are the buyer's own work.
   const findings = input.findings.filter(
-    (item) => item.flightId === flight?.id,
+    (item) => item.flightId === flight?.id && !item.suggestion,
   );
   const pending = findings.filter((item) => item.status === "pending").length;
   const operatorDocs = documents.filter((doc) =>

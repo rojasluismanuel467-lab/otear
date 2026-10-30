@@ -37,7 +37,14 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
-export type DroneKind = "compact" | "enterprise" | "sprayer" | "fixed-wing";
+export type DroneKind =
+  | "compact"
+  | "enterprise"
+  | "hexacopter"
+  | "heavy-lift"
+  | "sprayer"
+  | "fixed-wing"
+  | "vtol";
 
 /** The brand aircraft of the logo. It is not a fleet family: no catalog, parts or marks refer to it. */
 export type BrandKind = "viper";
@@ -919,6 +926,44 @@ const FW_PROFILE: [number, number][] = [
   [0.72, 0],
 ];
 
+/** Pusher motor, spinner and a twisted two-blade propeller behind a fuselage; `z` is the motor's centre. */
+function addPusher(kit: Kit, paints: Paints, parent: Group, z: number) {
+  const motor = kit.mesh(
+    new CylinderGeometry(0.05, 0.044, 0.1, 20),
+    paints.black,
+  );
+  motor.rotation.x = Math.PI / 2;
+  motor.position.set(0, 0, z);
+  parent.add(motor);
+  const spinnerProfile = [0, 0.012, 0.04, 0.085, 0.14].map(
+    (y) => new Vector2(0.05 * Math.sqrt(Math.max(0, 1 - (y / 0.14) ** 2.2)), y),
+  );
+  const spinnerGeometry = new LatheGeometry(spinnerProfile, 24);
+  spinnerGeometry.rotateX(-Math.PI / 2);
+  const spinner = kit.mesh(spinnerGeometry, paints.metal);
+  spinner.position.set(0, 0, z - 0.05);
+  parent.add(spinner);
+  const holder = new Group();
+  holder.position.set(0, 0, z - 0.065);
+  holder.rotation.x = Math.PI / 2;
+  const propeller = new Group();
+  const blade = createTippedBladeGeometry();
+  for (let index = 0; index < 2; index += 1) {
+    const pivot = new Group();
+    pivot.rotation.y = index * Math.PI;
+    const mesh = kit.mesh(blade, paints.blade);
+    mesh.scale.setScalar(0.95);
+    pivot.add(mesh);
+    propeller.add(pivot);
+  }
+  const blur = kit.mesh(new CircleGeometry(0.4, 48), paints.blurDisc);
+  blur.rotation.x = -Math.PI / 2;
+  propeller.add(blur);
+  holder.add(propeller);
+  parent.add(holder);
+  return propeller;
+}
+
 function buildFixedWing(kit: Kit): Parts {
   const paints = createPaints(kit);
   const root = new Group();
@@ -1061,41 +1106,7 @@ function buildFixedWing(kit: Kit): Parts {
   lens.position.set(0, -0.152, 0.2);
   body.add(lens);
 
-  // Pusher motor, spinner and a twisted two-blade propeller
-  const motor = kit.mesh(
-    new CylinderGeometry(0.05, 0.044, 0.1, 20),
-    paints.black,
-  );
-  motor.rotation.x = Math.PI / 2;
-  motor.position.set(0, 0, -0.67);
-  body.add(motor);
-  const spinnerProfile = [0, 0.012, 0.04, 0.085, 0.14].map(
-    (y) => new Vector2(0.05 * Math.sqrt(Math.max(0, 1 - (y / 0.14) ** 2.2)), y),
-  );
-  const spinnerGeometry = new LatheGeometry(spinnerProfile, 24);
-  spinnerGeometry.rotateX(-Math.PI / 2);
-  const spinner = kit.mesh(spinnerGeometry, paints.metal);
-  spinner.position.set(0, 0, -0.72);
-  body.add(spinner);
-  const holder = new Group();
-  holder.position.set(0, 0, -0.735);
-  holder.rotation.x = Math.PI / 2;
-  const propeller = new Group();
-  const blade = createTippedBladeGeometry();
-  for (let index = 0; index < 2; index += 1) {
-    const pivot = new Group();
-    pivot.rotation.y = index * Math.PI;
-    const mesh = kit.mesh(blade, paints.blade);
-    mesh.scale.setScalar(0.95);
-    pivot.add(mesh);
-    propeller.add(pivot);
-  }
-  const blur = kit.mesh(new CircleGeometry(0.4, 48), paints.blurDisc);
-  blur.rotation.x = -Math.PI / 2;
-  propeller.add(blur);
-  holder.add(propeller);
-  body.add(holder);
-  propellers.push(propeller);
+  propellers.push(addPusher(kit, paints, body, -0.67));
 
   return { group: root, propellers, extent: 1.95, lit: true };
 }
@@ -1655,11 +1666,394 @@ function buildViper(kit: Kit): Parts {
   return { group: root, propellers, extent: 2.75, shadow: 0.35, lit: true };
 }
 
+/** Colour of a rotor's status LED by where it sits on the airframe (front is +z). */
+const ledFor = (z: number) =>
+  z > 0.5 ? palette.front : z < -0.5 ? palette.rear : palette.accent;
+
+/** Six arms, one camera on a gimbal: the usual layout for mapping and LiDAR. */
+function buildHexacopter(kit: Kit): Parts {
+  const paints = createPaints(kit);
+  const group = new Group();
+  const propellers: Group[] = [];
+
+  group.add(
+    kit.mesh(new RoundedBoxGeometry(0.92, 0.34, 1.2, 6, 0.12), paints.graphite),
+  );
+  const shell = kit.mesh(
+    new RoundedBoxGeometry(0.72, 0.2, 0.92, 6, 0.09),
+    paints.shell,
+  );
+  shell.position.y = 0.24;
+  group.add(shell);
+  const nose = kit.mesh(
+    new RoundedBoxGeometry(0.66, 0.18, 0.26, 4, 0.06),
+    paints.black,
+  );
+  nose.position.set(0, 0.16, 0.6);
+  nose.rotation.x = -0.3;
+  group.add(nose);
+  for (const side of [-1, 1]) {
+    const window = kit.mesh(new BoxGeometry(0.16, 0.06, 0.012), paints.glass);
+    window.position.set(side * 0.2, 0.16, 0.73);
+    window.rotation.x = -0.3;
+    group.add(window);
+  }
+  const bar = kit.mesh(new BoxGeometry(0.5, 0.012, 0.06), paints.accent);
+  bar.position.set(0, 0.346, 0.3);
+  group.add(bar);
+  const plate = kit.mesh(
+    new CylinderGeometry(0.62, 0.66, 0.07, 6),
+    paints.graphite,
+  );
+  plate.position.y = 0.08;
+  group.add(plate);
+  const mast = kit.mesh(
+    new CylinderGeometry(0.02, 0.026, 0.34, 10),
+    paints.graphite,
+  );
+  mast.position.set(0, 0.52, -0.42);
+  group.add(mast);
+  const puck = kit.mesh(new SphereGeometry(0.075, 20, 10), paints.shell);
+  puck.scale.y = 0.45;
+  puck.position.set(0, 0.7, -0.42);
+  group.add(puck);
+
+  const bay = kit.mesh(
+    new RoundedBoxGeometry(0.5, 0.14, 0.4, 4, 0.05),
+    paints.black,
+  );
+  bay.position.set(0, -0.24, 0.3);
+  group.add(bay);
+  addPayload(kit, paints, group, 0.5, -0.5, 1.25, true);
+
+  // Skids on four short legs
+  for (const side of [-1, 1]) {
+    const skid = kit.mesh(
+      new CapsuleGeometry(0.035, 1.3, 4, 10),
+      paints.graphite,
+    );
+    skid.rotation.x = Math.PI / 2;
+    skid.position.set(side * 0.62, -0.95, 0);
+    group.add(skid);
+    for (const z of [-0.4, 0.4]) {
+      addTube(
+        kit,
+        group,
+        [side * 0.5, -0.1, z],
+        [side * 0.62, -0.93, z],
+        0.04,
+        0.035,
+        paints.graphite,
+      );
+    }
+  }
+
+  for (let arm = 0; arm < 6; arm += 1) {
+    const angle = Math.PI / 6 + (arm * Math.PI) / 3;
+    const dx = Math.sin(angle);
+    const dz = Math.cos(angle);
+    addTube(
+      kit,
+      group,
+      [dx * 0.5, 0.1, dz * 0.5],
+      [dx * 1.4, 0.12, dz * 1.4],
+      0.1,
+      0.07,
+      paints.graphite,
+    );
+    const joint = kit.mesh(
+      new CylinderGeometry(0.095, 0.095, 0.14, 18),
+      paints.black,
+    );
+    joint.position.set(dx * 0.85, 0.11, dz * 0.85);
+    group.add(joint);
+    propellers.push(
+      addRotorUnit(kit, paints, group, {
+        x: dx * 1.4,
+        y: 0.34,
+        z: dz * 1.4,
+        radius: 0.62,
+        led: ledFor(dz),
+        mirror: arm % 2 === 0,
+      }),
+    );
+  }
+  return { group, propellers, extent: 2.1, lit: true };
+}
+
+/** Eight rotors in four coaxial pairs, a big gimbal: the aircraft for heavy sensors. */
+function buildHeavyLift(kit: Kit): Parts {
+  const paints = createPaints(kit);
+  const group = new Group();
+  const propellers: Group[] = [];
+
+  group.add(
+    kit.mesh(new RoundedBoxGeometry(1.2, 0.46, 1.5, 6, 0.14), paints.graphite),
+  );
+  for (const side of [-1, 1]) {
+    const pack = kit.mesh(
+      new RoundedBoxGeometry(0.42, 0.26, 1.04, 4, 0.07),
+      paints.shell,
+    );
+    pack.position.set(side * 0.3, 0.36, -0.05);
+    group.add(pack);
+    const strip = kit.mesh(new BoxGeometry(0.2, 0.012, 0.5), paints.accent);
+    strip.position.set(side * 0.3, 0.5, -0.05);
+    group.add(strip);
+  }
+  const cross = kit.mesh(
+    new CylinderGeometry(0.78, 0.82, 0.08, 8),
+    paints.graphite,
+  );
+  cross.position.y = 0.06;
+  group.add(cross);
+  for (const side of [-1, 1]) {
+    const mast = kit.mesh(
+      new CylinderGeometry(0.02, 0.026, 0.4, 10),
+      paints.graphite,
+    );
+    mast.position.set(side * 0.36, 0.7, -0.62);
+    group.add(mast);
+    const puck = kit.mesh(new SphereGeometry(0.075, 20, 10), paints.shell);
+    puck.scale.y = 0.45;
+    puck.position.set(side * 0.36, 0.92, -0.62);
+    group.add(puck);
+  }
+  const beacon = kit.mesh(
+    new SphereGeometry(0.045, 14, 10),
+    paints.led(0xffb04a),
+  );
+  beacon.position.set(0, 0.52, -0.66);
+  group.add(beacon);
+
+  const bay = kit.mesh(
+    new RoundedBoxGeometry(0.7, 0.16, 0.6, 4, 0.06),
+    paints.black,
+  );
+  bay.position.set(0, -0.3, 0.3);
+  group.add(bay);
+  addPayload(kit, paints, group, 0.62, -0.62, 1.8, true);
+
+  // Wide gear with a cross bar at the front and at the rear
+  for (const z of [-0.4, 0.4]) {
+    const bridge = kit.mesh(
+      new CapsuleGeometry(0.045, 1.4, 4, 10),
+      paints.graphite,
+    );
+    bridge.rotation.z = Math.PI / 2;
+    bridge.position.set(0, -1.12, z);
+    group.add(bridge);
+    for (const side of [-1, 1]) {
+      addTube(
+        kit,
+        group,
+        [side * 0.55, -0.15, z],
+        [side * 0.7, -1.1, z],
+        0.05,
+        0.045,
+        paints.graphite,
+      );
+      addFoot(kit, paints, group, side * 0.7, -1.15, z);
+    }
+  }
+
+  for (const [sx, sz] of [
+    [-1, 1],
+    [1, 1],
+    [-1, -1],
+    [1, -1],
+  ] as const) {
+    const x = sx * 1.06;
+    const z = sz * 1.06;
+    addTube(
+      kit,
+      group,
+      [sx * 0.46, 0.1, sz * 0.46],
+      [x, 0.12, z],
+      0.12,
+      0.09,
+      paints.graphite,
+    );
+    const led = ledFor(sz);
+    const mirror = sx * sz < 0;
+    propellers.push(
+      addRotorUnit(kit, paints, group, {
+        x,
+        y: 0.34,
+        z,
+        radius: 0.66,
+        led,
+        mirror,
+      }),
+    );
+    // The lower rotor hangs under the arm: the same unit, turned upside down
+    const under = new Group();
+    under.position.set(x, 0.12, z);
+    under.rotation.x = Math.PI;
+    group.add(under);
+    propellers.push(
+      addRotorUnit(kit, paints, under, {
+        x: 0,
+        y: 0.22,
+        z: 0,
+        radius: 0.66,
+        led,
+        mirror: !mirror,
+      }),
+    );
+  }
+  return { group, propellers, extent: 1.95, lit: true };
+}
+
+const VTOL_HALF_SPAN = 1.75;
+const VTOL_CAMBER = 0.03;
+/** Straight tapered wing of the VTOL family. */
+function vtolWingStation(x: number): Station {
+  const u = clamp01(x / VTOL_HALF_SPAN);
+  return {
+    x,
+    y: 0.02,
+    zLE: 0.2 - 0.14 * u,
+    chord: 0.52 * (1 - 0.42 * u),
+    t: 0.12,
+    bank: 0,
+  };
+}
+const VTOL_STATIONS = [0.04, 0.3, 0.6, 0.9, 1.2, 1.5, 1.68, 1.75];
+
+/** Fixed wing that takes off and lands like a multirotor: four lift rotors on two booms and a pusher. */
+function buildVtol(kit: Kit): Parts {
+  const paints = createPaints(kit);
+  const root = new Group();
+  const body = new Group();
+  // Centre the aircraft (nose at +z, tail at -z) on the origin.
+  body.position.z = 0.22;
+  root.add(body);
+  const propellers: Group[] = [];
+  const top = new Color(0xf2f4f5);
+  const accent = new Color(palette.accent);
+  const under = new Color(0x2a3237);
+  const skin = kit.track(
+    new MeshPhysicalMaterial({
+      vertexColors: true,
+      roughness: 0.32,
+      metalness: 0.04,
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.3,
+    }),
+  );
+  const groove = kit.material(0x0f1a20, { roughness: 0.8 });
+
+  const bellyHalf = 1.1;
+  body.add(
+    kit.mesh(
+      fuselageSkin(-bellyHalf, bellyHalf * 2, 28, FW_PROFILE, 0.86),
+      paints.graphite,
+    ),
+    kit.mesh(
+      fuselageSkin(
+        bellyHalf,
+        Math.PI * 2 - bellyHalf * 2,
+        40,
+        FW_PROFILE,
+        0.86,
+      ),
+      paints.shell,
+    ),
+  );
+  const hatch = kit.mesh(
+    new RoundedBoxGeometry(0.15, 0.03, 0.34, 3, 0.012),
+    paints.accent,
+  );
+  hatch.position.set(0, 0.123, 0.2);
+  body.add(hatch);
+  const pitot = kit.mesh(
+    new CylinderGeometry(0.007, 0.007, 0.22, 10),
+    kit.steel,
+  );
+  pitot.rotation.x = Math.PI / 2;
+  pitot.position.set(0, 0, 0.82);
+  body.add(pitot);
+  const hatchBelly = kit.mesh(
+    new RoundedBoxGeometry(0.16, 0.05, 0.26, 3, 0.02),
+    paints.black,
+  );
+  hatchBelly.position.set(0, -0.125, 0.2);
+  body.add(hatchBelly);
+  const lens = kit.mesh(new CircleGeometry(0.036, 20), paints.glass);
+  lens.rotation.x = Math.PI / 2;
+  lens.position.set(0, -0.152, 0.2);
+  body.add(lens);
+
+  const wingHalf = new Group();
+  wingHalf.add(
+    kit.mesh(
+      loftSurface(
+        VTOL_STATIONS.map(vtolWingStation),
+        VTOL_CAMBER,
+        top,
+        accent,
+        under,
+      ),
+      skin,
+    ),
+  );
+  const onWing = (x: number) =>
+    surfacePoint(vtolWingStation(x), 0.74, true, VTOL_CAMBER, 0.0012);
+  wingHalf.add(skinLine(kit, groove, [0.9, 1.2, 1.5, 1.68].map(onWing)));
+  const wingLeft = wingHalf.clone();
+  wingLeft.scale.x = -1;
+  body.add(wingHalf, wingLeft);
+
+  // Two booms carry the lift rotors and the tail
+  for (const side of [-1, 1]) {
+    addTube(
+      kit,
+      body,
+      [side * 0.7, 0.03, 0.74],
+      [side * 0.7, 0.03, -1.2],
+      0.04,
+      0.035,
+      paints.graphite,
+    );
+    const fin = kit.mesh(
+      new RoundedBoxGeometry(0.03, 0.3, 0.24, 3, 0.012),
+      paints.shell,
+    );
+    fin.position.set(side * 0.7, 0.18, -1.08);
+    body.add(fin);
+    for (const z of [0.7, -0.6]) {
+      propellers.push(
+        addRotorUnit(kit, paints, body, {
+          x: side * 0.7,
+          y: 0.2,
+          z,
+          radius: 0.36,
+          led: ledFor(z * 1.5),
+          mirror: side * z < 0,
+        }),
+      );
+    }
+  }
+  const stabiliser = kit.mesh(
+    new RoundedBoxGeometry(1.46, 0.03, 0.26, 3, 0.012),
+    paints.shell,
+  );
+  stabiliser.position.set(0, 0.04, -1.1);
+  body.add(stabiliser);
+  propellers.push(addPusher(kit, paints, body, -0.67));
+
+  return { group: root, propellers, extent: 1.95, lit: true };
+}
+
 const builders: Record<DroneKind | BrandKind, (kit: Kit) => Parts> = {
   compact: buildCompact,
   enterprise: buildEnterprise,
+  hexacopter: buildHexacopter,
+  "heavy-lift": buildHeavyLift,
   sprayer: buildSprayer,
   "fixed-wing": buildFixedWing,
+  vtol: buildVtol,
   viper: buildViper,
 };
 

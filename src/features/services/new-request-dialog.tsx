@@ -3,6 +3,7 @@
 import { Button, Modal } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { CeilingHint } from "@/features/agents/ceiling-hint";
 import { useTerm } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
 import { DEMO_DATE } from "@/features/demo/demo-data";
@@ -20,12 +21,15 @@ export function NewRequestDialog({
 }) {
   const { site } = useDemo();
   const t = useTerm();
-  const { operators, create } = useServices();
+  const { operators, create, requests } = useServices();
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
   const [zoneIds, setZoneIds] = useState<string[]>([]);
   const [invited, setInvited] = useState<string[]>([]);
   const defaultUnit = site.sector === "agriculture" ? "ha" : "flight";
+  const [kind, setKind] = useState<ServiceKind>("monitoring");
+  const [unit, setUnit] = useState<"ha" | "flight">(defaultUnit);
+  const [maxPrice, setMaxPrice] = useState("");
 
   function handleOpenChange(open: boolean) {
     setIsOpen(open);
@@ -33,6 +37,9 @@ export function NewRequestDialog({
       setError("");
       setZoneIds([]);
       setInvited(operators.map((operator) => operator.id));
+      setKind("monitoring");
+      setUnit(defaultUnit);
+      setMaxPrice("");
     }
   }
 
@@ -88,7 +95,10 @@ export function NewRequestDialog({
                     <select
                       className="field-select"
                       name="kind"
-                      defaultValue="monitoring"
+                      value={kind}
+                      onChange={(event) =>
+                        setKind(event.target.value as ServiceKind)
+                      }
                     >
                       {kinds.map((kind) => (
                         <option key={kind} value={kind}>
@@ -102,7 +112,10 @@ export function NewRequestDialog({
                     <select
                       className="field-select"
                       name="unit"
-                      defaultValue={defaultUnit}
+                      value={unit}
+                      onChange={(event) =>
+                        setUnit(event.target.value === "ha" ? "ha" : "flight")
+                      }
                     >
                       <option value="ha">Hectárea</option>
                       <option value="flight">Vuelo completo</option>
@@ -186,12 +199,20 @@ export function NewRequestDialog({
                     className="field-input"
                     name="maxPrice"
                     inputMode="numeric"
+                    value={maxPrice}
+                    onChange={(event) => setMaxPrice(event.target.value)}
                   />
                   <span className="text-muted">
                     Por hectárea o por vuelo, según lo que elija arriba. Las
                     cotizaciones que lo superen se marcan.
                   </span>
                 </label>
+                <CeilingHint
+                  kind={kind}
+                  unit={unit}
+                  requests={requests}
+                  onUse={(value) => setMaxPrice(String(value))}
+                />
                 {error && (
                   <p className={styles.error} role="alert">
                     {error}

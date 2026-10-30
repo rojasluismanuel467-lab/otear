@@ -13,6 +13,23 @@ function roundPosition(latlng: L.LatLng): Position {
   return [Number(latlng.lat.toFixed(6)), Number(latlng.lng.toFixed(6))];
 }
 
+/** Colour and weight of a zone. Kept apart from the shape so a change of date or selection only
+ *  restyles the existing shapes (they fade between colours) instead of redrawing every layer. */
+function zoneStyle(
+  color: string,
+  selected: boolean,
+  line: boolean,
+): L.PathOptions {
+  return line
+    ? { color, weight: selected ? 12 : 9, opacity: selected ? 0.95 : 0.75 }
+    : {
+        color,
+        weight: selected ? 3.5 : 1.5,
+        fillColor: color,
+        fillOpacity: selected ? 0.38 : 0.22,
+      };
+}
+
 export default function ParcelMapCanvas({
   siteName,
   center,
@@ -34,7 +51,16 @@ export default function ParcelMapCanvas({
 }: ParcelMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
-  const live = useRef({ mode, outline, onOutlineChange, onCut, onMove });
+  const live = useRef({
+    mode,
+    outline,
+    onOutlineChange,
+    onCut,
+    onMove,
+    zoneColors,
+    selectedZoneId,
+  });
+  const shapes = useRef(new Map<string, L.Path>());
   const cutStartRef = useRef<Position | null>(null);
   const [cutStart, setCutStart] = useState<Position | null>(null);
   const [tileError, setTileError] = useState(false);
@@ -46,7 +72,15 @@ export default function ParcelMapCanvas({
   const lastFitKey = useRef(fitKey);
 
   useEffect(() => {
-    live.current = { mode, outline, onOutlineChange, onCut, onMove };
+    live.current = {
+      mode,
+      outline,
+      onOutlineChange,
+      onCut,
+      onMove,
+      zoneColors,
+      selectedZoneId,
+    };
   });
 
   useEffect(() => {
@@ -138,23 +172,22 @@ export default function ParcelMapCanvas({
         interactive: false,
       }).addTo(layer),
     );
+    const drawn = shapes.current;
+    drawn.clear();
     zones.forEach((zone, index) => {
       const color =
-        zoneColors?.[zone.id] ?? zonePalette[index % zonePalette.length];
-      const selected = zone.id === selectedZoneId;
+        live.current.zoneColors?.[zone.id] ??
+        zonePalette[index % zonePalette.length];
+      const options = zoneStyle(
+        color,
+        zone.id === live.current.selectedZoneId,
+        outlineKind === "line",
+      );
       const shape =
         outlineKind === "line"
-          ? L.polyline(zone.outline, {
-              color,
-              weight: selected ? 12 : 9,
-              opacity: selected ? 0.95 : 0.75,
-            })
-          : L.polygon(zone.outline, {
-              color,
-              weight: selected ? 3.5 : 1.5,
-              fillColor: color,
-              fillOpacity: selected ? 0.38 : 0.22,
-            });
+          ? L.polyline(zone.outline, options)
+          : L.polygon(zone.outline, options);
+      drawn.set(zone.id, shape);
       shape
         .addTo(layer)
         .bindTooltip(zone.name, {
@@ -210,6 +243,37 @@ export default function ParcelMapCanvas({
           });
       });
     }
+    if (cutStart) {
+      L.circleMarker(cutStart, {
+        radius: 6,
+        color: "#8a2f2f",
+        fillColor: "#fff",
+        fillOpacity: 1,
+        weight: 3,
+        interactive: false,
+      }).addTo(layer);
+    }
+    return () => {
+      layer.remove();
+      drawn.clear();
+    };
+  }, [
+    zones,
+    outline,
+    outlineKind,
+    history,
+    mode,
+    cutStart,
+    onSelectZone,
+    basemap,
+  ]);
+
+  // Issue pins live in their own layer: a new date swaps the pins without redrawing the zones,
+  // which is what lets the zone colours fade.
+  useEffect(() => {
+    const instance = map.current;
+    if (!instance) return;
+    const layer = L.layerGroup().addTo(instance);
     markers?.forEach((marker) => {
       L.marker(marker.position, {
         title: marker.label,
@@ -229,33 +293,25 @@ export default function ParcelMapCanvas({
           onSelectMarker?.(marker.id);
         });
     });
-    if (cutStart) {
-      L.circleMarker(cutStart, {
-        radius: 6,
-        color: "#8a2f2f",
-        fillColor: "#fff",
-        fillOpacity: 1,
-        weight: 3,
-        interactive: false,
-      }).addTo(layer);
-    }
     return () => {
       layer.remove();
     };
-  }, [
-    zones,
-    outline,
-    outlineKind,
-    selectedZoneId,
-    zoneColors,
-    markers,
-    onSelectMarker,
-    history,
-    mode,
-    cutStart,
-    onSelectZone,
-    basemap,
-  ]);
+  }, [markers, onSelectMarker]);
+
+  // Colours and selection: restyle the shapes already on the map so the change fades.
+  useEffect(() => {
+    zones.forEach((zone, index) => {
+      shapes.current
+        .get(zone.id)
+        ?.setStyle(
+          zoneStyle(
+            zoneColors?.[zone.id] ?? zonePalette[index % zonePalette.length],
+            zone.id === selectedZoneId,
+            outlineKind === "line",
+          ),
+        );
+    });
+  }, [zones, outlineKind, zoneColors, selectedZoneId]);
 
   // Click handling per mode.
   useEffect(() => {

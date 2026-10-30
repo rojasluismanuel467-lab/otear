@@ -49,6 +49,16 @@ export interface Flight {
   capture?: Capture;
   /** Flight log, filled in after the flight. */
   log?: FlightLog;
+  /** Set when the flight was prepared from an assistant's proposal that a person approved. */
+  origin?: FlightOrigin;
+}
+
+/** What an assistant proposed and when a person accepted it; the flight is theirs. */
+export interface FlightOrigin {
+  agent: "next-flight";
+  /** One line per proposed zone: the strongest reason the assistant gave. */
+  reasons: string[];
+  approvedOn: string;
 }
 
 export interface FlightLog {
@@ -86,6 +96,20 @@ export interface Finding {
   imageUrl: string;
   source: string;
   taskAssigned: boolean;
+  /** Set when an assistant, and not the operator, proposed this finding from the photos. */
+  suggestion?: FindingSuggestion;
+}
+
+/** What the image assistant says about a candidate finding; a person still decides. */
+export interface FindingSuggestion {
+  agent: "image";
+  confidence: "high" | "medium" | "low";
+  /** What in the photos led to the suggestion. */
+  evidence: string[];
+  /** What a photo cannot tell, so the person knows what to check on site. */
+  limits: string;
+  /** Where it shows in the flight's photo sequence, as fractions from 0 to 1. */
+  photoSpan: [number, number];
 }
 
 export interface Invoice {

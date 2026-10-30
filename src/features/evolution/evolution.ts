@@ -53,7 +53,11 @@ export function buildCaptures(
           site.zones.map((zone) => [
             zone.id,
             findings.filter(
-              (item) => item.flightId === flight.id && item.zoneId === zone.id,
+              (item) =>
+                item.flightId === flight.id &&
+                item.zoneId === zone.id &&
+                // An unreviewed suggestion is not yet a finding of the site.
+                !(item.suggestion && item.status === "pending"),
             ).length,
           ]),
         );

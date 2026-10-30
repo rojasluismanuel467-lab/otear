@@ -5,6 +5,7 @@ import { ArrowUpRight, CircleCheck } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { QuoteAdvisor } from "@/features/agents/quote-advisor";
 import { orderedHa as sumOrderedHa } from "@/features/billing/coverage";
 import { useTerm } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
@@ -296,6 +297,11 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
           </div>
         </section>
       )}
+
+      {workflow.isRequester(actor.role) &&
+        (request.status === "requested" || request.status === "quoted") && (
+          <QuoteAdvisor request={request} />
+        )}
 
       {request.delivery && (
         <section className={styles.delivery} aria-labelledby="delivery-title">

@@ -13,6 +13,7 @@ import {
   MapPin,
   Plus,
   Route,
+  Boxes,
   X,
 } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
@@ -23,8 +24,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SiteMap } from "@/components/maps/site-map";
 import { formatDate } from "@/lib/format";
 import { FlightTimeline } from "../flight-timeline";
-import { droneExamples } from "@/features/drones/drone-catalog";
+import { droneExamples, droneOptionFor } from "@/features/drones/drone-catalog";
+import { DroneGalleryDialog } from "@/features/drones/drone-gallery";
 import { DroneHangar } from "./drone-hangar";
+import { AiBadge } from "@/components/ui/ai-badge";
+import { NextFlightAssistant } from "@/features/agents/next-flight-assistant";
+import type { FlightProposal } from "@/features/agents/flight-proposal";
+import { DEMO_DATE } from "@/features/demo/demo-data";
 import { FlightItinerary } from "./flight-itinerary";
 import { LogDialog } from "./log-dialog";
 import { PreparationChecklist } from "./preparation-checklist";
@@ -138,19 +144,29 @@ function Calendar({
 function FlightForm({
   site,
   seed,
+  proposal,
   onSave,
   onCancel,
 }: {
   site: Site;
   seed?: Flight;
+  /** Assistant's proposal that prefilled the form; the person can change anything. */
+  proposal?: FlightProposal;
   onSave: (flight: Omit<Flight, "id">) => void;
   onCancel: () => void;
 }) {
   const [zoneIds, setZoneIds] = useState<string[]>(
-    site.zones.map((zone) => zone.id),
+    proposal?.zoneIds ?? site.zones.map((zone) => zone.id),
   );
-  const [route, setRoute] = useState<Position[]>([]);
+  const [route, setRoute] = useState<Position[]>(proposal?.route ?? []);
   const [error, setError] = useState("");
+  const [drone, setDrone] = useState(seed?.drone ?? "");
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const galleryTriggerRef = useRef<HTMLButtonElement>(null);
+  function handleGalleryChange(open: boolean) {
+    setIsGalleryOpen(open);
+    if (!open) setTimeout(() => galleryTriggerRef.current?.focus(), 50);
+  }
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -199,6 +215,11 @@ function FlightForm({
       distance: 0,
       photoCount: 0,
       checklist: [],
+      origin: proposal && {
+        agent: "next-flight",
+        reasons: proposal.reasons,
+        approvedOn: DEMO_DATE,
+      },
     });
   }
   const draft: Flight = {
@@ -221,147 +242,187 @@ function FlightForm({
     checklist: [],
   };
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <p className="demo-note">
-        Plan de ejemplo para {site.name}. Se conserva únicamente en esta sesión.
-      </p>
-      <label className="form-field">
-        <span className="field-label">Nombre del vuelo</span>
-        <input
-          autoFocus
-          className="field-input"
-          name="title"
-          placeholder="Ej. Seguimiento de la zona norte"
-          required
-          maxLength={100}
-        />
-      </label>
-      <label className="form-field">
-        <span className="field-label">¿Qué necesitas revisar?</span>
-        <textarea
-          className="field-input"
-          name="objective"
-          rows={2}
-          placeholder="Describe el objetivo y la entrega que esperas."
-          required
-          maxLength={500}
-        />
-      </label>
-      <div className={styles.formGrid}>
-        {[
-          {
-            name: "date",
-            label: "Fecha prevista",
-            type: "date",
-            value: "2026-10-29",
-          },
-          {
-            name: "time",
-            label: "Hora · Colombia",
-            type: "time",
-            value: "07:00",
-          },
-          {
-            name: "pilot",
-            label: "Piloto",
-            type: "text",
-            value: seed?.pilot ?? "",
-          },
-          {
-            name: "operator",
-            label: "Operador",
-            type: "text",
-            value: seed?.operator ?? "",
-          },
-          {
-            name: "manager",
-            label: "Encargado",
-            type: "text",
-            value: seed?.manager ?? "",
-          },
-          {
-            name: "drone",
-            label: "Dron",
-            type: "text",
-            value: seed?.drone ?? "",
-          },
-        ].map((field) => (
-          <label className="form-field" key={field.name}>
-            <span className="field-label">{field.label}</span>
-            <input
-              className="field-input"
-              list={field.name === "drone" ? "drone-options" : undefined}
-              name={field.name}
-              type={field.type}
-              defaultValue={field.value}
-              required
-              maxLength={100}
-            />
-          </label>
-        ))}
-        <datalist id="drone-options">
-          {droneExamples.map((example) => (
-            <option key={example} value={example} />
-          ))}
-        </datalist>
-      </div>
-      <fieldset className={styles.zoneField}>
-        <legend className="field-label">{site.zoneLabel} por recorrer</legend>
-        {site.zones.map((zone) => (
-          <label key={zone.id}>
-            <input
-              type="checkbox"
-              checked={zoneIds.includes(zone.id)}
-              onChange={() =>
-                setZoneIds((current) =>
-                  current.includes(zone.id)
-                    ? current.filter((id) => id !== zone.id)
-                    : [...current, zone.id],
-                )
-              }
-            />
-            <span>
-              {zone.name}
-              <small>{zone.description}</small>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-      <div>
-        <div className={styles.routeHeading}>
-          <span className="field-label">Recorrido previsto</span>
-          <span className="text-muted">{route.length} puntos</span>
-        </div>
-        <p className={styles.formHelp}>
-          Añade puntos en el mapa. Usa sus controles para editar el recorrido.
+    <>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <p className="demo-note">
+          Plan de ejemplo para {site.name}. Se conserva únicamente en esta
+          sesión.
         </p>
-        <div className={styles.formMap}>
-          <SiteMap
-            site={site}
-            flight={draft}
-            editable
-            onRouteChange={setRoute}
+        {proposal && (
+          <p className={styles.proposalNote}>
+            <AiBadge />
+            Precargado con la propuesta del asistente. Piloto, operador,
+            encargado y dron son los de un vuelo anterior: confírmelos. Usted
+            decide.
+          </p>
+        )}
+        <label className="form-field">
+          <span className="field-label">Nombre del vuelo</span>
+          <input
+            autoFocus
+            className="field-input"
+            name="title"
+            defaultValue={proposal?.title}
+            placeholder="Ej. Seguimiento de la zona norte"
+            required
+            maxLength={100}
           />
+        </label>
+        <label className="form-field">
+          <span className="field-label">¿Qué necesitas revisar?</span>
+          <textarea
+            className="field-input"
+            name="objective"
+            defaultValue={proposal?.objective}
+            rows={2}
+            placeholder="Describe el objetivo y la entrega que esperas."
+            required
+            maxLength={500}
+          />
+        </label>
+        <div className={styles.formGrid}>
+          {[
+            {
+              name: "date",
+              label: "Fecha prevista",
+              type: "date",
+              value: proposal?.date ?? "2026-10-29",
+            },
+            {
+              name: "time",
+              label: "Hora · Colombia",
+              type: "time",
+              value: proposal?.time ?? "07:00",
+            },
+            {
+              name: "pilot",
+              label: "Piloto",
+              type: "text",
+              value: seed?.pilot ?? "",
+            },
+            {
+              name: "operator",
+              label: "Operador",
+              type: "text",
+              value: seed?.operator ?? "",
+            },
+            {
+              name: "manager",
+              label: "Encargado",
+              type: "text",
+              value: seed?.manager ?? "",
+            },
+          ].map((field) => (
+            <label className="form-field" key={field.name}>
+              <span className="field-label">{field.label}</span>
+              <input
+                className="field-input"
+                name={field.name}
+                type={field.type}
+                defaultValue={field.value}
+                required
+                maxLength={100}
+              />
+            </label>
+          ))}
+          <div className={`form-field ${styles.droneField}`}>
+            <label className="field-label" htmlFor="flight-drone">
+              Dron
+            </label>
+            <div className={styles.droneRow}>
+              <input
+                id="flight-drone"
+                className="field-input"
+                list="drone-options"
+                name="drone"
+                type="text"
+                value={drone}
+                onChange={(event) => setDrone(event.target.value)}
+                placeholder="Escriba el equipo o elíjalo de la galería"
+                required
+                maxLength={100}
+              />
+              <Button
+                ref={galleryTriggerRef}
+                variant="secondary"
+                onPress={() => setIsGalleryOpen(true)}
+              >
+                <Boxes size={16} aria-hidden="true" />
+                Ver modelos
+              </Button>
+            </div>
+          </div>
+          <datalist id="drone-options">
+            {droneExamples.map((example) => (
+              <option key={example} value={example} />
+            ))}
+          </datalist>
         </div>
-        <p className={styles.formHelp}>
-          El recorrido no acredita autorización ni ausencia de restricciones.
-        </p>
-      </div>
-      {error && (
-        <p className={styles.error} role="alert">
-          {error}
-        </p>
-      )}
-      <div className={styles.formActions}>
-        <Button variant="secondary" onPress={onCancel} type="button">
-          Cancelar
-        </Button>
-        <Button variant="primary" type="submit">
-          <Plus size={17} />
-          Guardar plan de ejemplo
-        </Button>
-      </div>
-    </form>
+        <fieldset className={styles.zoneField}>
+          <legend className="field-label">{site.zoneLabel} por recorrer</legend>
+          {site.zones.map((zone) => (
+            <label key={zone.id}>
+              <input
+                type="checkbox"
+                checked={zoneIds.includes(zone.id)}
+                onChange={() =>
+                  setZoneIds((current) =>
+                    current.includes(zone.id)
+                      ? current.filter((id) => id !== zone.id)
+                      : [...current, zone.id],
+                  )
+                }
+              />
+              <span>
+                {zone.name}
+                <small>{zone.description}</small>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <div>
+          <div className={styles.routeHeading}>
+            <span className="field-label">Recorrido previsto</span>
+            <span className="text-muted">{route.length} puntos</span>
+          </div>
+          <p className={styles.formHelp}>
+            Añade puntos en el mapa. Usa sus controles para editar el recorrido.
+          </p>
+          <div className={styles.formMap}>
+            <SiteMap
+              site={site}
+              flight={draft}
+              editable
+              onRouteChange={setRoute}
+            />
+          </div>
+          <p className={styles.formHelp}>
+            El recorrido no acredita autorización ni ausencia de restricciones.
+          </p>
+        </div>
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
+        <div className={styles.formActions}>
+          <Button variant="secondary" onPress={onCancel} type="button">
+            Cancelar
+          </Button>
+          <Button variant="primary" type="submit">
+            <Plus size={17} />
+            Guardar plan de ejemplo
+          </Button>
+        </div>
+      </form>
+      <DroneGalleryDialog
+        isOpen={isGalleryOpen}
+        onOpenChange={handleGalleryChange}
+        currentId={drone ? droneOptionFor(drone).id : undefined}
+        chooseLabel="Usar en el vuelo"
+        onChoose={(option) => setDrone(option.equipmentName)}
+      />
+    </>
   );
 }
 
@@ -379,6 +440,7 @@ export function SchedulingView() {
   const [date, setDate] = useState("");
   const [filter, setFilter] = useState("all");
   const [isOpen, setIsOpen] = useState(false);
+  const [proposal, setProposal] = useState<FlightProposal>();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const visibleFlights = flights
     .filter(
@@ -401,12 +463,17 @@ export function SchedulingView() {
     setIsOpen(open);
     if (!open) setTimeout(() => triggerRef.current?.focus(), 50);
   }
+  function prepareFrom(next: FlightProposal) {
+    setProposal(next);
+    setIsOpen(true);
+  }
   function saveFlight(input: Omit<Flight, "id">) {
     const id = addFlight(input);
     selectFlight(id);
     setTab("agenda");
     setFilter("all");
     setDate("");
+    setProposal(undefined);
     handleOpenChange(false);
   }
   const zoneNames = activeFlight
@@ -430,6 +497,7 @@ export function SchedulingView() {
           </Button>
         }
       />
+      <NextFlightAssistant onPrepare={prepareFrom} />
       <section className={`surface ${styles.stage}`}>
         <aside className={styles.rail}>
           <header className={styles.railHeader}>
@@ -527,6 +595,22 @@ export function SchedulingView() {
               <div>
                 <h2>{activeFlight.title}</h2>
                 <p>{activeFlight.objective}</p>
+                {activeFlight.origin && (
+                  <details className={styles.origin}>
+                    <summary>
+                      <AiBadge>Propuesto por el asistente · ejemplo</AiBadge>
+                      <span>
+                        Aprobado por usted el{" "}
+                        {formatDate(activeFlight.origin.approvedOn)}
+                      </span>
+                    </summary>
+                    <ul>
+                      {activeFlight.origin.reasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
               </div>
               <div className={styles.headerActions}>
                 <LogDialog flight={activeFlight} />
@@ -592,11 +676,15 @@ export function SchedulingView() {
               </Modal.Header>
               <Modal.Body>
                 <FlightForm
-                  key={site.id}
+                  key={`${site.id}-${proposal?.title ?? "blank"}`}
                   site={site}
                   seed={flights[0]}
+                  proposal={proposal}
                   onSave={saveFlight}
-                  onCancel={() => handleOpenChange(false)}
+                  onCancel={() => {
+                    setProposal(undefined);
+                    handleOpenChange(false);
+                  }}
                 />
               </Modal.Body>
             </Modal.Dialog>

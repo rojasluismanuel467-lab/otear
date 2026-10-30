@@ -1,5 +1,6 @@
 "use client";
 
+import { sourceLabel } from "@/features/agents/image-candidates";
 import { useState } from "react";
 import { Button } from "@heroui/react";
 import { Download, FileText, Printer } from "lucide-react";
@@ -141,7 +142,7 @@ export function FlightReport({
     ...(included.length
       ? included.map(
           (finding, index) =>
-            `${index + 1}. ${finding.title}\n   Zona: ${site.zones.find((zone) => zone.id === finding.zoneId)?.name ?? "Sin asignar"}\n   Fuente: ${finding.source}\n   Descripción: ${finding.description}\n   Prioridad: ${priorityLabels[finding.priority]}\n   Ubicación: ${finding.position[0].toFixed(5)}, ${finding.position[1].toFixed(5)}\n   Revisión: ${statusLabels[finding.status]}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Tarea local: ${finding.taskAssigned ? "Propuesta de verificación añadida" : "Sin tarea"}\n   Referencia de muestra: ${finding.id}`,
+            `${index + 1}. ${finding.title}\n   Zona: ${site.zones.find((zone) => zone.id === finding.zoneId)?.name ?? "Sin asignar"}\n   Fuente: ${sourceLabel(finding)}\n   Descripción: ${finding.description}\n   Prioridad: ${priorityLabels[finding.priority]}\n   Ubicación: ${finding.position[0].toFixed(5)}, ${finding.position[1].toFixed(5)}\n   Revisión: ${statusLabels[finding.status]}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Tarea local: ${finding.taskAssigned ? "Propuesta de verificación añadida" : "Sin tarea"}\n   Referencia de muestra: ${finding.id}`,
         )
       : ["Sin observaciones seleccionadas."]),
     "",
@@ -273,7 +274,7 @@ export function FlightReport({
                 {finding.position[1].toFixed(5)}
               </small>
               <small>
-                {finding.source} · {statusLabels[finding.status]}
+                {sourceLabel(finding)} · {statusLabels[finding.status]}
                 {finding.taskAssigned ? " · Con tarea local" : ""}
               </small>
               <small>

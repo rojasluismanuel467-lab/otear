@@ -15,6 +15,9 @@ export function replayKindFor(equipment: string): DroneKind {
 export const replayKindLabels: Record<DroneKind, string> = {
   compact: "Multirrotor compacto",
   enterprise: "Multirrotor industrial",
+  hexacopter: "Hexacóptero",
+  "heavy-lift": "Multirrotor de carga pesada",
   sprayer: "Multirrotor de aspersión",
   "fixed-wing": "Ala fija",
+  vtol: "Ala fija VTOL",
 };

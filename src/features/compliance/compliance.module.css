@@ -10,28 +10,35 @@
   font-size: 14px;
 }
 .attention {
-  --ink: #6a4a0d;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 14px 28px;
   align-items: center;
-  padding: 18px 24px;
-  border: 1px solid var(--border-strong);
-  background: var(--warning-soft);
-  border-radius: 24px;
+  padding: 18px 24px 18px 28px;
   animation: row-enter 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .attentionHeading {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: flex-start;
   color: var(--ink);
+}
+.attentionIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bar);
+  color: #fff;
 }
 .attentionHeading h2 {
   font-size: var(--heading-sub);
   font-weight: 700;
   letter-spacing: var(--heading-sub-tracking);
   line-height: 1.35;
+  white-space: normal;
 }
 .attentionHeading p {
   margin-top: 3px;
@@ -42,6 +49,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .attentionList button {
   display: flex;
@@ -49,28 +59,61 @@
   text-align: left;
   gap: 10px;
   padding: 9px 14px;
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
+  min-height: 40px;
+  border: 1.5px solid var(--line);
+  background: #fff;
   border-radius: 999px;
-  font-size: 13px;
-  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 14px;
+  transition:
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 260ms;
 }
 .attentionList button:hover {
   transform: translateY(-1px);
+  border-color: var(--bar);
+}
+.attentionList button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.attentionDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--alert-warning-bar);
+}
+.attentionList [data-status="expired"] .attentionDot {
+  background: var(--alert-danger-bar);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+.attentionList [data-status="missing"] .attentionDot {
+  background: transparent;
+  border: 2px solid var(--muted);
 }
 .attentionList small {
-  color: var(--ink);
-  font-weight: 650;
+  font-weight: 700;
   font-size: 12px;
+  color: var(--alert-warning-text);
+}
+.attentionList [data-status="expired"] small {
+  color: var(--alert-danger-text);
+}
+.attentionList [data-status="missing"] small {
+  color: var(--muted);
 }
 .attentionList svg {
   color: var(--muted);
 }
 .disclaimer {
   grid-column: 1 / -1;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
   font-size: 13px;
   line-height: 1.6;
   color: var(--ink);
+  max-width: none;
 }
 
 .search {
@@ -392,6 +435,9 @@
 @media (max-width: 900px) {
   .attention {
     grid-template-columns: 1fr;
+  }
+  .attentionList button {
+    flex: 1 1 100%;
   }
   .metadata {
     grid-template-columns: 1fr;

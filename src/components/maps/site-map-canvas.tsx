@@ -194,7 +194,7 @@ export default function MapCanvas({
         title: finding.title,
         keyboard: true,
         icon: L.divIcon({
-          className: `finding-map-icon ${active ? "is-active" : ""}`,
+          className: `finding-map-icon ${active ? "is-active" : ""} ${finding.suggestion ? "is-suggested" : ""}`,
           html: `<span data-finding-id="${finding.id}">${index + 1}</span>`,
           iconSize: [34, 34],
           iconAnchor: [17, 17],

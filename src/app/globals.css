@@ -25,6 +25,24 @@
   /* "Good" is a neutral slate, not green: the palette is blue plus cool grays, with amber and red for alerts. */
   --success: #3d4f5c;
   --success-soft: #e4eaee;
+  /* Avisos (banners): un juego de cinco tonos por gravedad. ink = texto sobre wash (>= 8:1), bar = barra lateral e ícono
+     (>= 3:1 sobre wash, WCAG 1.4.11), wash = fondo opaco, line = filete decorativo, text = etiqueta pequeña sobre blanco (>= 5:1).
+     Calm es el estado sin pendientes. Ver DESIGN.md «Avisos». */
+  --alert-warning-ink: #5c3d06;
+  --alert-warning-bar: #b7791f;
+  --alert-warning-wash: #fdf1d0;
+  --alert-warning-line: #e6c77a;
+  --alert-warning-text: #896721;
+  --alert-danger-ink: #6e2619;
+  --alert-danger-bar: #b3402f;
+  --alert-danger-wash: #fdeae4;
+  --alert-danger-line: #e9b3a6;
+  --alert-danger-text: #9c4639;
+  --alert-calm-ink: #2f4553;
+  --alert-calm-bar: #1c6f8d;
+  --alert-calm-wash: #e6f1f6;
+  --alert-calm-line: #b9d7e4;
+  --alert-calm-text: #1c6f8d;
   --radius: 0.75rem;
   /* Fondo de cristal esmerilado, igual que la landing: el mapa (relieve y curvas) se ve desenfocado
      a través del vidrio y un grano fino con un brillo suave, nítidos, dan la textura. */
@@ -989,12 +1007,42 @@ textarea {
   background: #e4eaee;
 }
 .status-badge--warning {
-  color: #896721;
+  color: var(--alert-warning-text);
   background: #fbf2d9;
 }
 .status-badge--danger {
-  color: #9c4639;
+  color: var(--alert-danger-text);
   background: #fbede6;
+}
+/* Aviso de página (banner): opaco, barra lateral gruesa e ícono propios de la gravedad. El color nunca va solo:
+   cada uso añade ícono y texto. Diseño y estructura (grid, relleno) los pone cada módulo. */
+.alert-banner {
+  --ink: var(--alert-warning-ink);
+  --bar: var(--alert-warning-bar);
+  --wash: var(--alert-warning-wash);
+  --line: var(--alert-warning-line);
+  --tint: var(--alert-warning-text);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-left: 8px solid var(--bar);
+  background: var(--wash);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px -14px color-mix(in srgb, var(--ink) 55%, transparent);
+}
+.alert-banner[data-tone="danger"] {
+  --ink: var(--alert-danger-ink);
+  --bar: var(--alert-danger-bar);
+  --wash: var(--alert-danger-wash);
+  --line: var(--alert-danger-line);
+  --tint: var(--alert-danger-text);
+}
+.alert-banner[data-tone="calm"] {
+  --ink: var(--alert-calm-ink);
+  --bar: var(--alert-calm-bar);
+  --wash: var(--alert-calm-wash);
+  --line: var(--alert-calm-line);
+  --tint: var(--alert-calm-text);
+  box-shadow: none;
 }
 .status-badge--info {
   color: #1c6f8d;
@@ -1200,6 +1248,20 @@ textarea {
 }
 .map-canvas .leaflet-tile-pane {
   filter: saturate(0.45);
+}
+/* A zone that changes colour (another date, another selection) fades instead of jumping. Only
+   paint properties: the geometry (`d`) is never transitioned, so pan and zoom stay exact. */
+.map-canvas .leaflet-overlay-pane path.leaflet-interactive {
+  transition:
+    fill 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    stroke 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    fill-opacity 260ms ease-out,
+    stroke-width 260ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-canvas .leaflet-overlay-pane path.leaflet-interactive {
+    transition: none;
+  }
 }
 /* Leaflet's own rules zero these margins at equal specificity, hence the extra class. */
 .map-canvas .leaflet-bottom.leaflet-right .leaflet-control-attribution {
@@ -1438,6 +1500,10 @@ textarea {
   font-size: 12px;
   font-weight: 700;
   box-shadow: 0 2px 6px #67532322;
+}
+/* Sugerido por el asistente de imágenes: borde discontinuo hasta que una persona lo confirme. */
+.finding-map-icon.is-suggested > span {
+  border-style: dashed;
 }
 .finding-map-icon.is-active > span {
   color: #fff;

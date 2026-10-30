@@ -437,6 +437,9 @@
   font-size: 12px;
   color: var(--muted);
 }
+.suggestedNumber {
+  border: 1.5px dashed var(--accent);
+}
 .selectedRow {
   border-color: var(--border-strong);
   background: var(--accent-soft);

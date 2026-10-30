@@ -7,11 +7,13 @@ import {
   ArrowUpFromLine,
   Check,
   ChevronRight,
+  CircleAlert,
   FileCheck2,
   FileText,
   Info,
   Search,
   ShieldCheck,
+  TriangleAlert,
   X,
 } from "lucide-react";
 import { PageHeading } from "@/components/ui/page-heading";
@@ -43,6 +45,7 @@ const tones = {
   expired: "danger",
   missing: "neutral",
 } as const;
+const severity = { expired: 0, missing: 1, pending: 2, reviewed: 3 };
 const reasons = {
   reviewed: "Revisión registrada en la demo",
   pending: "Necesita revisión del responsable",
@@ -92,9 +95,16 @@ export function DocumentView() {
   );
   const selected =
     visible.find((document) => document.id === selectedId) ?? visible[0];
-  const attention = documents.filter(
-    (document) => document.status !== "reviewed",
-  );
+  const attention = documents
+    .filter((document) => document.status !== "reviewed")
+    .sort((a, b) => severity[a.status] - severity[b.status]);
+  const attentionTone = attention.some(
+    (document) => document.status === "expired",
+  )
+    ? "danger"
+    : attention.length
+      ? "warning"
+      : "calm";
   function selectDocument(document: FlightDocument) {
     setSelectedId(document.id);
     revealDetail("document-detail");
@@ -183,15 +193,24 @@ export function DocumentView() {
         }
       />
       <section
-        className={styles.attention}
-        aria-label="Documentos que necesitan atención"
+        className={`alert-banner ${styles.attention}`}
+        data-tone={attentionTone}
+        aria-labelledby="attention-title"
       >
         <div className={styles.attentionHeading}>
-          <Info size={20} aria-hidden="true" />
+          <span className={styles.attentionIcon} aria-hidden="true">
+            {attentionTone === "danger" ? (
+              <TriangleAlert size={20} />
+            ) : attentionTone === "warning" ? (
+              <CircleAlert size={20} />
+            ) : (
+              <Info size={20} />
+            )}
+          </span>
           <div>
-            <h2>
+            <h2 id="attention-title">
               {attention.length
-                ? "Antes del próximo vuelo"
+                ? `${attention.length} ${attention.length === 1 ? "soporte" : "soportes"} por atender antes del próximo vuelo`
                 : "Revisiones registradas"}
             </h2>
             <p>
@@ -202,23 +221,26 @@ export function DocumentView() {
           </div>
         </div>
         {attention.length > 0 && (
-          <div className={styles.attentionList}>
+          <ul className={styles.attentionList}>
             {attention.map((document) => (
-              <button
-                key={document.id}
-                onClick={() => {
-                  setQuery("");
-                  setCategory("all");
-                  setStatus("all");
-                  selectDocument(document);
-                }}
-              >
-                <span>{document.title}</span>
-                <small>{statusLabels[document.status]}</small>
-                <ChevronRight size={15} aria-hidden="true" />
-              </button>
+              <li key={document.id}>
+                <button
+                  data-status={document.status}
+                  onClick={() => {
+                    setQuery("");
+                    setCategory("all");
+                    setStatus("all");
+                    selectDocument(document);
+                  }}
+                >
+                  <span className={styles.attentionDot} aria-hidden="true" />
+                  <span>{document.title}</span>
+                  <small>{statusLabels[document.status]}</small>
+                  <ChevronRight size={15} aria-hidden="true" />
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
         <p className={styles.disclaimer}>
           Cargar un archivo o marcarlo como revisado no acredita autorización ni

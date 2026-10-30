@@ -13,6 +13,7 @@ import {
   Images,
   ListChecks,
   RotateCcw,
+  Sparkles,
   X,
 } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
@@ -28,6 +29,14 @@ import { formatDate } from "@/lib/format";
 import { EvidenceGallery } from "./evidence-gallery";
 import { FlightReport } from "./flight-report";
 import { revealDetail } from "@/lib/reveal-detail";
+import {
+  filterFindings,
+  isSuggested,
+  sourceLabel,
+  type ReviewFilter,
+} from "@/features/agents/image-candidates";
+import { SuggestionDetail } from "@/features/agents/suggestion-detail";
+import { SuggestionSummary } from "@/features/agents/suggestion-summary";
 import { ReplayBar } from "../replay/replay-bar";
 import { useReplay } from "../replay/use-replay";
 import styles from "./flight-review.module.css";
@@ -41,6 +50,16 @@ const findingLabels = {
   pending: "Por verificar",
   confirmed: "Confirmado · demo",
   dismissed: "Descartado · demo",
+};
+const suggestedLabels = {
+  pending: "Por revisar",
+  confirmed: "Confirmado · demo",
+  dismissed: "Descartado · demo",
+};
+const filterLabels: Record<ReviewFilter, string> = {
+  all: "Todas",
+  suggested: "Sugeridas por IA",
+  operator: "Del operador",
 };
 const priorityLabels = {
   high: "Prioridad alta",
@@ -99,15 +118,19 @@ export function FlightReviewView() {
 
 function FlightContent({ flight }: { flight: Flight }) {
   const t = useTerm();
-  const { site, findings, updateFinding, updateFlight, setNotice } = useDemo();
+  const { site, flights, findings, updateFinding, updateFlight, setNotice } =
+    useDemo();
   const [activeTab, setActiveTab] = useState("summary");
   const [selectedFindingId, setSelectedFindingId] = useState("");
+  const [filter, setFilter] = useState<ReviewFilter>("all");
   const flightFindings = findings.filter(
     (finding) => finding.flightId === flight.id,
   );
   const selectedFinding =
     flightFindings.find((finding) => finding.id === selectedFindingId) ??
     flightFindings[0];
+  const hasSuggestions = flightFindings.some(isSuggested);
+  const shownFindings = filterFindings(flightFindings, filter);
   const replay = useReplay(flight, site, flightFindings);
   const zoneNames = site.zones
     .filter((zone) => flight.zoneIds.includes(zone.id))
@@ -133,7 +156,11 @@ function FlightContent({ flight }: { flight: Flight }) {
     setNotice(
       status === "pending"
         ? "Observación devuelta a pendiente en esta sesión."
-        : `Observación ${status === "confirmed" ? "confirmada" : "descartada"} solo en esta demo. No es una revisión técnica real.`,
+        : isSuggested(finding)
+          ? status === "confirmed"
+            ? "Sugerencia confirmada como observación suya, solo en esta demo. No es una revisión técnica real."
+            : "Sugerencia descartada solo en esta demo. El asistente no aprende de esta respuesta."
+          : `Observación ${status === "confirmed" ? "confirmada" : "descartada"} solo en esta demo. No es una revisión técnica real.`,
     );
   }
 
@@ -320,6 +347,15 @@ function FlightContent({ flight }: { flight: Flight }) {
             />
           ) : (
             <>
+              <SuggestionSummary
+                flight={flight}
+                flightFindings={flightFindings}
+                siteFindings={findings}
+                onReview={(id) => {
+                  setFilter("all");
+                  pickFinding(id);
+                }}
+              />
               <div className={styles.findingsGrid}>
                 <section className={`surface ${styles.mapSection}`}>
                   <div className={styles.sectionTop}>
@@ -339,11 +375,30 @@ function FlightContent({ flight }: { flight: Flight }) {
                     replay={replay}
                   />
                   <ReplayBar replay={replay} />
+                  {hasSuggestions && (
+                    <div
+                      className="segmented-control"
+                      aria-label="Quién propuso la observación"
+                    >
+                      {(["all", "suggested", "operator"] as const).map(
+                        (value) => (
+                          <button
+                            type="button"
+                            key={value}
+                            aria-pressed={filter === value}
+                            onClick={() => setFilter(value)}
+                          >
+                            {filterLabels[value]}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  )}
                   <div
                     className={styles.findingList}
                     aria-label="Observaciones del vuelo"
                   >
-                    {flightFindings.map((finding, index) => (
+                    {shownFindings.map((finding) => (
                       <button
                         type="button"
                         className={`${styles.findingRow} ${selectedFinding?.id === finding.id ? styles.selectedRow : ""}`}
@@ -351,8 +406,10 @@ function FlightContent({ flight }: { flight: Flight }) {
                         key={finding.id}
                         onClick={() => pickFinding(finding.id)}
                       >
-                        <span className={styles.findingNumber}>
-                          {index + 1}
+                        <span
+                          className={`${styles.findingNumber} ${isSuggested(finding) ? styles.suggestedNumber : ""}`}
+                        >
+                          {flightFindings.indexOf(finding) + 1}
                         </span>
                         <span>
                           <strong>{finding.title}</strong>
@@ -362,12 +419,28 @@ function FlightContent({ flight }: { flight: Flight }) {
                                 (zone) => zone.id === finding.zoneId,
                               )?.name
                             }{" "}
-                            · {findingLabels[finding.status]}
+                            ·{" "}
+                            {isSuggested(finding)
+                              ? suggestedLabels[finding.status]
+                              : findingLabels[finding.status]}
                           </small>
                         </span>
-                        <ArrowRight size={16} aria-hidden="true" />
+                        {isSuggested(finding) ? (
+                          <Sparkles
+                            size={16}
+                            aria-label="Sugerido por IA"
+                            role="img"
+                          />
+                        ) : (
+                          <ArrowRight size={16} aria-hidden="true" />
+                        )}
                       </button>
                     ))}
+                    {!shownFindings.length && (
+                      <p className="text-muted">
+                        Ninguna observación coincide con este filtro.
+                      </p>
+                    )}
                   </div>
                 </section>
                 {selectedFinding && (
@@ -393,7 +466,9 @@ function FlightContent({ flight }: { flight: Flight }) {
                                 : "neutral"
                           }
                         >
-                          {findingLabels[selectedFinding.status]}
+                          {isSuggested(selectedFinding)
+                            ? suggestedLabels[selectedFinding.status]
+                            : findingLabels[selectedFinding.status]}
                         </StatusBadge>
                         <span className={styles.priority}>
                           {priorityLabels[selectedFinding.priority]}
@@ -401,7 +476,17 @@ function FlightContent({ flight }: { flight: Flight }) {
                       </div>
                       <h3>{selectedFinding.title}</h3>
                       <p>{selectedFinding.description}</p>
-                      <p className={styles.source}>{selectedFinding.source}</p>
+                      <p className={styles.source}>
+                        {sourceLabel(selectedFinding)}
+                      </p>
+                      {isSuggested(selectedFinding) && (
+                        <SuggestionDetail
+                          finding={selectedFinding}
+                          flight={flight}
+                          findings={findings}
+                          flights={flights}
+                        />
+                      )}
                       <CustomFieldsPanel
                         key={selectedFinding.id}
                         target="finding"
@@ -411,8 +496,9 @@ function FlightContent({ flight }: { flight: Flight }) {
                         }
                       />
                       <p className="demo-note">
-                        Imagen ilustrativa. Estos botones ensayan una decisión
-                        humana; no diagnostican ni validan una inspección real.
+                        {isSuggested(selectedFinding)
+                          ? "Imagen ilustrativa y sugerencia de ejemplo: en producción la propondría un modelo. Confirmar la convierte en una observación suya; descartarla no entrena al asistente. Estos botones ensayan una decisión humana."
+                          : "Imagen ilustrativa. Estos botones ensayan una decisión humana; no diagnostican ni validan una inspección real."}
                       </p>
                       <div className={styles.reviewActions}>
                         <Button
@@ -480,10 +566,11 @@ function FlightContent({ flight }: { flight: Flight }) {
               <div className={styles.assistanceNote}>
                 <FileText size={21} aria-hidden="true" />
                 <p>
-                  <strong>La fuente acompaña a cada observación.</strong> Aquí
-                  se muestran ejemplos atribuidos al operador. No se ejecutó IA
-                  ni una revisión profesional; una futura sugerencia se
-                  distinguiría de la evidencia y de tu decisión.
+                  <strong>La fuente acompaña a cada observación.</strong> Las
+                  del operador y las sugeridas por IA se distinguen, y ninguna
+                  es un diagnóstico. En esta demo las sugerencias son ejemplos
+                  escritos a mano: no se ejecutó ningún modelo ni una revisión
+                  profesional.
                 </p>
               </div>
             </>
