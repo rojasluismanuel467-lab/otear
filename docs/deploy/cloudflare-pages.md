@@ -34,14 +34,16 @@ En el proyecto de Pages → **Settings** → **Environment variables** → **Pro
 | Variable | Valor | Qué hace |
 |---|---|---|
 | `NODE_VERSION` | `22` | Fija la versión de Node para el build. |
-| `NEXT_PUBLIC_WEB3FORMS_KEY` | tu Access Key de web3forms.com | Si está, el formulario envía al correo configurado en Web3Forms. Si no está, los leads quedan en `localStorage` del navegador del visitante (útil para pruebas, no para producción). |
 
-Opcionales, para el paso 2 del formulario de contacto (si faltan, esa opción no aparece en producción; en desarrollo se muestra como «Pendiente»):
+Canales del formulario de contacto (paso 2). No hay servidor: el sitio no recibe lo que el visitante escribe, solo arma un mensaje que el visitante envía desde su WhatsApp o su correo. Si falta una variable, ese botón no aparece en producción; en desarrollo se muestra como «Pendiente».
 
 | Variable | Valor | Qué hace |
 |---|---|---|
-| `NEXT_PUBLIC_BOOKING_URL` | enlace de su calendario (Cal.com, Calendly…) | Botón «Elegir una hora» después de enviar el contacto. |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | número con indicativo, solo dígitos (ej. `573001234567`) | Botón «Escribir por WhatsApp»; el mensaje precargado solo incluye el sector. |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | número con indicativo, solo dígitos (ej. `573001234567`) | Botón «Enviar por WhatsApp» con el mensaje ya escrito. |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | correo donde quiere recibir los contactos | Botón «Enviar por correo» (`mailto:`) con asunto y mensaje ya escritos. |
+| `NEXT_PUBLIC_BOOKING_URL` | enlace de su calendario (Cal.com, Calendly…) | Botón «Elegir una hora». |
+
+Son públicas por necesidad: quedan visibles en la página para que el botón funcione. Para un despliegue con Wrangler, póngalas en `.env.local` (ignorado por git) antes de construir.
 
 Después de cambiar una variable, **Retry deployment** desde el panel.
 
@@ -59,15 +61,15 @@ En Cloudflare → `otear.app` → **Analytics & Logs** → **Web Analytics** →
 
 Si quieres eventos (ej. "click en Ver demo"), agrega el snippet opcional de Cloudflare Web Analytics en `src/app/layout.tsx` dentro de un `<Script>` de Next.
 
-## 7. Formulario: configurar Web3Forms
+## 7. Formulario: sin servidor ni servicio externo
 
-1. Entra a https://web3forms.com → **Create your Access Key** → ingresa `hola@otear.app` (ya debe recibir correos vía Email Routing).
-2. Confirma el correo que te envían.
-3. Copia el Access Key.
-4. Pégalo como `NEXT_PUBLIC_WEB3FORMS_KEY` en Cloudflare Pages (paso 4) y re-despliega.
-5. Prueba el formulario de la landing: debería llegarte el correo a `hola@otear.app` → reenvía a tu Gmail.
+El formulario no usa ningún servicio de envío. El paso 1 pide nombre, correo y sector; el paso 2 abre el WhatsApp o el correo del visitante con el mensaje ya escrito, y es el visitante quien lo envía. Por eso no hay cuota, cuenta ni costo.
 
-Alternativa si prefieres hoja de cálculo: Formspree (50 envíos/mes gratis) con destino a Google Sheets vía Zapier gratuito, o un Google Apps Script que escriba al sheet directo. Si quieres, cámbialo cuando te acomode y yo adapto el componente.
+Qué implica:
+
+- Hasta que el visitante pulse «enviar» en su WhatsApp o correo, usted no recibe nada. Quien abandona a la mitad no deja rastro.
+- Para recibir los datos aunque el visitante abandone haría falta un servidor propio (por ejemplo un Worker de Cloudflare con D1); no está construido.
+- Para recibir y responder desde `hola@otear.app`, use Email Routing (paso 5) y ponga ese correo en `NEXT_PUBLIC_CONTACT_EMAIL`.
 
 ## 8. Promover sin pagar nada
 
@@ -83,5 +85,5 @@ Dominio con certificado + landing + correo profesional + analítica = base lista
 - **El build falla en Cloudflare pero localmente funciona:** suele ser la versión de Node. Asegúrate de que `NODE_VERSION=22` esté puesto.
 - **404 en rutas internas (`/programacion/`, etc.):** `trailingSlash: true` ya está, pero verifica que los links en el código terminen en `/`. Pages sirve `/path/` como `/path/index.html`.
 - **La landing muestra el AppShell:** el root (`/`) debe quedar fuera del route group `(workspace)`. Está en `src/app/page.tsx`, correcto.
-- **Formulario no envía:** revisa en DevTools → Network si llama a `api.web3forms.com`. Si no, falta `NEXT_PUBLIC_WEB3FORMS_KEY` o el redeploy no se aplicó.
+- **El formulario no muestra los botones de WhatsApp o correo:** faltan `NEXT_PUBLIC_WHATSAPP_NUMBER` o `NEXT_PUBLIC_CONTACT_EMAIL`, o se definieron después del último build. Las variables `NEXT_PUBLIC_*` se fijan al construir, así que hay que volver a desplegar.
 - **Email Routing no entrega:** espera unos minutos tras activar, Gmail puede marcar los primeros correos como spam.
