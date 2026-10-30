@@ -45,12 +45,20 @@ export function ServicesView() {
     (request) =>
       actor.role !== "operator" || request.invited.includes(actor.id),
   );
+  // Changing a quote already sent is possible, but it is not something the operator is waiting on.
   const myTurn = (request: ServiceRequest) =>
     availableActions(
       request,
       actor.role,
       actor.role === "operator" ? actor.id : undefined,
-    ).some((action) => action.id !== "cancel");
+    ).some(
+      (action) =>
+        action.id !== "cancel" &&
+        !(
+          action.id === "quote" &&
+          request.quotes.some((quote) => quote.operatorId === actor.id)
+        ),
+    );
   const visible = mine.filter((request) =>
     filter === "turn"
       ? myTurn(request)
@@ -68,7 +76,7 @@ export function ServicesView() {
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description="Quien contrata pide, compara cotizaciones, verifica y paga; quien vuela cotiza, programa, entrega y factura. Cada paso queda registrado."
+        description="Quien contrata pide, compara cotizaciones, asigna y verifica; quien vuela cotiza, programa, entrega y factura. Quién paga está por definir. Cada paso queda registrado."
         actions={
           <>
             <div className={styles.viewAs}>
@@ -99,6 +107,31 @@ export function ServicesView() {
           </>
         }
       />
+      <details className={styles.roles}>
+        <summary>¿Qué hace cada papel?</summary>
+        <ul>
+          <li>
+            <strong>{roleWord.manager}</strong>: administra el programa de
+            varias fincas. Pide servicios, compara cotizaciones, asigna y
+            verifica entregas.
+          </li>
+          <li>
+            <strong>{roleWord.owner}</strong>: dueño de la tierra. En esta demo
+            puede hacer lo mismo que el {roleWord.manager.toLowerCase()}; quién
+            decide en cada caso se acuerda con cada cliente.
+          </li>
+          <li>
+            <strong>{roleWord.operator}</strong>: quien vuela. Cotiza, programa
+            el vuelo, entrega y factura. Solo ve su propia cotización y los
+            servicios a los que lo invitaron.
+          </li>
+        </ul>
+        <p className="text-muted">
+          «Ver como» le deja mirar el mismo servicio desde otro papel; no hay
+          inicio de sesión real. Quién paga, y qué ve cada parte de las
+          cotizaciones del otro, está por definir.
+        </p>
+      </details>
       <div className="surface rail-panel master-detail">
         <aside className="rail-panel master-rail" aria-label="Solicitudes">
           <div className="rail-sticky">
@@ -153,7 +186,10 @@ export function ServicesView() {
                       <small>
                         {kindLabels[request.kind]} ·{" "}
                         {request.operatorId
-                          ? nameOf(request.operatorId)
+                          ? actor.role === "operator" &&
+                            request.operatorId !== actor.id
+                            ? "otro operador"
+                            : nameOf(request.operatorId)
                           : `${request.invited.length} invitados`}{" "}
                         · hasta {formatDate(request.windowEnd)}
                       </small>
@@ -196,7 +232,11 @@ export function ServicesView() {
           </div>
         </aside>
         {selected ? (
-          <RequestDetail key={selected.id} request={selected} />
+          <RequestDetail
+            key={selected.id}
+            request={selected}
+            onActed={() => setSelectedId(selected.id)}
+          />
         ) : (
           <div className={styles.detailEmpty}>
             <EmptyState

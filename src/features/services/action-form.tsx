@@ -2,13 +2,17 @@
 
 import { Button } from "@heroui/react";
 import { useState, type FormEvent } from "react";
-import { formatMoney } from "@/lib/format";
+import { DEFAULT_TOLERANCE_PCT } from "@/features/billing/coverage";
+import { DEMO_DATE } from "@/features/demo/demo-data";
 import type { ServiceRequest } from "@/features/demo/types";
+import { formatDate, formatMoney } from "@/lib/format";
 import type { ActionInput } from "./use-services";
 import type { ActionId } from "./workflow";
 import styles from "./services.module.css";
 
 const number = (text: string) => Number(text.trim().replace(",", "."));
+const hectares = (value: number) =>
+  `${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(value)} ha`;
 const optional = (text: string) => {
   const value = number(text);
   return text && Number.isFinite(value) && value > 0 ? value : undefined;
@@ -19,17 +23,26 @@ export function ActionForm({
   request,
   action,
   orderedHa,
+  flightDate,
   onSubmit,
   onCancel,
 }: {
   request: ServiceRequest;
   action: ActionId;
   orderedHa: number;
+  /** Date of the flight this service scheduled, to warn when it has not happened yet. */
+  flightDate?: string;
   onSubmit: (input: ActionInput) => string | undefined;
   onCancel: () => void;
 }) {
   const [error, setError] = useState("");
   const perHa = request.unit === "ha";
+  const declared = request.delivery?.coveredHa;
+  const chosen = request.quotes.find((item) => item.state === "chosen");
+  const [billedText, setBilledText] = useState(
+    String(declared ?? "").replace(".", ","),
+  );
+  const billed = number(billedText);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,13 +82,15 @@ export function ActionForm({
           photoCount: optional(read("photoCount")),
         };
         break;
-      case "verify":
-        input = {
-          id: "verify",
-          result: read("result") === "disputed" ? "disputed" : "accepted",
-          note: read("note"),
-        };
+      case "verify": {
+        const result = read("result");
+        if (result !== "accepted" && result !== "disputed") {
+          setError("Elija si acepta la entrega o pide que la corrijan.");
+          return;
+        }
+        input = { id: "verify", result, note: read("note") };
         break;
+      }
       case "invoice": {
         const text = read("billedHa");
         input = {
@@ -202,6 +217,15 @@ export function ActionForm({
       )}
       {action === "deliver" && (
         <>
+          {flightDate && flightDate > DEMO_DATE && (
+            <p className={styles.notice}>
+              Este vuelo estaba programado para el {formatDate(flightDate)} y la
+              fecha de referencia de la demo es el {formatDate(DEMO_DATE)}. Si
+              ya voló, registre la entrega: el vuelo quedará completado con la
+              fecha de hoy. Si todavía no voló, vuelva y espere al día del
+              vuelo.
+            </p>
+          )}
           <div className={styles.formGrid}>
             <label className="form-field">
               <span className="field-label">Hectáreas que cubrió</span>
@@ -230,7 +254,12 @@ export function ActionForm({
                 name="deliverables"
                 placeholder="Ortomosaico (GeoTIFF), Registro de vuelo (CSV)"
               />
-              <span className="text-muted">Sepárelos con comas.</span>
+              <span className="text-muted">
+                Sepárelos con comas. En esta demo solo se anotan los nombres: no
+                se sube ni se guarda ningún archivo. Cómo llegan los archivos
+                (carga directa o un enlace a su almacenamiento) está por
+                definir.
+              </span>
             </label>
           </div>
           <div className={styles.formGrid}>
@@ -261,15 +290,24 @@ export function ActionForm({
       )}
       {action === "verify" && (
         <>
+          {declared !== undefined && (
+            <p className={styles.notice}>
+              El operador declaró {hectares(declared)}
+              {orderedHa > 0
+                ? ` de las ${hectares(orderedHa)} pedidas (${Math.round((declared / orderedHa) * 100)} %)`
+                : ""}
+              .
+              {perHa && chosen
+                ? ` A ${formatMoney(chosen.price)} por hectárea, son ${formatMoney(Math.round(chosen.price * declared))}.`
+                : ""}{" "}
+              Aceptar la entrega da por buena esa cifra. Cifras de ejemplo;
+              Otear no mide el área con las imágenes.
+            </p>
+          )}
           <fieldset className={styles.choices}>
             <legend>¿Qué decide?</legend>
             <label className={styles.choice}>
-              <input
-                type="radio"
-                name="result"
-                value="accepted"
-                defaultChecked
-              />
+              <input type="radio" name="result" value="accepted" />
               <span>Aceptar la entrega: el operador podrá facturar.</span>
             </label>
             <label className={styles.choice}>
@@ -289,35 +327,61 @@ export function ActionForm({
         </>
       )}
       {action === "invoice" && (
-        <label className="form-field">
-          <span className="field-label">
-            {perHa ? "Hectáreas que va a facturar" : "Alcance facturado"}
-          </span>
-          {perHa ? (
-            <input
-              className="field-input"
-              name="billedHa"
-              inputMode="decimal"
-              autoFocus
-              defaultValue={String(request.delivery?.coveredHa ?? "").replace(
-                ".",
-                ",",
-              )}
-            />
-          ) : (
-            <input
-              className="field-input"
-              name="billedHa"
-              disabled
-              placeholder="Precio por vuelo"
-            />
+        <>
+          {!request.flightId && (
+            <p className={styles.notice}>
+              Este servicio no tiene un vuelo asociado. La factura se crea
+              igual, con las hectáreas de la entrega; solo no podrá abrir el
+              vuelo desde Pagos.
+            </p>
           )}
-          <span className="text-muted">
-            {perHa
-              ? "Se multiplica por el precio cotizado. Quien paga lo verifica contra lo cubierto."
-              : `Se factura el precio acordado${request.quotes.find((item) => item.state === "chosen") ? `: ${formatMoney(request.quotes.find((item) => item.state === "chosen")!.price)}` : ""}.`}
-          </span>
-        </label>
+          <label className="form-field">
+            <span className="field-label">
+              {perHa ? "Hectáreas que va a facturar" : "Alcance facturado"}
+            </span>
+            {perHa ? (
+              <input
+                className="field-input"
+                name="billedHa"
+                inputMode="decimal"
+                autoFocus
+                value={billedText}
+                onChange={(event) => setBilledText(event.target.value)}
+              />
+            ) : (
+              <input
+                className="field-input"
+                name="billedHa"
+                disabled
+                placeholder="Precio por vuelo"
+              />
+            )}
+            <span className="text-muted">
+              {perHa
+                ? "Se multiplica por el precio cotizado. Quien paga lo verifica contra lo cubierto."
+                : `Se factura el precio acordado${chosen ? `: ${formatMoney(chosen.price)}` : ""}.`}
+            </span>
+          </label>
+          {perHa && chosen && Number.isFinite(billed) && billed > 0 && (
+            <p className={styles.notice} aria-live="polite">
+              {hectares(billed)} × {formatMoney(chosen.price)} por hectárea ={" "}
+              <strong>{formatMoney(Math.round(chosen.price * billed))}</strong>.
+              Cifra de ejemplo.
+              {declared !== undefined && billed > declared && (
+                <>
+                  {" "}
+                  Usted declaró {hectares(declared)} al entregar. Si factura
+                  más, el cliente verá la diferencia marcada en Pagos
+                  {((billed - declared) / declared) * 100 >
+                  DEFAULT_TOLERANCE_PCT
+                    ? ` (supera el ${DEFAULT_TOLERANCE_PCT} % que la demo tolera)`
+                    : ""}
+                  . Puede facturar así si hay una razón; explíquela al cliente.
+                </>
+              )}
+            </p>
+          )}
+        </>
       )}
       {error && (
         <p className={styles.error} role="alert">

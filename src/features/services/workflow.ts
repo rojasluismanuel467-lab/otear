@@ -583,3 +583,70 @@ export function rankedQuotes(request: ServiceRequest) {
     .filter((item) => item.state !== "declined")
     .sort((a, b) => a.price - b.price);
 }
+
+/**
+ * A quote the operator withdrew from has no price; one that was set aside when another quote was
+ * chosen keeps the price and the date it was given, so the person who decided can still justify it.
+ */
+export const wasDeclinedByOperator = (quote: ServiceQuote) =>
+  quote.state === "declined" && !(quote.price > 0);
+
+/** What the quotes table says about a quote, for whoever reads it. */
+export function quoteStateLabel(quote: ServiceQuote) {
+  if (quote.state === "chosen") return "Elegida";
+  if (quote.state === "open") return "Vigente";
+  return wasDeclinedByOperator(quote) ? "No puede" : "No fue seleccionada";
+}
+
+/** Price of an invoice: per hectare times hectares billed, or the flat price of the quote. */
+export function invoiceTotal(
+  request: Pick<ServiceRequest, "unit">,
+  quote: Pick<ServiceQuote, "price">,
+  billedHa?: number,
+) {
+  return Math.round(
+    request.unit === "ha" ? quote.price * (billedHa ?? 0) : quote.price,
+  );
+}
+
+export type InvoicePlan =
+  | {
+      ok: true;
+      /** Flight the invoice hangs from; empty when the service has none (the seed may lack one). */
+      flightId: string;
+      billedHa?: number;
+      total: number;
+      unitPrice: number;
+    }
+  | { ok: false; error: string };
+
+/**
+ * What an invoice for a verified service would say. A service without a flight can still be
+ * invoiced (the delivery already carries the hectares); one without a chosen quote cannot, because
+ * there is no price, and the message says who can fix that.
+ */
+export function invoicePlan(
+  request: ServiceRequest,
+  input: { orderedHa: number; billedHa?: number },
+): InvoicePlan {
+  const quote = request.quotes.find((item) => item.state === "chosen");
+  if (!quote)
+    return {
+      ok: false,
+      error:
+        "Este servicio no tiene una cotización elegida, así que no hay precio para calcular la factura. Quien contrata debe asignarlo a un operador con cotización.",
+    };
+  const perHa = request.unit === "ha";
+  const billedHa = perHa
+    ? (input.billedHa ?? request.delivery?.coveredHa ?? input.orderedHa)
+    : undefined;
+  if (perHa && !(billedHa! > 0))
+    return { ok: false, error: "Escriba las hectáreas que va a facturar." };
+  return {
+    ok: true,
+    flightId: request.flightId ?? "",
+    billedHa,
+    total: invoiceTotal(request, quote, billedHa),
+    unitPrice: quote.price,
+  };
+}

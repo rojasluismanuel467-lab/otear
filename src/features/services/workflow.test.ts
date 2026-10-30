@@ -8,7 +8,9 @@ import {
   decline,
   deliver,
   invoice,
+  invoicePlan,
   quote,
+  quoteStateLabel,
   rankedQuotes,
   schedule,
   stepIndex,
@@ -265,4 +267,84 @@ test("declining and cancelling close the request when nobody is left", () => {
   assert.equal(cancel(fresh, "", as("o1")).ok, false);
   const done: ServiceRequest = { ...fresh, status: "delivered" };
   assert.equal(cancel(done, "", as("m")).ok, false);
+});
+
+test("a verified service without a flight can still be invoiced; without a chosen quote it says why", () => {
+  let request = base();
+  request = ok(
+    quote(
+      request,
+      { price: 4000, startDate: "2026-11-02", note: "" },
+      as("o1"),
+    ),
+  ).request;
+  request = ok(
+    quote(
+      request,
+      { price: 5000, startDate: "2026-11-03", note: "" },
+      as("o2"),
+    ),
+  ).request;
+  const withoutChoice = invoicePlan(request, { orderedHa: 100 });
+  assert.equal(withoutChoice.ok, false);
+  assert.ok(
+    !withoutChoice.ok && withoutChoice.error.includes("cotización elegida"),
+  );
+  request = ok(assign(request, "o1", as("m"))).request;
+  // A seed that jumped straight to «delivered»: no flight id, but it has a delivery.
+  const delivered: ServiceRequest = {
+    ...request,
+    status: "verified",
+    flightId: undefined,
+    delivery: {
+      coveredHa: 90,
+      deliveredOn: "2026-10-24",
+      note: "",
+      deliverables: ["Ortomosaico"],
+    },
+  };
+  const plan = invoicePlan(delivered, { orderedHa: 100 });
+  assert.ok(plan.ok);
+  assert.equal(plan.ok && plan.flightId, "");
+  assert.equal(plan.ok && plan.billedHa, 90);
+  assert.equal(plan.ok && plan.total, 360000);
+  const more = invoicePlan(delivered, { orderedHa: 100, billedHa: 95 });
+  assert.equal(more.ok && more.total, 380000);
+  assert.equal(
+    invoicePlan({ ...delivered, unit: "flight" }, { orderedHa: 0 }).ok &&
+      (
+        invoicePlan({ ...delivered, unit: "flight" }, { orderedHa: 0 }) as {
+          total: number;
+        }
+      ).total,
+    4000,
+  );
+  assert.ok(
+    invoice(delivered, { invoiceId: "inv", billedHa: 90 }, as("o1")).ok,
+  );
+});
+
+test("a quote that was not selected keeps its price and is not labelled as one the operator declined", () => {
+  let request = base();
+  request = ok(
+    quote(
+      request,
+      { price: 4000, startDate: "2026-11-02", note: "" },
+      as("o1"),
+    ),
+  ).request;
+  request = ok(
+    quote(
+      request,
+      { price: 5000, startDate: "2026-11-03", note: "" },
+      as("o2"),
+    ),
+  ).request;
+  request = ok(assign(request, "o1", as("m"))).request;
+  const lost = request.quotes.find((q) => q.operatorId === "o2")!;
+  assert.equal(lost.price, 5000);
+  assert.equal(quoteStateLabel(lost), "No fue seleccionada");
+  assert.equal(quoteStateLabel(request.quotes[0]), "Elegida");
+  const withdrawn = ok(decline(base(), "Sin cupo", as("o1"))).request.quotes[0];
+  assert.equal(quoteStateLabel(withdrawn), "No puede");
 });

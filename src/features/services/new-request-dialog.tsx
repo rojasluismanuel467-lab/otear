@@ -10,6 +10,7 @@ import { DEMO_DATE } from "@/features/demo/demo-data";
 import type { ServiceKind } from "@/features/demo/types";
 import { useServices } from "./use-services";
 import { kindLabels } from "./workflow";
+import { measureText, measureZones } from "./zones";
 import styles from "./services.module.css";
 
 const kinds = Object.keys(kindLabels) as ServiceKind[];
@@ -26,6 +27,11 @@ export function NewRequestDialog({
   const [error, setError] = useState("");
   const [zoneIds, setZoneIds] = useState<string[]>([]);
   const [invited, setInvited] = useState<string[]>([]);
+  const measures = measureZones(
+    site.zones,
+    site.zones.map((zone) => zone.id),
+    site.sector === "roads",
+  );
   const defaultUnit = site.sector === "agriculture" ? "ha" : "flight";
   const [kind, setKind] = useState<ServiceKind>("monitoring");
   const [unit, setUnit] = useState<"ha" | "flight">(defaultUnit);
@@ -150,9 +156,19 @@ export function NewRequestDialog({
                         checked={zoneIds.includes(zone.id)}
                         onChange={() => setZoneIds(toggle(zoneIds, zone.id))}
                       />
-                      <span>{zone.name}</span>
+                      <span>
+                        {zone.name}
+                        {" · "}
+                        {measureText(
+                          measures.find((item) => item.id === zone.id)!,
+                        )}
+                      </span>
                     </label>
                   ))}
+                  <small className="text-muted">
+                    Medidas calculadas por Otear con el contorno dibujado en el
+                    mapa. El operador las verá así en el pedido.
+                  </small>
                 </fieldset>
                 <fieldset className={styles.choices}>
                   <legend>
