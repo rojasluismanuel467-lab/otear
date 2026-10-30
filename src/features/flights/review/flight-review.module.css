@@ -227,6 +227,7 @@
 .textLink {
   display: inline-flex;
   align-items: center;
+  min-height: 28px;
   gap: 8px;
   color: var(--accent);
   font-size: 13px;

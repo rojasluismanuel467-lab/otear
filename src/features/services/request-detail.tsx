@@ -92,7 +92,12 @@ export function RequestDetail({ request }: { request: ServiceRequest }) {
   }
 
   return (
-    <article className={styles.detail} aria-labelledby="request-title">
+    <article
+      id="request-detail"
+      data-reveal-target
+      className={styles.detail}
+      aria-labelledby="request-title"
+    >
       <header className={styles.detailHeading}>
         <div>
           <h2 id="request-title">{request.title}</h2>

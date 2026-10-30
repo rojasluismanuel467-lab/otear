@@ -20,6 +20,10 @@
   fill: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+.tickYear {
+  font-size: 11.5px;
+  opacity: 0.85;
+}
 .cursor {
   stroke: var(--accent);
   stroke-width: 1.5;
@@ -55,10 +59,14 @@
     transparent 5px 9px
   );
 }
+/* Applied to a wrapper, never to the <table>: tables and captions ignore
+   width/height/clip and positioned captions confuse screen readers. */
 .srOnly {
   position: absolute;
   width: 1px;
   height: 1px;
+  margin: -1px;
+  padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;

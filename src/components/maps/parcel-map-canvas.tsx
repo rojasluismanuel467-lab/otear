@@ -39,7 +39,11 @@ export default function ParcelMapCanvas({
   const [cutStart, setCutStart] = useState<Position | null>(null);
   const [tileError, setTileError] = useState(false);
   const basemap = useBasemap();
-  const [sized, setSized] = useState(false);
+  // Counts container resizes: the panel animates in, so the first size is not the final one.
+  const [sizeTick, setSizeTick] = useState(0);
+  const moved = useRef(false);
+  const fitting = useRef(false);
+  const lastFitKey = useRef(fitKey);
 
   useEffect(() => {
     live.current = { mode, outline, onOutlineChange, onCut, onMove };
@@ -52,6 +56,9 @@ export default function ParcelMapCanvas({
       scrollWheelZoom: false,
     }).setView(center, 14);
     map.current = instance;
+    instance.on("dragstart zoomstart", () => {
+      if (!fitting.current) moved.current = true;
+    });
     L.control.zoom({ position: "bottomleft" }).addTo(instance);
     // Leaflet's default prefix carries a flag emoji unrelated to the product.
     instance.attributionControl.setPrefix(
@@ -59,7 +66,8 @@ export default function ParcelMapCanvas({
     );
     const resize = new ResizeObserver(() => {
       instance.invalidateSize();
-      setSized(true);
+      // Refit after a resize only while the visitor has not moved the map.
+      if (!moved.current) setSizeTick((tick) => tick + 1);
     });
     resize.observe(container.current);
     return () => {
@@ -93,17 +101,33 @@ export default function ParcelMapCanvas({
       : outline.length
         ? outline
         : [center];
+    const requested = lastFitKey.current !== fitKey;
+    if (requested) {
+      lastFitKey.current = fitKey;
+      moved.current = false;
+    }
+    fitting.current = true;
     if (points.length === 1) instance.setView(points[0], 15);
-    else instance.fitBounds(L.latLngBounds(points), { padding: [48, 48] });
-    // Only fitKey should move the camera.
+    else
+      instance.fitBounds(L.latLngBounds(points), {
+        padding: [48, 48],
+        animate: requested,
+      });
+    fitting.current = false;
+    // Only fitKey and the container size should move the camera.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fitKey, sized]);
+  }, [fitKey, sizeTick]);
 
   // Layers.
   useEffect(() => {
     const instance = map.current;
     if (!instance) return;
     const edge = basemap === "satellite" ? "#ffffff" : "#0f3447";
+    // Zone names sit under the markers, so a label never hides a route point or finding.
+    const labelPane =
+      instance.getPane("zoneLabels") ?? instance.createPane("zoneLabels");
+    labelPane.style.zIndex = "590";
+    labelPane.style.pointerEvents = "none";
     const layer = L.layerGroup().addTo(instance);
     history?.forEach((route) =>
       L.polyline(route, {
@@ -134,6 +158,7 @@ export default function ParcelMapCanvas({
       shape
         .addTo(layer)
         .bindTooltip(zone.name, {
+          pane: "zoneLabels",
           permanent: true,
           direction: "center",
           className: "zone-map-label",

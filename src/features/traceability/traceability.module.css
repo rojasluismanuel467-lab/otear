@@ -32,6 +32,9 @@
   color: #2f5f78;
 }
 .chipLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   font-size: 12px;
   font-weight: 650;
   color: var(--accent);

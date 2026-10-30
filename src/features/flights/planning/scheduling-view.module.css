@@ -1,5 +1,6 @@
 .view {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
 
@@ -59,6 +60,15 @@
   inset: 0;
   height: 100%;
   min-height: 0;
+}
+/* La ubicación no pisa la etiqueta del recorrido: se acorta con puntos suspensivos en vez de montarse encima. */
+.mapStage :global(.map-top-label) {
+  max-width: calc(100% - 290px);
+}
+.mapStage :global(.map-top-label span) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .mapTag {
   position: absolute;
@@ -475,7 +485,10 @@
   }
   .mapTag {
     right: 14px;
-    top: 66px;
+    top: 100px;
+  }
+  .mapStage :global(.map-top-label) {
+    max-width: calc(100% - 140px);
   }
   .briefingMain {
     padding: 24px 20px;

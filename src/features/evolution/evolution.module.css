@@ -1,5 +1,6 @@
 .view {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
 .surface {
@@ -70,7 +71,7 @@
   align-items: center;
   gap: 14px;
   margin-top: 10px;
-  padding: 10px 16px 8px 10px;
+  padding: 4px 16px 8px 10px;
   border-radius: 20px;
   background: #0c2f40;
   color: #e3eff5;
@@ -94,7 +95,9 @@
   min-width: 0;
   list-style: none;
   margin: 0;
-  padding: 0;
+  /* overflow-x:auto also clips vertically: the room for the count badge and
+     the selected ring has to be padding inside the scroller. */
+  padding: 10px 0 0;
   display: flex;
   overflow-x: auto;
   scrollbar-width: none;
@@ -106,7 +109,7 @@
 .stops li::before {
   content: "";
   position: absolute;
-  top: 17px;
+  top: 27px;
   left: -50%;
   right: 50%;
   height: 3px;

@@ -28,20 +28,34 @@ export default function MapCanvas({
       scrollWheelZoom: false,
     }).setView(site.center, 14);
     const zonePoints = site.zones.flatMap((zone) => zone.outline);
-    if (zonePoints.length) {
+    const fit = () => {
+      if (!zonePoints.length) return;
       instance.fitBounds(L.latLngBounds([...zonePoints, site.center]), {
         padding: [40, 40],
         maxZoom: 18,
         animate: false,
       });
-    }
+    };
+    fit();
+    // The panel animates in, so the first size is not the final one: refit while the visitor has not moved the map.
+    let fittedZoom = instance.getZoom();
+    let moved = false;
+    instance.on("dragstart", () => {
+      moved = true;
+    });
     map.current = instance;
     L.control.zoom({ position: "bottomleft" }).addTo(instance);
     // Leaflet's default prefix carries a flag emoji unrelated to the product.
     instance.attributionControl.setPrefix(
       '<a href="https://leafletjs.com">Leaflet</a>',
     );
-    const resize = new ResizeObserver(() => instance.invalidateSize());
+    const resize = new ResizeObserver(() => {
+      instance.invalidateSize();
+      if (!moved && instance.getZoom() === fittedZoom) {
+        fit();
+        fittedZoom = instance.getZoom();
+      }
+    });
     resize.observe(container.current);
     return () => {
       resize.disconnect();
@@ -66,6 +80,11 @@ export default function MapCanvas({
     const instance = map.current;
     if (!instance) return;
     const style = overlayStyle(basemap);
+    // Zone names sit under the route points and findings, so a label never hides a marker.
+    const labelPane =
+      instance.getPane("zoneLabels") ?? instance.createPane("zoneLabels");
+    labelPane.style.zIndex = "590";
+    labelPane.style.pointerEvents = "none";
     const layer = L.layerGroup().addTo(instance);
     site.zones.forEach((zone) => {
       const shape =
@@ -83,6 +102,7 @@ export default function MapCanvas({
               dashArray: basemap === "satellite" ? undefined : "5 5",
             });
       shape.addTo(layer).bindTooltip(zone.name, {
+        pane: "zoneLabels",
         permanent: true,
         direction: "center",
         className: "zone-map-label",

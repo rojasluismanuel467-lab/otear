@@ -22,6 +22,7 @@ import { useModuleTitle } from "@/features/config/use-config";
 import type { FlightDocument } from "@/features/demo/types";
 import { downloadText, formatDate } from "@/lib/format";
 import { DEMO_DATE } from "@/features/demo/demo-data";
+import { revealDetail } from "@/lib/reveal-detail";
 import styles from "./compliance.module.css";
 
 const categoryLabels = {
@@ -96,6 +97,7 @@ export function DocumentView() {
   );
   function selectDocument(document: FlightDocument) {
     setSelectedId(document.id);
+    revealDetail("document-detail");
     setDateDraft(null);
     setFeedback("");
     setFileError("");
@@ -356,6 +358,8 @@ export function DocumentView() {
         </aside>
         {selected ? (
           <div
+            id="document-detail"
+            data-reveal-target
             className={styles.detail}
             key={selected.id}
             role="region"

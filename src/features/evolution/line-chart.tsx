@@ -14,7 +14,9 @@ export interface ChartSeries {
 
 const HEIGHT = 240;
 const COMPACT_HEIGHT = 150;
-const PAD = { top: 14, right: 16, bottom: 30, left: 46 };
+const PAD = { top: 14, right: 26, bottom: 40, left: 46 };
+/** Minimum distance between two date labels so they never touch. */
+const MIN_LABEL_GAP = 60;
 const DAY_MS = 86_400_000;
 const time = (date: string) => new Date(`${date}T12:00:00`).getTime();
 
@@ -79,6 +81,10 @@ export function LineChart({
   const dates = [
     ...new Set(series.flatMap((item) => item.points.map((p) => p.date))),
   ].sort();
+  const axisDates = pickAxisDates(
+    [...new Set([xDomain[0], xDomain[1], ...dates])].sort(),
+    x,
+  );
 
   return (
     <figure className={styles.figure}>
@@ -108,21 +114,29 @@ export function LineChart({
               </text>
             </g>
           ))}
-          <text x={PAD.left} y={height - 8} className={styles.tick}>
-            {formatDate(xDomain[0], { day: "numeric", month: "short" })}
-          </text>
-          <text
-            x={width - PAD.right}
-            y={height - 8}
-            textAnchor="end"
-            className={styles.tick}
-          >
-            {formatDate(xDomain[1], {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          </text>
+          {axisDates.map((date, i) => {
+            const year = date.slice(0, 4);
+            const showYear = i === 0 || year !== axisDates[i - 1].slice(0, 4);
+            return (
+              <text
+                key={date}
+                x={x(date)}
+                y={height - (showYear ? 22 : 8)}
+                textAnchor="middle"
+                className={styles.tick}
+              >
+                {formatDate(date, { day: "numeric", month: "short" }).replace(
+                  / de /g,
+                  " ",
+                )}
+                {showYear && (
+                  <tspan x={x(date)} dy={15} className={styles.tickYear}>
+                    {year}
+                  </tspan>
+                )}
+              </text>
+            );
+          })}
           {cursor && (
             <line
               x1={x(cursor)}
@@ -183,32 +197,54 @@ export function LineChart({
           ))}
         </ul>
       )}
-      <table className={styles.srOnly}>
-        <caption>{label}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Fecha</th>
-            {series.map((item) => (
-              <th key={item.id} scope="col">
-                {item.name}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {dates.map((date) => (
-            <tr key={date}>
-              <th scope="row">{formatDate(date)}</th>
-              {series.map((item) => {
-                const point = item.points.find((p) => p.date === date);
-                return (
-                  <td key={item.id}>{point ? format(point.value) : "—"}</td>
-                );
-              })}
+      <div className={styles.srOnly}>
+        <table>
+          <caption>{label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              {series.map((item) => (
+                <th key={item.id} scope="col">
+                  {item.name}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {dates.map((date) => (
+              <tr key={date}>
+                <th scope="row">{formatDate(date)}</th>
+                {series.map((item) => {
+                  const point = item.points.find((p) => p.date === date);
+                  return (
+                    <td key={item.id}>{point ? format(point.value) : "—"}</td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
+}
+
+/**
+ * Dates that get a label: left to right, keeping the first and last, and
+ * dropping any whose neighbour is closer than MIN_LABEL_GAP pixels.
+ */
+function pickAxisDates(dates: string[], x: (date: string) => number) {
+  if (dates.length <= 2) return dates;
+  const last = dates[dates.length - 1];
+  const kept = [dates[0]];
+  for (const date of dates.slice(1, -1)) {
+    if (
+      x(date) - x(kept[kept.length - 1]) >= MIN_LABEL_GAP &&
+      x(last) - x(date) >= MIN_LABEL_GAP
+    ) {
+      kept.push(date);
+    }
+  }
+  kept.push(last);
+  return kept;
 }

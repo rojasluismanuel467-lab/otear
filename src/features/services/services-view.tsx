@@ -17,6 +17,7 @@ import {
   kindLabels,
   statusLabels,
 } from "./workflow";
+import { revealDetail } from "@/lib/reveal-detail";
 import styles from "./services.module.css";
 
 type Filter = "turn" | "open" | "closed";
@@ -138,7 +139,10 @@ export function ServicesView() {
                       type="button"
                       className={styles.row}
                       aria-pressed={selected?.id === request.id}
-                      onClick={() => setSelectedId(request.id)}
+                      onClick={() => {
+                        setSelectedId(request.id);
+                        revealDetail("request-detail");
+                      }}
                     >
                       <span className={styles.rowTop}>
                         <strong>{request.title}</strong>

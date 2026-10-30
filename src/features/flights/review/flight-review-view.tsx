@@ -27,6 +27,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate } from "@/lib/format";
 import { EvidenceGallery } from "./evidence-gallery";
 import { FlightReport } from "./flight-report";
+import { revealDetail } from "@/lib/reveal-detail";
 import styles from "./flight-review.module.css";
 
 const flightLabels = {
@@ -73,10 +74,13 @@ export function FlightReviewView() {
               label="Vuelos del sitio"
               flights={orderedFlights}
               selectedId={flight.id}
-              onSelect={selectFlight}
+              onSelect={(id) => {
+                selectFlight(id);
+                revealDetail("flight-detail");
+              }}
             />
           </aside>
-          <div className={styles.content}>
+          <div id="flight-detail" data-reveal-target className={styles.content}>
             <FlightContent key={flight.id} flight={flight} />
           </div>
         </div>

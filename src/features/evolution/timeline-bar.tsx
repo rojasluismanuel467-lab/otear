@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { Pause, Play } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import styles from "./evolution.module.css";
@@ -20,6 +23,29 @@ export function TimelineBar({
   onSelect: (index: number) => void;
   onTogglePlay: () => void;
 }) {
+  const list = useRef<HTMLOListElement>(null);
+
+  // On narrow screens the stops scroll sideways: keep the selected one in view (centred) as it
+  // changes, including while playing. Only the list moves, never the page.
+  useEffect(() => {
+    const node = list.current;
+    const stop = node?.querySelector<HTMLElement>(
+      'button[aria-pressed="true"]',
+    );
+    if (!node || !stop) return;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const a = stop.getBoundingClientRect();
+    const b = node.getBoundingClientRect();
+    const delta = a.left + a.width / 2 - (b.left + b.width / 2);
+    if (Math.abs(delta) < 2) return;
+    node.scrollTo({
+      left: node.scrollLeft + delta,
+      behavior: reduced ? "auto" : "smooth",
+    });
+  }, [index]);
+
   return (
     <div className={styles.timeline}>
       <button
@@ -36,7 +62,7 @@ export function TimelineBar({
           <Play size={18} aria-hidden="true" />
         )}
       </button>
-      <ol className={styles.stops} aria-label="Vuelos en el tiempo">
+      <ol ref={list} className={styles.stops} aria-label="Vuelos en el tiempo">
         {dates.map((date, i) => (
           <li key={date} data-past={i <= index ? "true" : undefined}>
             <button

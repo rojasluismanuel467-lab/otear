@@ -16,6 +16,7 @@ import { PaymentAutomation } from "./payment-automation";
 import { PaymentDialog } from "./payment-dialog";
 import { AreaCheckCard } from "./area-check-card";
 import { coveredHaFor } from "@/features/services/links";
+import { revealDetail } from "@/lib/reveal-detail";
 import { checkArea, orderedHa } from "./coverage";
 import { payReadiness } from "./readiness";
 import styles from "./billing.module.css";
@@ -224,7 +225,10 @@ export function BillingView() {
                         type="button"
                         className={styles.invoiceRow}
                         aria-pressed={isSelected}
-                        onClick={() => setSelectedId(invoice.id)}
+                        onClick={() => {
+                          setSelectedId(invoice.id);
+                          revealDetail("invoice-detail");
+                        }}
                       >
                         <time className={styles.due} dateTime={invoice.dueDate}>
                           <small>vence</small>
@@ -292,6 +296,8 @@ export function BillingView() {
         </aside>
         {selectedInvoice ? (
           <div
+            id="invoice-detail"
+            data-reveal-target
             className={styles.detail}
             key={selectedInvoice.id}
             aria-label={`Detalle de ${selectedInvoice.reference}`}
