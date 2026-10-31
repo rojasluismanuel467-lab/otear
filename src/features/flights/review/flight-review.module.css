@@ -266,7 +266,7 @@
 }
 @media (max-width: 960px) {
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .nextStep {
     grid-template-columns: 1fr;
@@ -282,9 +282,29 @@
   }
 }
 @media (max-width: 640px) {
+  /* El texto del botón es largo («…3 del operador y 2 sugerencias sin revisar») y arriba
+     del mapa ya hay controles: en un teléfono va debajo del mapa, a todo el ancho y en
+     las líneas que necesite. */
+  .mapHero {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    background: var(--surface);
+  }
+  .mapHero :global(.site-map) {
+    height: 420px;
+    flex: none;
+  }
   .mapAction {
-    top: 66px;
-    right: 14px;
+    position: static;
+    margin: 12px;
+    height: auto;
+    min-height: 44px;
+    padding-block: 8px;
+    justify-content: space-between;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.35;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -722,9 +742,18 @@
   .compareGrid {
     grid-template-columns: 1fr;
   }
+  /* Las cuatro pestañas en dos filas: ninguna queda cortada fuera de la pantalla. */
+  .tabsContainer {
+    width: 100%;
+  }
+  .tabList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .tabList [role="tab"] {
-    font-size: 12px;
-    padding-inline: 12px;
+    justify-content: center;
+    font-size: 13px;
+    padding-inline: 10px;
   }
   .tabList svg {
     display: none;

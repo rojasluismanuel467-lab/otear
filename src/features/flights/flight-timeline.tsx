@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import type { Flight } from "@/features/demo/types";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/lib/format";
@@ -29,8 +32,18 @@ export function FlightTimeline({
   onSelect,
   label,
 }: FlightTimelineProps) {
+  const listRef = useRef<HTMLOListElement>(null);
+  // En teléfono la lista es una fila que se desliza: el vuelo elegido debe quedar a la
+  // vista. Solo mueve la fila (scrollLeft), nunca la página.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || list.scrollWidth <= list.clientWidth) return;
+    const pressed = list.querySelector<HTMLElement>("[aria-pressed='true']");
+    const item = pressed?.closest("li");
+    if (item) list.scrollLeft = Math.max(0, item.offsetLeft - list.offsetLeft);
+  }, [selectedId]);
   return (
-    <ol className={styles.timeline} aria-label={label}>
+    <ol className={styles.timeline} aria-label={label} ref={listRef}>
       {flights.map((flight, index) => {
         const isSelected = flight.id === selectedId;
         return (
