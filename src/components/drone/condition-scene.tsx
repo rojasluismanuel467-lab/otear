@@ -889,6 +889,7 @@ export function ConditionScene({
           className={styles.callout}
           data-show="false"
           aria-hidden="true"
+          style={status === "ready" ? undefined : { display: "none" }}
         >
           <i style={{ background: callout.color }} />
           {callout.text}
@@ -911,8 +912,9 @@ export function ConditionScene({
       )}
       {status === "error" && (
         <p className={styles.message}>
-          No se pudo leer el modelo. Si es un escaneo, expórtelo como .glb e
-          inténtelo de nuevo.
+          {source.kind === "scan"
+            ? "No se pudo leer el escaneo. Expórtelo como .glb e inténtelo de nuevo."
+            : "No se pudo cargar el modelo de ejemplo de esta aeronave (el archivo no está disponible aquí). Puede cargar su escaneo (.glb) o marcar las partes desde la lista."}
         </p>
       )}
       {status === "unavailable" && (
