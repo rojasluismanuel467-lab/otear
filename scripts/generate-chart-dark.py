@@ -128,7 +128,9 @@ def main():
             r, g, b, a = px_in[x, y]
             # La carta clara guarda el sombreado como transparencia de un gris: más alfa = más sombra.
             px_out[x, y] = (150, 205, 230, min(255, int(a * 1.3)))
-    out.save(os.path.join(TEX, "chart-relief-dark.webp"), quality=70, method=6)
+    # El relieve es un fondo tenue: media resolución y menos calidad bastan y pesan un tercio.
+    out = out.resize((768, 576), Image.LANCZOS)
+    out.save(os.path.join(TEX, "chart-relief-dark.webp"), quality=40, alpha_quality=25, method=6)
 
     rose = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='-110 -110 220 220' fill='none' stroke='#c4e3f0' stroke-linejoin='round'>"
             "<circle r='84' stroke-width='1' stroke-opacity='.6'/><circle r='64' stroke-width='.8' stroke-opacity='.45'/>"

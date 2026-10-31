@@ -23,7 +23,7 @@ npm run audit:ui -- --label mi-cambio --compare docs/planning/ui-audit/base.json
 npm run audit:ui -- --label final --lh-runs 3 --experiments
 ```
 
-Otras opciones: `--routes /,/vuelos/`, `--viewports desktop`, `--no-lighthouse`, `--no-axe`, `--no-screens`, `--full-page` (captura de toda la página), `--report-only` (nunca sale con código 1), `--chrome-flags="<banderas>"` (por ejemplo `--disable-3d-apis --disable-gpu` para medir sin WebGL), `--inject-css="<css>"` (prueba un cambio de CSS sin editar el código; no afecta a Lighthouse), `--out <carpeta>`, `--config <archivo>`. `node scripts/ui-audit.mjs --help` las lista.
+Otras opciones: `--routes /,/vuelos/`, `--viewports desktop`, `--no-lighthouse`, `--no-axe`, `--no-screens`, `--no-keyboard` (omite teclado y movimiento reducido), `--full-page` (captura de toda la página), `--report-only` (nunca sale con código 1), `--chrome-flags="<banderas>"` (por ejemplo `--disable-3d-apis --disable-gpu` para medir sin WebGL), `--inject-css="<css>"` (prueba un cambio de CSS sin editar el código; no afecta a Lighthouse), `--out <carpeta>`, `--config <archivo>`. `node scripts/ui-audit.mjs --help` las lista.
 
 **Mida siempre contra la compilación de producción** (`out/`), no contra `npm run dev`: el modo de desarrollo añade mucho JavaScript y falsea todas las cifras. **No corra una compilación ni otra cosa pesada mientras audita**: la medición es sensible a la carga de la máquina. Si va a comparar dos corridas, hágalo en la misma máquina y sin otra cosa abierta.
 
@@ -46,6 +46,8 @@ Salida, en `docs/planning/ui-audit/` (o `--out`): `<etiqueta>.md` (informe), `<e
 | Fluidez: FPS en reposo y al desplazar (cuadro p50/p95/máx, cuadros > 33 ms), tareas largas | `requestAnimationFrame` mientras se recorre la página a 1.400 px/s; observador de tareas largas | Notar tirones                                                                                             |
 | Errores de consola y peticiones fallidas                                      | Playwright                                               | Recursos rotos (p. ej. un 404)                                                                            |
 | Capturas                                                                      | Playwright (JPEG, ventana visible)                       | Mirar a ojo qué se midió                                                                                  |
+| **Teclado**: recorrido con Tab (hasta 60 paradas, en su propia página) | Playwright: elemento enfocado, anillo de foco (propio o de un contenedor cercano), si está visible y si otro elemento lo tapa, `tabindex` positivo, trampa (el mismo elemento 4 veces seguidas). Los marcadores de los mapas de Leaflet y los campos de fecha nativos se excluyen (se superponen o resaltan por dentro por diseño) | Que todo se alcance y se vea con el teclado (WCAG 2.1.1, 2.4.7); **no** reemplaza probar con teclado y lector de pantalla |
+| **Movimiento reducido**: carga con `prefers-reduced-motion: reduce` | `document.getAnimations()`: cuántas animaciones siguen y cuántas son infinitas o de más de 400 ms | Que la preferencia se respete en CSS (no ve el 3D ni el JS propio que no use animaciones del documento) |
 | **Experimentos de costo** (`--experiments`)                                   | Quita un efecto por vez con CSS inyectado (sin `backdrop-filter`, sin `filter`, sin fondo, sin animaciones, sin canvas, sin sombras) y repite el recorrido | Saber qué efecto cuesta, antes de decidir quitarlo                                                        |
 
 ### Límites que hay que leer antes de usar una cifra
@@ -74,6 +76,8 @@ Son objetivos del equipo, no estándares externos, y se pueden cambiar con una d
 | Interacción más lenta (sonda)           |   ≤ 200 ms | ≤ 400 ms | Referencia de INP «bueno»: ≤ 200 ms                   |
 | Cuadro p95 al desplazar                 |   ≤ 50 ms |  ≤ 50 ms | 50 ms ≈ 20 FPS; alerta de tirones evidentes            |
 | `h1` visibles                           |          1 |     1 |                                                         |
+| Teclado: paradas sin anillo / tapadas   |      0 / 0 | 0 / 0 | También trampas de teclado y `tabindex` positivo       |
+| Movimiento reducido: animaciones largas o infinitas |  0 |  0 |                                                    |
 
 **Regresiones** (solo con `--compare`): rendimiento −5 puntos, accesibilidad −1 punto, LCP +15 %, JS transferido +10 %, y cualquier violación de axe, texto menor de 12 px o píxel de desborde nuevos frente a la corrida base.
 
