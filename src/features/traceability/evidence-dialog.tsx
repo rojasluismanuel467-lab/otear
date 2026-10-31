@@ -9,6 +9,7 @@ import {
   Printer,
   RefreshCw,
   Send,
+  SearchCheck,
   ShieldCheck,
   Trash2,
   TriangleAlert,
@@ -17,12 +18,22 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useDemo } from "@/features/demo/demo-context";
 import type { Evidence, Flight, Site } from "@/features/demo/types";
 import { downloadText } from "@/lib/format";
-import { documentHtml, documentText, printHtml } from "./document-export";
+import {
+  checkDownload,
+  documentHtml,
+  documentText,
+  printHtml,
+  type DownloadCheck,
+} from "./document-export";
+import { DEMO_PROFILE_LABEL } from "./demo-profile";
 import { flightReportChanges } from "./flight-report-document";
 import {
+  eventAuthor,
+  eventOf,
   evidenceState,
   isComplete,
   newEvidence,
+  NO_IDENTITY_CHECK,
   signingConflict,
   statusLabels,
   withFields,
@@ -31,6 +42,7 @@ import {
 } from "./integrity";
 import { sha256Hex } from "./sha256";
 import { SignaturePad } from "./signature-pad";
+import { signerProblem } from "./signers";
 import {
   autofill,
   missingFields,
@@ -148,7 +160,12 @@ function EvidenceBody({
   });
   const [requestTo, setRequestTo] = useState("");
   const [error, setError] = useState("");
+  const [downloaded, setDownloaded] = useState("");
+  const [downloadCheck, setDownloadCheck] = useState<DownloadCheck | null>(
+    null,
+  );
   const fileInput = useRef<HTMLInputElement>(null);
+  const downloadInput = useRef<HTMLInputElement>(null);
 
   const base: Evidence =
     stored ??
@@ -162,6 +179,7 @@ function EvidenceBody({
         fields,
       },
       new Date().toISOString(),
+      DEMO_PROFILE_LABEL,
     );
   const working: Evidence =
     base.kind === "drafted" ? { ...base, fields } : base;
@@ -189,7 +207,7 @@ function EvidenceBody({
     const now = new Date().toISOString();
     const saved =
       stored && stored.kind === "drafted"
-        ? withFields(stored, fields, now)
+        ? withFields(stored, fields, now, DEMO_PROFILE_LABEL)
         : newEvidence(
             {
               ...(stored ? { id: stored.id } : {}),
@@ -201,6 +219,7 @@ function EvidenceBody({
               fields,
             },
             now,
+            DEMO_PROFILE_LABEL,
           );
     saveEvidence(saved);
     return saved;
@@ -223,10 +242,9 @@ function EvidenceBody({
 
   function confirmSigning() {
     if (!signing) return;
-    if (signer.name.trim().length < 3 || signer.documentId.trim().length < 3) {
-      setError(
-        "Escriba el nombre completo y el número de documento de quien firma.",
-      );
+    const problem = signerProblem(signer);
+    if (problem) {
+      setError(problem);
       return;
     }
     if (signer.method === "drawn" && !signer.image) {
@@ -254,6 +272,7 @@ function EvidenceBody({
         image: signer.method === "drawn" ? signer.image : undefined,
       },
       now,
+      DEMO_PROFILE_LABEL,
     );
     saveEvidence(signed);
     setSigning(null);
@@ -283,15 +302,17 @@ function EvidenceBody({
         attachment: { name: file.name, size: file.size, hash },
       },
       now,
+      DEMO_PROFILE_LABEL,
     );
     saveEvidence({
       ...attachment,
       events: [
         ...(stored?.events ?? []),
-        {
-          at: now,
-          text: `Se adjuntó «${file.name}». Huella SHA-256 del archivo: ${hash.slice(0, 12)}.`,
-        },
+        eventOf(
+          now,
+          `Se adjuntó «${file.name}». Huella SHA-256 del archivo: ${hash.slice(0, 12)}.`,
+          DEMO_PROFILE_LABEL,
+        ),
       ],
     });
     setError("");
@@ -312,11 +333,26 @@ function EvidenceBody({
     saveEvidence({
       ...current,
       requestedFrom: requestTo.trim(),
-      events: [...current.events, { at: now, text }],
+      events: [...current.events, eventOf(now, text, DEMO_PROFILE_LABEL)],
     });
     setRequestTo("");
     setError("");
     setNotice("Solicitud registrada. En la demo no se envía ningún mensaje.");
+  }
+
+  async function loadDownload(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setDownloadCheck({
+        result: "unreadable",
+        message:
+          "El archivo supera 2 MB; un documento de texto es mucho menor.",
+      });
+      return;
+    }
+    const text = await file.text();
+    setDownloaded(text);
+    setDownloadCheck(stored ? checkDownload(stored, text) : null);
   }
 
   const roleSignature = (role: string) =>
@@ -619,6 +655,12 @@ function EvidenceBody({
                 guarda con la hora de este dispositivo y la huella de su
                 contenido.
               </label>
+              {template.separateRoles && (
+                <p className={styles.hint}>
+                  En este documento cada rol lo firma una persona distinta.{" "}
+                  {NO_IDENTITY_CHECK}
+                </p>
+              )}
               <p className={styles.hint}>
                 Es una firma electrónica simple: sirve como prueba de
                 consentimiento (Ley 527 de 1999, Decreto 2364 de 2012) pero
@@ -675,6 +717,81 @@ function EvidenceBody({
         </div>
       </section>
 
+      {mode === "draft" && stored?.kind === "drafted" && (
+        <section
+          className={styles.section}
+          aria-label="Verificar un archivo descargado"
+        >
+          <h3>Verificar un archivo descargado</h3>
+          <p className={styles.hint}>
+            Pegue el texto del .txt que descargó de este documento (o cárguelo,
+            o escriba la huella de 64 caracteres) y se compara con la huella
+            guardada. Todo ocurre en su navegador; no se envía nada. Solo
+            comprueba que el texto es el mismo, no quién lo firmó ni cuándo.
+          </p>
+          <label className="form-field">
+            <span className="field-label">Texto del archivo o huella</span>
+            <textarea
+              className="field-input"
+              rows={3}
+              value={downloaded}
+              onChange={(event) => {
+                setDownloaded(event.target.value);
+                setDownloadCheck(null);
+              }}
+            />
+          </label>
+          <input
+            ref={downloadInput}
+            type="file"
+            accept=".txt,text/plain"
+            className={styles.hidden}
+            aria-label="Elegir el archivo .txt descargado"
+            onChange={(event) => {
+              void loadDownload(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+          <div className={styles.inline}>
+            <Button
+              variant="secondary"
+              onPress={() => downloadInput.current?.click()}
+            >
+              <FileUp size={16} aria-hidden="true" />
+              Cargar el archivo .txt
+            </Button>
+            <Button
+              variant="primary"
+              isDisabled={!downloaded.trim()}
+              onPress={() =>
+                setDownloadCheck(checkDownload(stored, downloaded))
+              }
+            >
+              <SearchCheck size={16} aria-hidden="true" />
+              Comprobar
+            </Button>
+          </div>
+          {downloadCheck && (
+            <p
+              className={
+                downloadCheck.result === "match"
+                  ? styles.fileLine
+                  : styles.alert
+              }
+              role="status"
+              data-result={downloadCheck.result}
+            >
+              {downloadCheck.result === "match" ? (
+                <ShieldCheck size={16} aria-hidden="true" />
+              ) : (
+                <TriangleAlert size={16} aria-hidden="true" />
+              )}
+              {downloadCheck.message}
+            </p>
+          )}
+        </section>
+      )}
+
       {working.events.length > 0 && (
         <section
           className={styles.section}
@@ -685,10 +802,22 @@ function EvidenceBody({
             {[...working.events].reverse().map((event, index) => (
               <li key={`${event.at}-${index}`}>
                 <time dateTime={event.at}>{time(event.at)}</time>
-                <span>{event.text}</span>
+                <span>
+                  {event.text}
+                  <small className={styles.eventAuthor}>
+                    {eventAuthor(event)
+                      ? `Perfil de la demostración: ${eventAuthor(event)}`
+                      : "Autor no registrado"}
+                  </small>
+                </span>
               </li>
             ))}
           </ol>
+          <p className={styles.hint}>
+            La demostración no tiene inicio de sesión: cada cambio queda a
+            nombre del perfil de la demostración ({DEMO_PROFILE_LABEL}), que no
+            es una identidad comprobada.
+          </p>
         </section>
       )}
 
@@ -747,6 +876,9 @@ function EvidenceBody({
               variant="danger"
               onPress={() => {
                 removeEvidence(stored.id);
+                setNotice(
+                  `«${template.title}» eliminado por el perfil de la demostración (${DEMO_PROFILE_LABEL}). Se perdieron el documento, sus firmas y su historial.`,
+                );
                 onClose();
               }}
             >

@@ -13,7 +13,10 @@ import {
   outlineKindFor,
 } from "@/features/sites/mapping/mapping-model";
 import { textToHtml, printHtml } from "@/features/traceability/document-export";
-import { flightReportFields } from "@/features/traceability/flight-report-document";
+import {
+  flightReportFields,
+  reportPhrases,
+} from "@/features/traceability/flight-report-document";
 import { FlightReportSigning } from "@/features/traceability/flight-report-signing";
 import {
   displayTitle,
@@ -131,6 +134,7 @@ export function FlightReport({
 }) {
   const { findings: siteFindings, flights, evidences } = useDemo();
   const words = useFindingWords();
+  const phrases = reportPhrases(words);
   const flightEvidences = evidences.filter(
     (entry) => entry.flightId === flight.id,
   );
@@ -187,7 +191,7 @@ export function FlightReport({
     brief,
     logRows,
     debrief: flight.log?.debrief,
-    findingsTitle: `${words.Plural} incluidos`,
+    findingsTitle: phrases.heading,
     findings: findingBlocks,
     notes,
     technical,
@@ -220,10 +224,10 @@ export function FlightReport({
         })
       : ["- Sin documentos registrados para este vuelo."]),
     "",
-    `${words.Plural.toUpperCase()} INCLUIDOS`,
+    phrases.heading.toUpperCase(),
     ...(included.length
       ? findingBlocks.map((block, index) => `${index + 1}. ${block}`)
-      : [`Sin ${words.plural} incluidos.`]),
+      : [phrases.none]),
     "",
     "NOTAS DE REVISIÓN",
     notes.trim() || "Sin notas adicionales.",
@@ -246,8 +250,7 @@ export function FlightReport({
       <section className={`surface ${styles.reportOptions}`}>
         <h2 className="section-heading">Qué incluir en el informe</h2>
         <p className="text-muted">
-          Marque los {words.plural} que quiere incluir. El contexto del vuelo
-          acompaña al informe.
+          {phrases.pick} El contexto del vuelo acompaña al informe.
         </p>
         <fieldset className={styles.checklist}>
           <legend>{words.Plural} del vuelo</legend>
@@ -276,7 +279,7 @@ export function FlightReport({
               </label>
             ))
           ) : (
-            <p className="text-muted">Este vuelo no tiene {words.plural}.</p>
+            <p className="text-muted">{phrases.noneInFlight}</p>
           )}
         </fieldset>
         <label className="form-field">
@@ -360,7 +363,7 @@ export function FlightReport({
             <p>{flight.log.debrief}</p>
           </>
         )}
-        <h3>{words.Plural} incluidos</h3>
+        <h3>{phrases.heading}</h3>
         {included.length ? (
           included.map((finding) => (
             <article className={styles.reportFinding} key={finding.id}>
@@ -387,9 +390,7 @@ export function FlightReport({
             </article>
           ))
         ) : (
-          <p className="text-muted">
-            No hay {words.plural} incluidos en este borrador.
-          </p>
+          <p className="text-muted">{phrases.noneInDraft}</p>
         )}
         {notes.trim() && (
           <>
