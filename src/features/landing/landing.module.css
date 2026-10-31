@@ -354,11 +354,15 @@
 
 .heroMeta {
   margin-top: 36px;
-  display: inline-flex;
+  display: flex;
   gap: 18px;
   flex-wrap: wrap;
   color: #8ea4b0;
   font-size: 12px;
+}
+
+.heroMeta + .inlineLink {
+  margin-top: 8px;
 }
 
 .heroMeta span {
@@ -1012,42 +1016,6 @@
   background: var(--background);
 }
 
-.exampleNumbers {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin: 0;
-}
-
-.exampleNumbers > div {
-  display: grid;
-  align-content: start;
-  gap: 4px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--background);
-}
-
-.exampleNumbers dt {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.exampleNumbers dd {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--foreground);
-  font-feature-settings: "tnum";
-}
-
-.exampleNumbers small {
-  font-size: 12px;
-  color: var(--muted);
-}
-
 .exampleText {
   font-size: var(--text-body);
   line-height: 1.6;
@@ -1601,6 +1569,28 @@ a.channel:focus-visible {
   color: var(--accent);
 }
 
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.backLink:hover {
+  text-decoration-thickness: 2px;
+}
+
 .detailsForm {
   display: grid;
   gap: 14px;
@@ -1667,7 +1657,7 @@ a.channel:focus-visible {
 }
 
 .footerLinks {
-  display: inline-flex;
+  display: flex;
   gap: 16px;
   margin-top: 12px;
   flex-wrap: wrap;
@@ -1692,6 +1682,34 @@ a.channel:focus-visible {
   .heroProofInline {
     display: grid;
     margin-bottom: 24px;
+  }
+
+  /* Apilado, lo primero tras el titular es lo que Otear no es (no hace los vuelos);
+     luego la prueba y después el resto. Solo cambia el orden visual: el DOM sigue
+     igual y los dos enlaces de acción quedan al final, como siempre. */
+  .heroCopy {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .heroCopy > * {
+    order: 3;
+  }
+
+  .heroCopy > .title {
+    order: 0;
+  }
+
+  .heroCopy > .heroNote {
+    order: 1;
+  }
+
+  .heroCopy > .heroProofInline {
+    order: 2;
+  }
+
+  .heroCopy > .inlineLink {
+    align-self: flex-start;
   }
 
   .heroInner,
@@ -1751,8 +1769,7 @@ a.channel:focus-visible {
   }
 
   .rolesRail,
-  .rolesRailTwo,
-  .exampleNumbers {
+  .rolesRailTwo {
     grid-template-columns: 1fr;
   }
 

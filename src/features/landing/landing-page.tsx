@@ -249,7 +249,16 @@ export function LandingPage() {
               <ArrowRight size={14} aria-hidden />
             </Link>
             <p className={styles.heroBehind}>
-              <strong>Quién está detrás.</strong> {behindText()} Escriba a{" "}
+              {behindOtear.who ? (
+                <>
+                  <strong>Quién está detrás.</strong> {behindText()} Escriba
+                  a{" "}
+                </>
+              ) : (
+                <>
+                  <strong>Contacto.</strong> Escríbanos a{" "}
+                </>
+              )}
               <a href="mailto:hola@otear.app">hola@otear.app</a>.
             </p>
           </div>
@@ -352,25 +361,13 @@ export function LandingPage() {
               <h4>Pedido, cubierto y facturado</h4>
               <span className={styles.exampleBadge}>Cifras de ejemplo</span>
             </div>
-            <dl className={styles.exampleNumbers}>
-              <div>
-                <dt>Se pidieron</dt>
-                <dd>{example.ordered} ha</dd>
-              </div>
-              <div>
-                <dt>El operador declara haber cubierto</dt>
-                <dd>{example.covered} ha</dd>
-                <small>{example.coveredPct} % de lo pedido</small>
-              </div>
-              <div>
-                <dt>Facturó</dt>
-                <dd>{example.billed} ha</dd>
-              </div>
-            </dl>
             <p className={styles.exampleText}>
-              Antes de registrar el pago, Otear marca la diferencia: «Facturó{" "}
-              {example.over} ha más de las cubiertas ({example.overPct} %)».{" "}
-              {toleranceText()}
+              Es el mismo ejemplo de la primera pantalla: se pidieron{" "}
+              {example.ordered} ha, el operador declara haber cubierto{" "}
+              {example.covered} ({example.coveredPct} % de lo pedido) y facturó{" "}
+              {example.billed}. Antes de registrar el pago, Otear marca la
+              diferencia: «Facturó {example.over} ha más de las cubiertas (
+              {example.overPct} %)». {toleranceText()}
             </p>
             <p className={styles.exampleNote}>
               Cifras sintéticas de la demo, no de un cliente ni un ahorro real.

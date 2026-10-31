@@ -340,7 +340,7 @@ export function LeadForm() {
 
       <button
         type="button"
-        className={`${styles.linkBtn} ${styles.ghost}`}
+        className={styles.backLink}
         onClick={() => {
           setDetailsAdded(false);
           setStep("contact");
