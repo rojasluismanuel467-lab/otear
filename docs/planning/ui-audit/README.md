@@ -85,3 +85,20 @@ Son objetivos del equipo, no estándares externos, y se pueden cambiar con una d
 4. Después, a ojo: escritorio y móvil, teclado, movimiento reducido. La auditoría no sustituye esa revisión ni las pruebas con personas (`docs/planning/prueba-con-personas.md`).
 
 Las capturas de cada corrida van en `docs/planning/ui-audit/<etiqueta>/capturas/`; se confirman solo las de las corridas de referencia (`base`, `final`).
+
+## Bucle por pantalla y prompt-plantilla
+
+Lo que funcionó y lo que recomiendan Anthropic y practicantes (guía de buenas prácticas de Claude Code, «Prompting for Frontend Aesthetics»): dar al agente un **chequeo pasa/falla** y exigir **evidencia** (comando y salida, o captura), no «todo pasa».
+
+1. **Una pantalla por agente, en su worktree** (`npm ci` en cada uno; 3–5 en paralelo como máximo y nunca dos sobre los mismos archivos).
+2. **Antes:** captura solo de la zona (no la página entera) y `npm run audit:ui -- --routes /ruta/ --label antes`.
+3. **Un cambio concreto y medible por ciclo** (tamaño, espaciado, contraste, un efecto). Nueva captura y medición. Si no converge en 1–2 intentos, cambiar de enfoque.
+4. **Chequeo:** `npm run check`, `npm test` y `npm run audit:ui -- --routes /ruta/ --compare docs/planning/ui-audit/base.json` (sale con 1 si empeora algo).
+5. **Revisión independiente de solo lectura** (subagente nuevo o `/code-review`), pidiendo solo fallos de corrección, no estilo.
+6. Un commit por cambio, con los números antes/después en el mensaje. La dirección estética ya está fijada (`DESIGN.md`, Instrument Sans + EB Garamond cursiva, tokens): se usa como restricción, no se reinventa.
+
+Plantilla de prompt:
+
+> En `src/features/<pantalla>/<archivo>`: <síntoma observable, con la captura y la cifra de `base.md`>. Está «arreglado» cuando <criterio medible: p. ej. `npm run audit:ui -- --routes /ruta/` baja X o sube Y sin nuevas violaciones, y la captura muestra Z>. Siga el patrón de <componente existente>; sin librerías nuevas; respete los tokens de `globals.css`, el piso de 12 px, `useTerm()` y las reglas de honestidad del `CLAUDE.md`. Incluya estados vacío y de error, teclado y `prefers-reduced-motion`. Termine solo cuando `npm run check`, `npm test` y la auditoría pasen, y muéstreme la salida y las capturas antes/después.
+
+Lighthouse, axe y las capturas no sustituyen las pruebas funcionales ni a las personas: tras cada cambio, mirar también el diff.
