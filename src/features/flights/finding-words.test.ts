@@ -23,3 +23,36 @@ test("words agree with the company's term", () => {
   assert.equal(countOf(masculine, 1), "1 hallazgo");
   assert.equal(countOf(feminine, 3), "3 no conformidades");
 });
+
+test("gender is decided by the word for every term of the sector presets", () => {
+  const terms: [string, boolean][] = [
+    ["Hallazgo de campo", false],
+    ["Novedad de campo", true],
+    ["No conformidad", true],
+    ["Observación", true],
+    ["Novedad", true],
+    ["Novedad de talud", true],
+    ["Desviación", true],
+    ["Incidencia", true],
+    ["Defecto", false],
+    ["Incidente", false],
+    ["Alerta", true],
+    ["Reporte de obra", false],
+    ["Foto por revisar", true],
+    ["Imagen", true],
+    ["Síntoma", false],
+    ["Avión", false],
+    ["Hallazgos", false],
+  ];
+  for (const [term, feminine] of terms) {
+    assert.equal(isFeminine(term), feminine, term);
+  }
+});
+
+test("the article agrees with the term, as the sentences of Evolución use it", () => {
+  const observation = findingWords("Observación", "Observaciones");
+  assert.equal(`${observation.a} ${observation.singular}`, "una observación");
+  assert.equal(agree(observation, "nuevos", "nuevas"), "nuevas");
+  const finding = findingWords("Hallazgo de campo", "Hallazgos de campo");
+  assert.equal(`${finding.a} ${finding.singular}`, "un hallazgo de campo");
+});

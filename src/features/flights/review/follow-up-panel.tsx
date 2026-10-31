@@ -129,7 +129,8 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
           <dl className={styles.facts}>
             <div>
               <dt>
-                <UserRound size={14} aria-hidden="true" /> Responsable
+                <UserRound size={14} aria-hidden="true" /> Responsable (quien lo
+                corrige)
               </dt>
               <dd>{followUp.owner}</dd>
             </div>
@@ -147,6 +148,13 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
               </div>
             )}
           </dl>
+
+          {active && form === "none" && (
+            <p className={styles.hint}>
+              Cierra la medida quien registra la nota; su nombre queda en el
+              historial. Quién debe hacerlo en su empresa lo decide usted.
+            </p>
+          )}
 
           {form === "none" && (
             <div className={styles.actions}>

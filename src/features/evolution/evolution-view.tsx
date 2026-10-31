@@ -24,7 +24,9 @@ import {
   vigorColor,
   type CapturePoint,
 } from "./evolution";
-import { summarizeFollowUps } from "@/features/flights/follow-up";
+import { summarizeFollowUps, measuresText } from "@/features/flights/follow-up";
+import { countPoints, pointsText } from "@/features/flights/finding-count";
+import { useFindingWords } from "@/features/flights/use-finding-words";
 import { issuesFor, type Issue } from "./issues";
 import { IssueSheet } from "./issue-sheet";
 import { LineChart, type ChartSeries } from "./line-chart";
@@ -132,10 +134,7 @@ function EvolutionContent({
 }) {
   const { findings } = useDemo();
   const t = useTerm();
-  const findingWord = {
-    singular: t("finding").toLowerCase(),
-    plural: t("finding", "plural").toLowerCase(),
-  };
+  const findingWord = useFindingWords();
   const measures = useMemo(() => summarizeFollowUps(findings), [findings]);
   const last = captures.length - 1;
   const [picked, setPicked] = useState<number | null>(null);
@@ -188,20 +187,30 @@ function EvolutionContent({
       }),
     [site, captures, index, refIndex, findings, zoneNames],
   );
-  const counts = useMemo(
+  // Per stop: the number on the dot (everything the list of that flight shows) and the sentence
+  // that says what it is made of, so «6» here and «5» in Vuelos are never a mystery.
+  const stops = useMemo(
     () =>
-      captures.map(
-        (_, i) =>
-          issuesFor({
-            site,
-            captures,
-            index: i,
-            referenceIndex: Math.min(refPicked, Math.max(i - 1, 0)),
-            findings,
-            zoneNames,
-          }).length,
-      ),
-    [site, captures, findings, zoneNames, refPicked],
+      captures.map((point, i) => {
+        const all = issuesFor({
+          site,
+          captures,
+          index: i,
+          referenceIndex: Math.min(refPicked, Math.max(i - 1, 0)),
+          findings,
+          zoneNames,
+        });
+        const count = countPoints(
+          findings.filter(
+            (item) =>
+              item.flightId === point.flightId && item.status !== "dismissed",
+          ),
+          all.filter((item) => item.kind !== "finding").length,
+        );
+        return { total: all.length, label: pointsText(count, findingWord) };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [site, captures, findings, zoneNames, refPicked, findingWord.plural],
   );
   const lines = useMemo(
     () =>
@@ -223,6 +232,19 @@ function EvolutionContent({
     [site, captures, index, refIndex, zoneNames, findings, findingWord.plural],
   );
   const selected = issues.find((item) => item.id === issueId);
+  // The same count every screen uses: the operator's findings, the suggestions nobody has
+  // reviewed and the alerts Otear calculates by comparing flights, each said apart.
+  const pointCount = useMemo(
+    () =>
+      countPoints(
+        findings.filter(
+          (item) =>
+            item.flightId === current.flightId && item.status !== "dismissed",
+        ),
+        issues.filter((item) => item.kind !== "finding").length,
+      ),
+    [findings, current.flightId, issues],
+  );
 
   async function loadModel(file: File) {
     const flightId = current.flightId;
@@ -278,7 +300,7 @@ function EvolutionContent({
           data-tone={issues.length ? "warning" : "good"}
         >
           {issues.length
-            ? `${issues.length} ${issues.length === 1 ? findingWord.singular : findingWord.plural} en este vuelo`
+            ? `${pointsText(pointCount, findingWord)} en este vuelo`
             : `Sin ${findingWord.plural} en este vuelo`}
         </span>
       </header>
@@ -325,7 +347,8 @@ function EvolutionContent({
               </div>
               <TimelineBar
                 dates={captures.map((point) => point.date)}
-                counts={counts}
+                counts={stops.map((stop) => stop.total)}
+                labels={stops.map((stop) => stop.label)}
                 index={index}
                 referenceIndex={refIndex}
                 playing={isPlaying}
@@ -359,11 +382,56 @@ function EvolutionContent({
                 <header>
                   <h3>Qué pasa en este vuelo</h3>
                   <p>
-                    Toque un marcador del escenario o un {findingWord.singular}{" "}
-                    de la lista. Unos los marca quien vuela; otros salen de
-                    comparar los valores de un vuelo con otro.
+                    Toque un marcador del escenario o una fila de la lista. Unas
+                    filas las marca quien vuela; las «alertas calculadas» las
+                    saca Otear al comparar los valores de un vuelo con otro.
                   </p>
                 </header>
+                {issues.length ? (
+                  <ul
+                    className={styles.issueList}
+                    aria-label={`${t("finding", "plural")} de este vuelo`}
+                  >
+                    {issues.map((issue) => (
+                      <li key={issue.id}>
+                        <button
+                          type="button"
+                          onClick={() => setIssueId(issue.id)}
+                        >
+                          <span
+                            className={styles.issueDot}
+                            data-tone={issue.tone}
+                            aria-hidden="true"
+                          >
+                            !
+                          </span>
+                          <span className={styles.issueText}>
+                            {issue.kind !== "finding" && (
+                              <small className={styles.issueKind}>
+                                Alerta calculada
+                              </small>
+                            )}
+                            <strong>{issue.title}</strong>
+                            <small>{issue.summary}</small>
+                            {issue.measure && (
+                              <small
+                                className={styles.issueMeasure}
+                                data-tone={issue.measure.tone}
+                              >
+                                Medida: {issue.measure.label.toLowerCase()}
+                              </small>
+                            )}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.allGood}>
+                    <CircleCheck size={18} aria-hidden="true" />
+                    Sin {findingWord.plural} en este vuelo.
+                  </p>
+                )}
                 <label className={styles.compare}>
                   <span>Comparar con</span>
                   <select
@@ -403,57 +471,10 @@ function EvolutionContent({
                   measures.withoutMeasure >
                   0 && (
                   <p className={styles.measureLine}>
-                    <strong>Medidas del sitio:</strong> {measures.open}{" "}
-                    {measures.open === 1 ? "abierta" : "abiertas"} ·{" "}
-                    {measures.inProgress} en corrección · {measures.closed}{" "}
-                    {measures.closed === 1 ? "cerrada" : "cerradas"} ·{" "}
-                    <span data-late={measures.overdue > 0}>
-                      {measures.overdue}{" "}
-                      {measures.overdue === 1 ? "vencida" : "vencidas"}
-                    </span>
+                    <strong>Medidas del sitio:</strong> {measuresText(measures)}
                     {measures.withoutMeasure > 0 &&
                       ` · ${measures.withoutMeasure} sin responsable`}
                     . Se asignan y se cierran en Vuelos.
-                  </p>
-                )}
-                {issues.length ? (
-                  <ul
-                    className={styles.issueList}
-                    aria-label={`${t("finding", "plural")} de este vuelo`}
-                  >
-                    {issues.map((issue) => (
-                      <li key={issue.id}>
-                        <button
-                          type="button"
-                          onClick={() => setIssueId(issue.id)}
-                        >
-                          <span
-                            className={styles.issueDot}
-                            data-tone={issue.tone}
-                            aria-hidden="true"
-                          >
-                            !
-                          </span>
-                          <span className={styles.issueText}>
-                            <strong>{issue.title}</strong>
-                            <small>{issue.summary}</small>
-                            {issue.measure && (
-                              <small
-                                className={styles.issueMeasure}
-                                data-tone={issue.measure.tone}
-                              >
-                                Medida: {issue.measure.label.toLowerCase()}
-                              </small>
-                            )}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className={styles.allGood}>
-                    <CircleCheck size={18} aria-hidden="true" />
-                    Sin {findingWord.plural} en este vuelo.
                   </p>
                 )}
                 {site.sector === "construction" && <DeliverablesHelp />}

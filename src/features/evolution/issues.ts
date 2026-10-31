@@ -380,7 +380,9 @@ export function issuesFor(input: {
           label: "Medida correctiva",
           value: finding.followUp
             ? followUpLine(finding, today)
-            : "Sin responsable ni plazo",
+            : finding.suggestion && finding.status === "pending"
+              ? "Se asigna cuando una persona confirme la sugerencia"
+              : "Sin responsable ni plazo",
         },
       ],
       ...(finding.followUp
@@ -395,6 +397,11 @@ export function issuesFor(input: {
           : undefined,
     });
   }
+  // What Otear calculates (falling vigor, delay, stalled progress) comes first: it answers «what is
+  // going wrong» before the findings the operator marked; each group by urgency.
   const order = { danger: 0, warning: 1, info: 2 } as const;
-  return issues.sort((a, b) => order[a.tone] - order[b.tone]);
+  const group = (issue: Issue) => (issue.kind === "finding" ? 1 : 0);
+  return issues.sort(
+    (a, b) => group(a) - group(b) || order[a.tone] - order[b.tone],
+  );
 }

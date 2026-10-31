@@ -11,6 +11,7 @@ import {
   sustainedDeclines,
   type CapturePoint,
 } from "./evolution.ts";
+import { agree, findingWords } from "../flights/finding-words.ts";
 
 export interface Line {
   tone: "good" | "warning" | "danger" | "info";
@@ -224,10 +225,10 @@ export function comparisonSummary(input: {
   const reference = captures[referenceIndex];
   if (!current || !reference || reference === current) return [];
   const kind = indicatorFor(site.sector).kind;
-  const word = input.findingWord ?? {
-    singular: "hallazgo",
-    plural: "hallazgos",
-  };
+  // The gender comes from the company's word: «nuevas» for «observaciones», «nuevos» for «hallazgos».
+  const word = input.findingWord
+    ? findingWords(input.findingWord.singular, input.findingWord.plural)
+    : findingWords("hallazgo", "hallazgos");
   const digits = kind === "vigor" ? 2 : 0;
   const unit = kind === "progress" ? " puntos" : "";
   const sign = (change: number) =>
@@ -282,9 +283,9 @@ export function comparisonSummary(input: {
   const change = findingChange(findings, current, reference);
   if (change.appeared || change.gone || change.persistent) {
     const pieces = [
-      `${change.appeared} ${change.appeared === 1 ? "nuevo" : "nuevos"}`,
+      `${change.appeared} ${change.appeared === 1 ? agree(word, "nuevo", "nueva") : agree(word, "nuevos", "nuevas")}`,
       `${change.gone} ${change.gone === 1 ? "ya no aparece" : "ya no aparecen"}`,
-      `${change.persistent} ${change.persistent === 1 ? "sigue" : "siguen"} abiertos`,
+      `${change.persistent} ${change.persistent === 1 ? "sigue" : "siguen"} ${change.persistent === 1 ? agree(word, "abierto", "abierta") : agree(word, "abiertos", "abiertas")}`,
     ];
     lines.push({
       tone: change.appeared > change.gone ? "warning" : "info",

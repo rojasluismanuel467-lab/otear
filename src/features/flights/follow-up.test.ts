@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { Finding, FindingFollowUp } from "../demo/types";
 import {
+  FOLLOW_UP_TODAY,
   canHaveFollowUp,
   changeTerms,
   closeFollowUp,
@@ -9,13 +10,14 @@ import {
   followUpBadge,
   isOverdue,
   measureList,
+  measuresText,
   openFollowUp,
   reopenFollowUp,
   startCorrection,
   summarizeFollowUps,
 } from "./follow-up.ts";
 
-const TODAY = "2026-10-30";
+const TODAY = "2026-10-25";
 
 function finding(id: string, extra: Partial<Finding> = {}): Finding {
   return {
@@ -75,7 +77,7 @@ test("opening needs an owner and a deadline that is not in the past", () => {
     false,
   );
   assert.equal(
-    openFollowUp(base, { owner: "Ana", dueDate: "2026-10-29" }, TODAY).ok,
+    openFollowUp(base, { owner: "Ana", dueDate: "2026-10-24" }, TODAY).ok,
     false,
   );
   assert.equal(
@@ -139,8 +141,8 @@ test("closing needs a note and stamps the day; a closed measure is not overdue",
 });
 
 test("a measure is overdue only after its deadline day, and only while pending", () => {
-  assert.equal(isOverdue(measure("open", "2026-10-30"), TODAY), false);
-  assert.equal(isOverdue(measure("open", "2026-10-29"), TODAY), true);
+  assert.equal(isOverdue(measure("open", "2026-10-25"), TODAY), false);
+  assert.equal(isOverdue(measure("open", "2026-10-24"), TODAY), true);
   assert.equal(isOverdue(measure("inProgress", "2026-10-01"), TODAY), true);
   assert.equal(
     isOverdue(
@@ -153,14 +155,14 @@ test("a measure is overdue only after its deadline day, and only while pending",
     label: "Vencida",
     tone: "danger",
   });
-  assert.equal(dueText(measure("open", "2026-10-30"), TODAY), "Vence hoy");
+  assert.equal(dueText(measure("open", "2026-10-25"), TODAY), "Vence hoy");
   assert.equal(
-    dueText(measure("open", "2026-11-06"), TODAY),
+    dueText(measure("open", "2026-11-01"), TODAY),
     "Vence en 7 días",
   );
   assert.equal(
     dueText(measure("open", "2026-10-16"), TODAY),
-    "Venció hace 14 días",
+    "Venció hace 9 días",
   );
 });
 
@@ -249,6 +251,30 @@ test("the summary counts each state and leaves out dismissed findings and unrevi
   });
 });
 
+test("the demo has one «today»: 25 October 2026", () => {
+  assert.equal(FOLLOW_UP_TODAY, "2026-10-25");
+});
+
+test("the measures sentence adds the three states and keeps «vencida» as a condition", () => {
+  const base = { active: 0, withoutMeasure: 0 };
+  assert.equal(
+    measuresText({ ...base, open: 1, inProgress: 1, closed: 1, overdue: 1 }),
+    "3 medidas: 1 abierta, 1 en corrección, 1 cerrada · 1 vencida",
+  );
+  assert.equal(
+    measuresText({ ...base, open: 0, inProgress: 2, closed: 3, overdue: 2 }),
+    "5 medidas: 2 en corrección, 3 cerradas · 2 vencidas",
+  );
+  assert.equal(
+    measuresText({ ...base, open: 1, inProgress: 0, closed: 0, overdue: 0 }),
+    "1 medida: 1 abierta",
+  );
+  assert.equal(
+    measuresText({ ...base, open: 0, inProgress: 0, closed: 0, overdue: 0 }),
+    "Sin medidas",
+  );
+});
+
 test("the list puts late measures first, then by deadline, and closed ones last", () => {
   const findings = [
     finding("done", {
@@ -256,7 +282,7 @@ test("the list puts late measures first, then by deadline, and closed ones last"
     }),
     finding("soon", { followUp: measure("open", "2026-11-02") }),
     finding("later", { followUp: measure("inProgress", "2026-11-20") }),
-    finding("late-a", { followUp: measure("open", "2026-10-25") }),
+    finding("late-a", { followUp: measure("open", "2026-10-24") }),
     finding("late-b", { followUp: measure("inProgress", "2026-10-10") }),
     finding("none"),
   ];

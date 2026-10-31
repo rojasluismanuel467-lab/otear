@@ -6,6 +6,7 @@ import type { Finding, Site } from "@/features/demo/types";
 import { formatDate } from "@/lib/format";
 import {
   FOLLOW_UP_TODAY,
+  measuresText,
   dayText,
   dueText,
   followUpBadge,
@@ -13,6 +14,7 @@ import {
   summarizeFollowUps,
   type MeasureFilter,
 } from "../follow-up";
+import { agree } from "../finding-words";
 import { useFindingWords } from "../use-finding-words";
 import styles from "./follow-up.module.css";
 
@@ -40,7 +42,7 @@ export function MeasureBoard({
   const summary = summarizeFollowUps(findings, FOLLOW_UP_TODAY);
   const total = summary.active + summary.closed;
   const options: { id: MeasureFilter; label: string; count: number }[] = [
-    { id: "active", label: "Pendientes", count: summary.active },
+    { id: "active", label: "Abiertas y en corrección", count: summary.active },
     { id: "overdue", label: "Vencidas", count: summary.overdue },
     { id: "inProgress", label: "En corrección", count: summary.inProgress },
     { id: "closed", label: "Cerradas", count: summary.closed },
@@ -63,9 +65,13 @@ export function MeasureBoard({
             tiene un responsable y un plazo, y se cierra con una nota.
           </p>
         </div>
-        <ul className={styles.counts} aria-label="Resumen de las medidas">
+        <ul
+          className={styles.counts}
+          aria-label={`Resumen de las medidas. ${measuresText(summary)}`}
+        >
           <li>
-            <strong>{summary.open}</strong> abiertas
+            <strong>{summary.open}</strong>{" "}
+            {summary.open === 1 ? "abierta" : "abiertas"}
           </li>
           <li>
             <strong>{summary.inProgress}</strong> en corrección
@@ -75,7 +81,7 @@ export function MeasureBoard({
             {summary.closed === 1 ? "cerrada" : "cerradas"}
           </li>
           <li data-tone={summary.overdue ? "danger" : undefined}>
-            <strong>{summary.overdue}</strong>{" "}
+            de ellas, <strong>{summary.overdue}</strong>{" "}
             {summary.overdue === 1 ? "vencida" : "vencidas"}
           </li>
         </ul>
@@ -127,7 +133,7 @@ export function MeasureBoard({
       ) : (
         <p className={styles.empty}>
           {total === 0
-            ? `Aún no hay medidas. Abra una desde el detalle de ${words.the} ${words.singular}: responsable, plazo y nota de cierre.`
+            ? `Aún no hay medidas. Abra una desde el detalle ${agree(words, "del", "de la")} ${words.singular}: responsable, plazo y nota de cierre.`
             : "Ninguna medida coincide con este filtro."}
         </p>
       )}

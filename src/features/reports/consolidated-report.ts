@@ -5,6 +5,7 @@ import {
   dayText,
   followUpLine,
   measureList,
+  measuresText,
   summarizeFollowUps,
 } from "../flights/follow-up.ts";
 import { requestInPeriod, serviceDecisionLines } from "./decisions.ts";
@@ -150,7 +151,7 @@ export function buildConsolidatedReport(
     const m = summarizeFollowUps(siteFindings, today);
     lines.push(
       `SEGUIMIENTO DE MEDIDAS CORRECTIVAS (a ${dayText(today)}, día de la demostración)`,
-      `Abiertas: ${m.open} · en corrección: ${m.inProgress} · cerradas: ${m.closed} · vencidas: ${m.overdue}` +
+      `${measuresText(m)}` +
         (m.withoutMeasure
           ? ` · ${m.withoutMeasure} ${m.withoutMeasure === 1 ? fw.singular : fw.plural} ${confirmed(m.withoutMeasure)} sin responsable`
           : ""),
@@ -184,7 +185,7 @@ export function buildConsolidatedReport(
       lines.push(`  · ${date(flight.date)}: ${flight.log?.incidents}`);
     }
     lines.push(
-      `Uso de baterías: ${o.batteries.map((b) => `${b.id} (${b.flights} vuelos)`).join(", ") || "sin registro"}`,
+      `Uso de baterías: ${o.batteries.map((b) => `${b.id} (${b.flights} ${b.flights === 1 ? "vuelo" : "vuelos"})`).join(", ") || "sin registro"}`,
       "",
     );
   }

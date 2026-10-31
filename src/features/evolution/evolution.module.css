@@ -327,6 +327,12 @@
 .issueText .issueMeasure {
   font-weight: 650;
 }
+.issueText .issueKind {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
 .issueMeasure[data-tone="danger"] {
   color: var(--alert-danger-text);
 }

@@ -380,7 +380,7 @@ test("the consolidated report lists pending measures and the ones closed in the 
   assert.match(text, /SEGUIMIENTO DE MEDIDAS CORRECTIVAS/);
   assert.match(
     text,
-    /Abiertas: 1 · en corrección: 1 · cerradas: 1 · vencidas: 1/,
+    /3 medidas: 1 abierta, 1 en corrección, 1 cerrada · 1 vencida/,
   );
   assert.match(text, /- Drenaje .*Vencida \(en corrección\)/);
   // Closed on 18 September: outside October, so it is counted but not listed.

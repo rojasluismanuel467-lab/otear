@@ -19,18 +19,53 @@ export interface FindingWords {
 }
 
 const NOT_HEAD = new Set(["no", "el", "la", "un", "una", "los", "las"]);
-/** Nouns ending in -a that are masculine. */
-const MASCULINE_A = new Set(["día", "mapa", "problema", "programa", "sistema"]);
+/** Nouns ending in -a (mostly Greek -ma) that are masculine. */
+const MASCULINE_A = new Set([
+  "día",
+  "mapa",
+  "problema",
+  "programa",
+  "sistema",
+  "tema",
+  "esquema",
+  "síntoma",
+  "diagrama",
+  "dilema",
+  "clima",
+  "planeta",
+]);
+/** Feminine nouns the endings do not reveal. */
+const FEMININE_OTHER = new Set([
+  "imagen",
+  "señal",
+  "luz",
+  "crisis",
+  "mano",
+  "foto",
+  "moto",
+  "cruz",
+  "red",
+]);
+/** Nouns in -ión that are masculine. */
+const MASCULINE_ION = new Set(["avión", "camión", "gorrión", "sarampión"]);
+/** Feminine endings: -ción, -sión, -xión, -gión, -dad, -tad, -tud, -umbre, -ez, -ie. */
+const FEMININE_ENDING =
+  /(ci[oó]n|si[oó]n|xi[oó]n|gi[oó]n|dad|tad|tud|umbre|ez|ie)$/;
 
 const capitalise = (text: string) =>
   text.charAt(0).toUpperCase() + text.slice(1);
 
-/** Whether the noun that heads a phrase is feminine («no conformidad», «novedad de campo»). */
+/**
+ * Whether the noun that heads a term is feminine («no conformidad», «observación», «novedad de
+ * talud»). The gender is decided by the word, never by the sentence it sits in: a sentence
+ * written for «hallazgo» says «un», and the term that replaces it brings its own article.
+ */
 export function isFeminine(phrase: string): boolean {
   const words = phrase.toLocaleLowerCase("es-CO").trim().split(/\s+/);
   const head = words.find((word) => !NOT_HEAD.has(word)) ?? "";
-  if (MASCULINE_A.has(head)) return false;
-  return /(ci[oó]n|si[oó]n|dad|tad|tud|umbre|ie|a)$/.test(head);
+  if (MASCULINE_A.has(head) || MASCULINE_ION.has(head)) return false;
+  if (FEMININE_OTHER.has(head)) return true;
+  return FEMININE_ENDING.test(head) || head.endsWith("a");
 }
 
 export function findingWords(singular: string, plural: string): FindingWords {
