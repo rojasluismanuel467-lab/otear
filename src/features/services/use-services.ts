@@ -23,6 +23,8 @@ export type ActionInput =
       note: string;
       durationMin?: number;
       photoCount?: number;
+      /** The aircraft that really flew it, when the operator picks one. */
+      aircraftId?: string;
     }
   | ({ id: "reply" } & workflow.ReplyInput)
   | { id: "verify"; result: "accepted" | "disputed"; note: string }
@@ -138,8 +140,15 @@ export function useServices() {
         const result = workflow.deliver(request, input, ctx);
         if (result.ok && request.flightId) {
           const flight = flights.find((item) => item.id === request.flightId);
+          // The operator says which aircraft flew; its hours land there, not on the suggested one.
+          const flown = input.aircraftId
+            ? aircraft.find((item) => item.id === input.aircraftId)
+            : undefined;
           updateFlight(request.flightId, {
             status: "completed",
+            ...(flown
+              ? { aircraftId: flown.id, drone: `${flown.make} ${flown.model}` }
+              : {}),
             ...(input.durationMin ? { duration: input.durationMin } : {}),
             ...(input.photoCount ? { photoCount: input.photoCount } : {}),
             date: flight && flight.date > DEMO_DATE ? DEMO_DATE : flight?.date,

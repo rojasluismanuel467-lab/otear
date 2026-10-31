@@ -9,6 +9,7 @@ import { Button } from "@heroui/react";
 import { ArrowUpRight, Download, FileText, Printer } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
+import { OperatorScopeNote } from "@/components/ui/operator-scope-note";
 import { SectionTabs } from "@/components/ui/section-tabs";
 import { useDemo } from "@/features/demo/demo-context";
 import { DEMO_DATE } from "@/features/demo/demo-data";
@@ -210,6 +211,7 @@ function ReportsContent() {
         title={moduleTitle}
         description={`Todos los vuelos de ${site.name} en un solo lugar: qué pasó, qué se repite y qué falta. Los nombres, las cifras y las facturas son de ejemplo.`}
       />
+      <OperatorScopeNote subject="las cifras, los costos y las facturas" />
       <section className="surface master-detail">
         <aside
           className="rail-panel master-rail"
@@ -248,8 +250,12 @@ function ReportsContent() {
                     </span>
                   </h2>
                   <p>
-                    {selected.duration} min · {number(selected.distance)} km ·{" "}
-                    {selected.photoCount} fotos · {selectedPoint?.findings ?? 0}{" "}
+                    {selected.duration} min ·{" "}
+                    {selected.distance > 0
+                      ? `${number(selected.distance)} km`
+                      : "km sin registrar"}{" "}
+                    · {selected.photoCount} fotos ·{" "}
+                    {selectedPoint?.findings ?? 0}{" "}
                     {selectedPoint?.findings === 1
                       ? findingWord.singular
                       : findingWord.plural}
@@ -299,7 +305,11 @@ function ReportsContent() {
                 </dl>
               ) : (
                 <p className={styles.muted}>
-                  Este vuelo no tiene bitácora. Regístrela desde Programación.
+                  {serviceRequests.some(
+                    (request) => request.flightId === selected.id,
+                  )
+                    ? "Este vuelo se entregó desde Servicios. La bitácora detallada (clima, baterías) es opcional y se registra desde Programación."
+                    : "Este vuelo no tiene bitácora. Regístrela desde Programación."}
                 </p>
               )}
             </section>

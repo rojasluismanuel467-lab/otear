@@ -148,7 +148,7 @@ export function RequestDetail({
   /** Called after a step succeeds, so the list keeps this request selected. */
   onActed?: () => void;
 }) {
-  const { site, flights, selectFlight, setNotice } = useDemo();
+  const { site, flights, aircraft, selectFlight, setNotice } = useDemo();
   const router = useRouter();
   const t = useTerm();
   const { actor, nameOf, act } = useServices();
@@ -291,6 +291,21 @@ export function RequestDetail({
             orderedHa={ordered}
             actorId={actor.id}
             flightDate={flightDate}
+            aircraftId={requestFlight?.aircraftId}
+            aircraftOptions={
+              requestFlight
+                ? aircraft
+                    .filter(
+                      (item) =>
+                        item.status === "active" ||
+                        item.id === requestFlight.aircraftId,
+                    )
+                    .map((item) => ({
+                      id: item.id,
+                      label: `${item.make} ${item.model} · ${item.name}`,
+                    }))
+                : undefined
+            }
             onSubmit={run}
             onCancel={() => setOpenAction(null)}
           />

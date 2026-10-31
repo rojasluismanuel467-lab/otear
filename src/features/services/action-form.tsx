@@ -28,6 +28,8 @@ export function ActionForm({
   orderedHa,
   flightDate,
   actorId,
+  aircraftOptions,
+  aircraftId,
   onSubmit,
   onCancel,
 }: {
@@ -38,6 +40,10 @@ export function ActionForm({
   orderedHa: number;
   /** Date of the flight this service scheduled, to warn when it has not happened yet. */
   flightDate?: string;
+  /** Aircraft of the example fleet the operator can say flew it (only when the service has a flight). */
+  aircraftOptions?: { id: string; label: string }[];
+  /** The aircraft the flight already carries, offered first. */
+  aircraftId?: string;
   onSubmit: (input: ActionInput) => string | undefined;
   onCancel: () => void;
 }) {
@@ -102,6 +108,7 @@ export function ActionForm({
           note: read("note"),
           durationMin: optional(read("durationMin")),
           photoCount: optional(read("photoCount")),
+          aircraftId: read("aircraftId") || undefined,
         };
         break;
       case "reply": {
@@ -354,6 +361,27 @@ export function ActionForm({
               />
             </label>
           </div>
+          {aircraftOptions && aircraftOptions.length > 0 && (
+            <label className="form-field">
+              <span className="field-label">¿Con qué aeronave voló?</span>
+              <select
+                className="field-select"
+                name="aircraftId"
+                defaultValue={aircraftId ?? ""}
+              >
+                {!aircraftId && <option value="">Sin indicar</option>}
+                {aircraftOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <span className="text-muted">
+                Las horas del vuelo se suman a esa aeronave en Equipos. Los
+                ciclos de las baterías no se piden aquí.
+              </span>
+            </label>
+          )}
           <label className="form-field">
             <span className="field-label">Observaciones (opcional)</span>
             <input className="field-input" name="note" maxLength={300} />

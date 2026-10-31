@@ -324,7 +324,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Modal.Container size="lg">
             <Modal.Dialog>
               <Modal.Header>
-                <Modal.Heading>Buscar en tus vuelos</Modal.Heading>
+                <Modal.Heading>Buscar entre sus vuelos</Modal.Heading>
                 <Modal.CloseTrigger>
                   <X size={20} />
                 </Modal.CloseTrigger>

@@ -374,7 +374,7 @@ export default function MapCanvas({
       )}
       {editable && (
         <div className="map-edit-controls">
-          <span>Haz clic para añadir un punto</span>
+          <span>Haga clic para añadir un punto</span>
           <button
             type="button"
             onClick={() => {
