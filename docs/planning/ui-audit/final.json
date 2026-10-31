@@ -1,0 +1,2659 @@
+{
+ "meta": {
+  "label": "final",
+  "date": "2026-10-31 16:59",
+  "commit": "dfa8079 (+cambios sin confirmar)",
+  "browser": "Chrome/155.0.8059.12",
+  "source": "out/ (local)",
+  "routes": [
+   "/",
+   "/programacion/",
+   "/vuelos/",
+   "/evolucion/",
+   "/servicios/",
+   "/pagos/",
+   "/informes/",
+   "/documentos/"
+  ],
+  "viewports": [
+   "desktop",
+   "mobile"
+  ],
+  "lhRuns": 3
+ },
+ "results": [
+  {
+   "route": "/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 525,
+    "pageHeight": 8699,
+    "backdropFilters": 1,
+    "filters": 4,
+    "willChange": 1,
+    "mixBlend": 3,
+    "manyShadows": 0,
+    "fixedLayers": 9,
+    "canvases": 1,
+    "webglCanvases": 1,
+    "cssAnimationsRunning": 20,
+    "images": 2,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 27
+   },
+   "title": "Otear — Información aérea de su proyecto, en un solo lugar",
+   "frames": {
+    "idle": {
+     "frames": 38,
+     "fps": 18.677807815184583,
+     "p50": 50,
+     "p95": 66.60000000000036,
+     "max": 66.69999999999891,
+     "jank": 38,
+     "scrolledPx": 7000
+    },
+    "scroll": {
+     "frames": 107,
+     "fps": 20.15521398433215,
+     "p50": 50,
+     "p95": 83.40000000000146,
+     "max": 233.29999999999927,
+     "jank": 66,
+     "scrolledPx": 7000
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 147
+   },
+   "screenshot": "final/capturas/inicio-desktop.jpg",
+   "lcpCandidates": [
+    {
+     "t": 636,
+     "size": 156927,
+     "el": "h1.MkS3jW_title"
+    }
+   ],
+   "lcpObserved": {
+    "t": 636,
+    "size": 156927,
+    "el": "h1.MkS3jW_title"
+   },
+   "cls": 0.20629301476131678,
+   "longTasks": {
+    "count": 4,
+    "totalMs": 4429,
+    "maxMs": 3304
+   },
+   "inpProxyMs": 216,
+   "interactionsTried": 1,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.63,
+    "accessibility": 0.96,
+    "bestPractices": 1,
+    "fcpMs": 361.69259999999997,
+    "lcpMs": 1522.2568,
+    "cls": 0.0002043033889187735,
+    "tbtMs": 1944.3969,
+    "siMs": 1357.7867833618127,
+    "mainThreadMs": 4067.0640000000817,
+    "bootupMs": 3343.1020000000635,
+    "domSize": 488,
+    "jsKbTransfer": 501.978515625,
+    "cssKbTransfer": 77.7197265625,
+    "imgKbTransfer": 1026.693359375,
+    "fontKbTransfer": 76.56640625,
+    "totalKbTransfer": 1749.71484375,
+    "requests": 46,
+    "unusedJsKb": 142.609375,
+    "lcpElement": "<h1 class=\"MkS3jW_title\">",
+    "a11yFailing": [
+     "color-contrast"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 40,
+      "kb": 143
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 56
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 40,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 820,
+    "pageHeight": 2635,
+    "backdropFilters": 3,
+    "filters": 3,
+    "willChange": 1,
+    "mixBlend": 34,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 1,
+    "images": 33,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 7
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.215764331188225,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1735
+    },
+    "scroll": {
+     "frames": 13,
+     "fps": 6.20110665903123,
+     "p50": 33.30000000000018,
+     "p95": 916.5999999999995,
+     "max": 916.5999999999995,
+     "jank": 5,
+     "scrolledPx": 1735
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 1
+   },
+   "screenshot": "final/capturas/programacion-desktop.jpg",
+   "lcpCandidates": [
+    {
+     "t": 796,
+     "size": 21899,
+     "el": "p._6NP6Jq_bannerHint"
+    },
+    {
+     "t": 1404,
+     "size": 48400,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 2000,
+     "size": 159159,
+     "el": "aside.CWmW1q_rail"
+    }
+   ],
+   "lcpObserved": {
+    "t": 2000,
+    "size": 159159,
+    "el": "aside.CWmW1q_rail"
+   },
+   "cls": 0.004476123654172168,
+   "longTasks": {
+    "count": 3,
+    "totalMs": 939,
+    "maxMs": 402
+   },
+   "inpProxyMs": 208,
+   "interactionsTried": 4,
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "failedRequests": [
+    "404 http://127.0.0.1:3470/models/dji/mavic-3-enterprise.glb"
+   ],
+   "lighthouse": {
+    "performance": 0.77,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 366.58765,
+    "lcpMs": 1710.6847749999997,
+    "cls": 0,
+    "tbtMs": 372.9999999999999,
+    "siMs": 991.3547337825623,
+    "mainThreadMs": 1347.9449999999517,
+    "bootupMs": 666.1449999999758,
+    "domSize": 758,
+    "jsKbTransfer": 759.6513671875,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 651.23828125,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1609.5068359375,
+    "requests": 121,
+    "unusedJsKb": 198.02734375,
+    "lcpElement": "<aside class=\"CWmW1q_rail\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "uses-rel-preconnect",
+      "ms": 124,
+      "kb": 0
+     },
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 0,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 160,
+      "kb": 198
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 55
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 525,
+    "pageHeight": 1641,
+    "backdropFilters": 2,
+    "filters": 3,
+    "willChange": 1,
+    "mixBlend": 26,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 2,
+    "images": 25,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 4
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.880239520958085,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 741
+    },
+    "scroll": {
+     "frames": 47,
+     "fps": 56.64698083654863,
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "max": 33.30000000000018,
+     "jank": 0,
+     "scrolledPx": 741
+    }
+   },
+   "axe": {
+    "violations": [
+     {
+      "id": "target-size",
+      "impact": "serious",
+      "help": "All touch targets must be 24px large, or leave sufficient space",
+      "nodes": 1,
+      "samples": [
+       {
+        "target": "div[title=\"Seguimiento de resiembra\"]",
+        "summary": "Target has insufficient size because it is partially obscured (smallest space is 22px by 34px, should be at least 24px by 24px)"
+       }
+      ]
+     }
+    ],
+    "incompleteContrast": 1
+   },
+   "screenshot": "final/capturas/vuelos-desktop.jpg",
+   "lcpCandidates": [
+    {
+     "t": 656,
+     "size": 205842,
+     "el": "aside.u_w20G_rail"
+    }
+   ],
+   "lcpObserved": {
+    "t": 656,
+    "size": 205842,
+    "el": "aside.u_w20G_rail"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 3,
+    "totalMs": 443,
+    "maxMs": 267
+   },
+   "inpProxyMs": 208,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.84,
+    "accessibility": 0.97,
+    "bestPractices": 1,
+    "fcpMs": 361.96420000000006,
+    "lcpMs": 864.1220999999999,
+    "cls": 0,
+    "tbtMs": 333.9999999999998,
+    "siMs": 1058.32998822659,
+    "mainThreadMs": 1244.9599999999627,
+    "bootupMs": 658.5909999999722,
+    "domSize": 463,
+    "jsKbTransfer": 757.3564453125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 693.203125,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1644.8212890625,
+    "requests": 112,
+    "unusedJsKb": 197.1142578125,
+    "lcpElement": "<aside class=\"u_w20G_rail\">",
+    "a11yFailing": [
+     "target-size"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 0,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 40,
+      "kb": 197
+     },
+     {
+      "id": "modern-image-formats",
+      "ms": 0,
+      "kb": 77
+     },
+     {
+      "id": "uses-optimized-images",
+      "ms": 0,
+      "kb": 58
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/evolucion/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 544,
+    "pageHeight": 1603,
+    "backdropFilters": 2,
+    "filters": 2,
+    "willChange": 1,
+    "mixBlend": 26,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 25,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 4
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.348660914645535,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 703
+    },
+    "scroll": {
+     "frames": 44,
+     "fps": 54.12054120541206,
+     "p50": 16.699999999999818,
+     "p95": 33.30000000000018,
+     "max": 33.30000000000018,
+     "jank": 0,
+     "scrolledPx": 703
+    }
+   },
+   "axe": {
+    "violations": [
+     {
+      "id": "target-size",
+      "impact": "serious",
+      "help": "All touch targets must be 24px large, or leave sufficient space",
+      "nodes": 1,
+      "samples": [
+       {
+        "target": "div[title=\"Seguimiento de resiembra\"]",
+        "summary": "Target has insufficient size because it is partially obscured (smallest space is 22px by 44px, should be at least 24px by 24px)"
+       }
+      ]
+     }
+    ],
+    "incompleteContrast": 1
+   },
+   "screenshot": "final/capturas/evolucion-desktop.jpg",
+   "lcpCandidates": [
+    {
+     "t": 764,
+     "size": 48400,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 896,
+     "size": 65536,
+     "el": "img.leaflet-tile"
+    }
+   ],
+   "lcpObserved": {
+    "t": 896,
+    "size": 65536,
+    "el": "img.leaflet-tile"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 202,
+    "maxMs": 202
+   },
+   "inpProxyMs": 112,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.72,
+    "accessibility": 0.97,
+    "bestPractices": 1,
+    "fcpMs": 362.4747000000001,
+    "lcpMs": 2164.0484000000015,
+    "cls": 0,
+    "tbtMs": 379.0000000000002,
+    "siMs": 918.1197786934449,
+    "mainThreadMs": 1036.390999999981,
+    "bootupMs": 656.6849999999868,
+    "domSize": 484,
+    "jsKbTransfer": 662.767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 679.0009765625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1538.4814453125,
+    "requests": 111,
+    "unusedJsKb": 163.6806640625,
+    "lcpElement": "<img alt=\"\" src=\"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServ…\" class=\"leaflet-tile leafle",
+    "a11yFailing": [
+     "target-size"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 271,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 0,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 80,
+      "kb": 164
+     },
+     {
+      "id": "modern-image-formats",
+      "ms": 0,
+      "kb": 77
+     },
+     {
+      "id": "uses-optimized-images",
+      "ms": 0,
+      "kb": 58
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/servicios/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 482,
+    "pageHeight": 2727,
+    "backdropFilters": 2,
+    "filters": 2,
+    "willChange": 0,
+    "mixBlend": 2,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 1,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 8
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.54153021730457,
+     "p50": 16.699999999999818,
+     "p95": 16.800000000000182,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1827
+    },
+    "scroll": {
+     "frames": 85,
+     "fps": 52.700105400174294,
+     "p50": 16.699999999999818,
+     "p95": 33.29999999999927,
+     "max": 66.60000000000036,
+     "jank": 4,
+     "scrolledPx": 1827
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 28
+   },
+   "screenshot": "final/capturas/servicios-desktop.jpg",
+   "lcpCandidates": [
+    {
+     "t": 268,
+     "size": 27224,
+     "el": "p"
+    },
+    {
+     "t": 732,
+     "size": 48400,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 1232,
+     "size": 209586,
+     "el": "aside.rail-panel"
+    }
+   ],
+   "lcpObserved": {
+    "t": 1232,
+    "size": 209586,
+    "el": "aside.rail-panel"
+   },
+   "cls": 0.0024373364834466235,
+   "longTasks": {
+    "count": 2,
+    "totalMs": 374,
+    "maxMs": 320
+   },
+   "inpProxyMs": 240,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.75,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 361.27395,
+    "lcpMs": 1861.6985999999995,
+    "cls": 0,
+    "tbtMs": 384.9999999999998,
+    "siMs": 584.870526797428,
+    "mainThreadMs": 1001.8219999999826,
+    "bootupMs": 557.9689999999903,
+    "domSize": 423,
+    "jsKbTransfer": 617.1767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 518.8369140625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1333.0888671875,
+    "requests": 85,
+    "unusedJsKb": 144.7880859375,
+    "lcpElement": "<aside class=\"rail-panel master-rail\" aria-label=\"Solicitudes\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 201,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 160,
+      "kb": 145
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 55
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 40,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/pagos/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 490,
+    "pageHeight": 2525,
+    "backdropFilters": 3,
+    "filters": 3,
+    "willChange": 0,
+    "mixBlend": 2,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 1,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 7
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.313163534909236,
+     "p50": 16.699999999999818,
+     "p95": 16.800000000000182,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1625
+    },
+    "scroll": {
+     "frames": 77,
+     "fps": 52.66397647221095,
+     "p50": 16.699999999999818,
+     "p95": 33.30000000000018,
+     "max": 33.400000000000546,
+     "jank": 1,
+     "scrolledPx": 1625
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 50
+   },
+   "screenshot": "final/capturas/pagos-desktop.jpg",
+   "lcpCandidates": [
+    {
+     "t": 716,
+     "size": 48400,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 1176,
+     "size": 247858,
+     "el": "aside.rail-panel"
+    }
+   ],
+   "lcpObserved": {
+    "t": 1176,
+    "size": 247858,
+    "el": "aside.rail-panel"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 2,
+    "totalMs": 230,
+    "maxMs": 179
+   },
+   "inpProxyMs": 280,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.73,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 361.64085000000006,
+    "lcpMs": 1862.1878,
+    "cls": 0,
+    "tbtMs": 429,
+    "siMs": 704.0615137659711,
+    "mainThreadMs": 956.0929999999823,
+    "bootupMs": 590.8859999999885,
+    "domSize": 431,
+    "jsKbTransfer": 617.1767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 518.8369140625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1332.98828125,
+    "requests": 86,
+    "unusedJsKb": 144.234375,
+    "lcpElement": "<aside class=\"rail-panel master-rail\" aria-labelledby=\"invoice-list-heading\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 201,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 40,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 120,
+      "kb": 144
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 55
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 40,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/informes/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 404,
+    "pageHeight": 1779,
+    "backdropFilters": 2,
+    "filters": 2,
+    "willChange": 0,
+    "mixBlend": 2,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 2,
+    "images": 1,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 6
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.52971524953973,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000273,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 879
+    },
+    "scroll": {
+     "frames": 54,
+     "fps": 58.08950086063178,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 879
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 37
+   },
+   "screenshot": "final/capturas/informes-desktop.jpg",
+   "lcpCandidates": [
+    {
+     "t": 292,
+     "size": 48400,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 5828,
+     "size": 240137,
+     "el": "aside.rail-panel"
+    }
+   ],
+   "lcpObserved": {
+    "t": 5828,
+    "size": 240137,
+    "el": "aside.rail-panel"
+   },
+   "cls": 0.05452316841084324,
+   "longTasks": {
+    "count": 2,
+    "totalMs": 385,
+    "maxMs": 328
+   },
+   "inpProxyMs": 192,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.86,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 366.16819999999996,
+    "lcpMs": 762.00445,
+    "cls": 0.05452316841084324,
+    "tbtMs": 301.28634999999963,
+    "siMs": 715.6276388880167,
+    "mainThreadMs": 887.6529999999743,
+    "bootupMs": 536.1099999999828,
+    "domSize": 345,
+    "jsKbTransfer": 617.1767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 518.8369140625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1329.455078125,
+    "requests": 85,
+    "unusedJsKb": 97.1318359375,
+    "lcpElement": "<header class=\"app-topbar\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 40,
+      "kb": 18
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 40,
+      "kb": 97
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 55
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 40,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/documentos/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 433,
+    "pageHeight": 1909,
+    "backdropFilters": 2,
+    "filters": 3,
+    "willChange": 0,
+    "mixBlend": 2,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 1,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 6
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.40198672194199,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000273,
+     "max": 16.799999999999727,
+     "jank": 0,
+     "scrolledPx": 1009
+    },
+    "scroll": {
+     "frames": 60,
+     "fps": 58.27505827512152,
+     "p50": 16.699999999999818,
+     "p95": 16.800000000000182,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1009
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 38
+   },
+   "screenshot": "final/capturas/documentos-desktop.jpg",
+   "lcpCandidates": [
+    {
+     "t": 336,
+     "size": 11880,
+     "el": "p"
+    },
+    {
+     "t": 712,
+     "size": 48400,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 1220,
+     "size": 161832,
+     "el": "aside.rail-panel"
+    }
+   ],
+   "lcpObserved": {
+    "t": 1220,
+    "size": 161832,
+    "el": "aside.rail-panel"
+   },
+   "cls": 0.0004637442200379263,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 318,
+    "maxMs": 318
+   },
+   "inpProxyMs": 104,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.75,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 363.00870000000003,
+    "lcpMs": 1864.0115999999991,
+    "cls": 0,
+    "tbtMs": 383.0000000000007,
+    "siMs": 723.6381145118903,
+    "mainThreadMs": 1070.9949999999812,
+    "bootupMs": 641.4779999999887,
+    "domSize": 374,
+    "jsKbTransfer": 617.1767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 518.8369140625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1332.7001953125,
+    "requests": 86,
+    "unusedJsKb": 144.2001953125,
+    "lcpElement": "<aside class=\"rail-panel master-rail\" aria-label=\"Inventario documental\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 201,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 40,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 120,
+      "kb": 144
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 55
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 40,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 525,
+    "pageHeight": 13892,
+    "backdropFilters": 1,
+    "filters": 4,
+    "willChange": 1,
+    "mixBlend": 3,
+    "manyShadows": 0,
+    "fixedLayers": 9,
+    "canvases": 1,
+    "webglCanvases": 1,
+    "cssAnimationsRunning": 20,
+    "images": 2,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 27
+   },
+   "title": "Otear — Información aérea de su proyecto, en un solo lugar",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.41681645696028,
+     "p50": 16.69999999999891,
+     "p95": 16.799999999999272,
+     "max": 16.80000000000109,
+     "jank": 0,
+     "scrolledPx": 7000
+    },
+    "scroll": {
+     "frames": 268,
+     "fps": 50.48126730583074,
+     "p50": 16.69999999999891,
+     "p95": 16.799999999999272,
+     "max": 266.6999999999989,
+     "jank": 7,
+     "scrolledPx": 7000
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 147
+   },
+   "screenshot": "final/capturas/inicio-mobile.jpg",
+   "lcpCandidates": [
+    {
+     "t": 500,
+     "size": 40826,
+     "el": "h1.MkS3jW_title"
+    }
+   ],
+   "lcpObserved": {
+    "t": 500,
+    "size": 40826,
+    "el": "h1.MkS3jW_title"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 5,
+    "totalMs": 2471,
+    "maxMs": 1681
+   },
+   "inpProxyMs": 160,
+   "interactionsTried": 1,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.45,
+    "accessibility": 0.96,
+    "bestPractices": 1,
+    "fcpMs": 1651.4543999999999,
+    "lcpMs": 8110.939200000002,
+    "cls": 0.08865565331744914,
+    "tbtMs": 2352.755849999999,
+    "siMs": 2400.9136117775797,
+    "mainThreadMs": 8801.487999999925,
+    "bootupMs": 7325.023999999932,
+    "domSize": 488,
+    "jsKbTransfer": 501.978515625,
+    "cssKbTransfer": 77.7197265625,
+    "imgKbTransfer": 1026.693359375,
+    "fontKbTransfer": 76.56640625,
+    "totalKbTransfer": 1749.71484375,
+    "requests": 46,
+    "unusedJsKb": 142.68359375,
+    "lcpElement": "<h1 class=\"MkS3jW_title\">",
+    "a11yFailing": [
+     "color-contrast"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 140,
+      "kb": 143
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 49
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 150,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 806,
+    "pageHeight": 4048,
+    "backdropFilters": 3,
+    "filters": 3,
+    "willChange": 1,
+    "mixBlend": 20,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 1,
+    "images": 19,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 7
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.177482719158526,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 3204
+    },
+    "scroll": {
+     "frames": 121,
+     "fps": 46.308699146528944,
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "max": 583.3000000000002,
+     "jank": 1,
+     "scrolledPx": 3204
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 1
+   },
+   "screenshot": "final/capturas/programacion-mobile.jpg",
+   "lcpCandidates": [
+    {
+     "t": 420,
+     "size": 20088,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 728,
+     "size": 85831,
+     "el": "aside.CWmW1q_rail"
+    }
+   ],
+   "lcpObserved": {
+    "t": 728,
+    "size": 85831,
+    "el": "aside.CWmW1q_rail"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 4,
+    "totalMs": 934,
+    "maxMs": 387
+   },
+   "inpProxyMs": 584,
+   "interactionsTried": 4,
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "failedRequests": [
+    "404 http://127.0.0.1:3470/models/dji/mavic-3-enterprise.glb"
+   ],
+   "lighthouse": {
+    "performance": 0.51,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 1502.69115,
+    "lcpMs": 6808.382299999999,
+    "cls": 0,
+    "tbtMs": 1408.4999999999982,
+    "siMs": 2176.7583784272,
+    "mainThreadMs": 3987.623999999875,
+    "bootupMs": 2272.787999999927,
+    "domSize": 744,
+    "jsKbTransfer": 759.6513671875,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 643.0400390625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1601.30859375,
+    "requests": 107,
+    "unusedJsKb": 198.4853515625,
+    "lcpElement": "<aside class=\"CWmW1q_rail\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 150,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 150,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 1050,
+      "kb": 198
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 45
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 150,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 519,
+    "pageHeight": 2521,
+    "backdropFilters": 2,
+    "filters": 3,
+    "willChange": 1,
+    "mixBlend": 20,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 2,
+    "images": 19,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 4
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.547439460070194,
+     "p50": 16.699999999999818,
+     "p95": 16.800000000000182,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1677
+    },
+    "scroll": {
+     "frames": 89,
+     "fps": 58.80021141650496,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1677
+    }
+   },
+   "axe": {
+    "violations": [
+     {
+      "id": "target-size",
+      "impact": "serious",
+      "help": "All touch targets must be 24px large, or leave sufficient space",
+      "nodes": 1,
+      "samples": [
+       {
+        "target": "div[title=\"Seguimiento de resiembra\"]",
+        "summary": "Target has insufficient size because it is partially obscured (smallest space is 11px by 34px, should be at least 24px by 24px)"
+       }
+      ]
+     }
+    ],
+    "incompleteContrast": 1
+   },
+   "screenshot": "final/capturas/vuelos-mobile.jpg",
+   "lcpCandidates": [
+    {
+     "t": 96,
+     "size": 24696,
+     "el": "span"
+    },
+    {
+     "t": 268,
+     "size": 87480,
+     "el": "aside.u_w20G_rail"
+    }
+   ],
+   "lcpObserved": {
+    "t": 268,
+    "size": 87480,
+    "el": "aside.u_w20G_rail"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 2,
+    "totalMs": 363,
+    "maxMs": 265
+   },
+   "inpProxyMs": 328,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.51,
+    "accessibility": 0.97,
+    "bestPractices": 0.96,
+    "fcpMs": 1502.3928500000002,
+    "lcpMs": 6233.3760999999995,
+    "cls": 0.01071654045857933,
+    "tbtMs": 1664.499999999999,
+    "siMs": 2075.6576086078417,
+    "mainThreadMs": 4282.599999999871,
+    "bootupMs": 2587.547999999925,
+    "domSize": 457,
+    "jsKbTransfer": 757.3564453125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 628.837890625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1580.4560546875,
+    "requests": 106,
+    "unusedJsKb": 197.09765625,
+    "lcpElement": "<aside class=\"u_w20G_rail\">",
+    "a11yFailing": [
+     "target-size"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 451,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 0,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 150,
+      "kb": 197
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 45
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 0,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/evolucion/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 537,
+    "pageHeight": 2912,
+    "backdropFilters": 2,
+    "filters": 2,
+    "willChange": 1,
+    "mixBlend": 20,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 19,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 4
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.26885147922001,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 2068
+    },
+    "scroll": {
+     "frames": 105,
+     "fps": 58.98876404491913,
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 2068
+    }
+   },
+   "axe": {
+    "violations": [
+     {
+      "id": "target-size",
+      "impact": "serious",
+      "help": "All touch targets must be 24px large, or leave sufficient space",
+      "nodes": 1,
+      "samples": [
+       {
+        "target": "div[title=\"Seguimiento de resiembra\"]",
+        "summary": "Target has insufficient size because it is partially obscured (smallest space is 11px by 44px, should be at least 24px by 24px)"
+       }
+      ]
+     }
+    ],
+    "incompleteContrast": 1
+   },
+   "screenshot": "final/capturas/evolucion-mobile.jpg",
+   "lcpCandidates": [
+    {
+     "t": 100,
+     "size": 18328,
+     "el": "p"
+    },
+    {
+     "t": 264,
+     "size": 20088,
+     "el": "header.app-topbar"
+    }
+   ],
+   "lcpObserved": {
+    "t": 264,
+    "size": 20088,
+    "el": "header.app-topbar"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 265,
+    "maxMs": 265
+   },
+   "inpProxyMs": 64,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.53,
+    "accessibility": 0.97,
+    "bestPractices": 0.96,
+    "fcpMs": 1501.5176000000001,
+    "lcpMs": 5853.0358000000015,
+    "cls": 0.002031884693999202,
+    "tbtMs": 1445.5000000000018,
+    "siMs": 2283.7348700572256,
+    "mainThreadMs": 3402.807999999919,
+    "bootupMs": 2258.867999999946,
+    "domSize": 477,
+    "jsKbTransfer": 662.767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 614.6357421875,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1474.1162109375,
+    "requests": 105,
+    "unusedJsKb": 164.0947265625,
+    "lcpElement": "<header class=\"app-topbar\">",
+    "a11yFailing": [
+     "target-size"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 600,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 150,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 300,
+      "kb": 164
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 45
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 150,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/servicios/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 482,
+    "pageHeight": 4453,
+    "backdropFilters": 2,
+    "filters": 2,
+    "willChange": 0,
+    "mixBlend": 2,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 1,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 8
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.52380952382054,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000273,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 3609
+    },
+    "scroll": {
+     "frames": 171,
+     "fps": 59.38943493211691,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 3609
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 6
+   },
+   "screenshot": "final/capturas/servicios-mobile.jpg",
+   "lcpCandidates": [
+    {
+     "t": 276,
+     "size": 20272,
+     "el": "p"
+    },
+    {
+     "t": 600,
+     "size": 140334,
+     "el": "aside.rail-panel"
+    }
+   ],
+   "lcpObserved": {
+    "t": 600,
+    "size": 140334,
+    "el": "aside.rail-panel"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 270,
+    "maxMs": 270
+   },
+   "inpProxyMs": 152,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.49,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 1501.5960000000002,
+    "lcpMs": 9676.596,
+    "cls": 0.006321822199722517,
+    "tbtMs": 1395.0000000000005,
+    "siMs": 1501.5960000000002,
+    "mainThreadMs": 2959.175999999947,
+    "bootupMs": 2009.1079999999627,
+    "domSize": 423,
+    "jsKbTransfer": 617.1767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 518.8369140625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1333.0888671875,
+    "requests": 85,
+    "unusedJsKb": 144.7880859375,
+    "lcpElement": "<aside class=\"rail-panel master-rail\" aria-label=\"Solicitudes\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 1051,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 750,
+      "kb": 145
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 45
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 0,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/pagos/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 490,
+    "pageHeight": 4686,
+    "backdropFilters": 3,
+    "filters": 3,
+    "willChange": 0,
+    "mixBlend": 2,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 1,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 7
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.52971524952872,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000273,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 3842
+    },
+    "scroll": {
+     "frames": 177,
+     "fps": 58.08801811557821,
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "max": 50,
+     "jank": 1,
+     "scrolledPx": 3842
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 28
+   },
+   "screenshot": "final/capturas/pagos-mobile.jpg",
+   "lcpCandidates": [
+    {
+     "t": 376,
+     "size": 20088,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 752,
+     "size": 225382,
+     "el": "aside.rail-panel"
+    }
+   ],
+   "lcpObserved": {
+    "t": 752,
+    "size": 225382,
+    "el": "aside.rail-panel"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 293,
+    "maxMs": 293
+   },
+   "inpProxyMs": 72,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.49,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 1501.5601499999998,
+    "lcpMs": 9601.729199999998,
+    "cls": 0,
+    "tbtMs": 1483.0000000000005,
+    "siMs": 1501.5601499999998,
+    "mainThreadMs": 2960.7559999999407,
+    "bootupMs": 1933.2479999999578,
+    "domSize": 431,
+    "jsKbTransfer": 617.1767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 518.8369140625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1332.98828125,
+    "requests": 86,
+    "unusedJsKb": 144.234375,
+    "lcpElement": "<aside class=\"rail-panel master-rail\" aria-labelledby=\"invoice-list-heading\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 1051,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 0,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 600,
+      "kb": 144
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 45
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 0,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/informes/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 404,
+    "pageHeight": 2589,
+    "backdropFilters": 2,
+    "filters": 2,
+    "willChange": 0,
+    "mixBlend": 2,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 2,
+    "images": 1,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 6
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.59475566153486,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1745
+    },
+    "scroll": {
+     "frames": 91,
+     "fps": 58.83874304931187,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1745
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 15
+   },
+   "screenshot": "final/capturas/informes-mobile.jpg",
+   "lcpCandidates": [
+    {
+     "t": 232,
+     "size": 20088,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 6252,
+     "size": 89510,
+     "el": "aside.rail-panel"
+    }
+   ],
+   "lcpObserved": {
+    "t": 6252,
+    "size": 89510,
+    "el": "aside.rail-panel"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 250,
+    "maxMs": 250
+   },
+   "inpProxyMs": 184,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.65,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 1519.0949,
+    "lcpMs": 3754.5537000000004,
+    "cls": 0.05924170616113744,
+    "tbtMs": 1115.7489500000001,
+    "siMs": 2098.4035386380547,
+    "mainThreadMs": 2664.7999999999283,
+    "bootupMs": 1670.9719999999495,
+    "domSize": 345,
+    "jsKbTransfer": 617.1767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 518.8369140625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1329.455078125,
+    "requests": 85,
+    "unusedJsKb": 97.1318359375,
+    "lcpElement": "<header class=\"app-topbar\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 150,
+      "kb": 18
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 150,
+      "kb": 97
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 45
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 150,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/documentos/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 433,
+    "pageHeight": 3082,
+    "backdropFilters": 2,
+    "filters": 3,
+    "willChange": 0,
+    "mixBlend": 2,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 1,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 6
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.11868448511506,
+     "p50": 16.699999999999818,
+     "p95": 16.800000000000182,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 2238
+    },
+    "scroll": {
+     "frames": 113,
+     "fps": 59.06952430741662,
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 2238
+    }
+   },
+   "axe": {
+    "violations": [],
+    "incompleteContrast": 16
+   },
+   "screenshot": "final/capturas/documentos-mobile.jpg",
+   "lcpCandidates": [
+    {
+     "t": 156,
+     "size": 9690,
+     "el": "p"
+    },
+    {
+     "t": 312,
+     "size": 20088,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 664,
+     "size": 86309,
+     "el": "aside.rail-panel"
+    }
+   ],
+   "lcpObserved": {
+    "t": 664,
+    "size": 86309,
+    "el": "aside.rail-panel"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 280,
+    "maxMs": 280
+   },
+   "inpProxyMs": 56,
+   "interactionsTried": 4,
+   "consoleErrors": [],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.49,
+    "accessibility": 1,
+    "bestPractices": 1,
+    "fcpMs": 1501.6417499999998,
+    "lcpMs": 9601.615650000003,
+    "cls": 0.001089365117563362,
+    "tbtMs": 1407,
+    "siMs": 1539.840990731612,
+    "mainThreadMs": 2942.7319999999495,
+    "bootupMs": 1860.119999999962,
+    "domSize": 374,
+    "jsKbTransfer": 617.1767578125,
+    "cssKbTransfer": 79.958984375,
+    "imgKbTransfer": 518.8369140625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1332.7001953125,
+    "requests": 86,
+    "unusedJsKb": 144.2001953125,
+    "lcpElement": "<aside class=\"rail-panel master-rail\" aria-label=\"Inventario documental\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 1051,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 0,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 600,
+      "kb": 144
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 45
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 0,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  }
+ ],
+ "fails": [
+  {
+   "route": "/",
+   "viewport": "desktop",
+   "what": "Lighthouse rendimiento",
+   "got": 63,
+   "limit": "≥ 80"
+  },
+  {
+   "route": "/",
+   "viewport": "desktop",
+   "what": "TBT (ms)",
+   "got": 1944,
+   "limit": "≤ 300"
+  },
+  {
+   "route": "/",
+   "viewport": "desktop",
+   "what": "interacción más lenta (ms)",
+   "got": 216,
+   "limit": "≤ 200"
+  },
+  {
+   "route": "/",
+   "viewport": "desktop",
+   "what": "cuadro p95 al desplazar (ms)",
+   "got": "83.4",
+   "limit": "≤ 50"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "desktop",
+   "what": "Lighthouse rendimiento",
+   "got": 77,
+   "limit": "≥ 80"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "desktop",
+   "what": "TBT (ms)",
+   "got": 373,
+   "limit": "≤ 300"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "desktop",
+   "what": "JS transferido (KB)",
+   "got": 760,
+   "limit": "≤ 700"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "desktop",
+   "what": "interacción más lenta (ms)",
+   "got": 208,
+   "limit": "≤ 200"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "desktop",
+   "what": "cuadro p95 al desplazar (ms)",
+   "got": "916.6",
+   "limit": "≤ 50"
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "desktop",
+   "what": "TBT (ms)",
+   "got": 334,
+   "limit": "≤ 300"
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "desktop",
+   "what": "JS transferido (KB)",
+   "got": 757,
+   "limit": "≤ 700"
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "desktop",
+   "what": "axe: reglas incumplidas",
+   "got": 1,
+   "limit": "≤ 0"
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "desktop",
+   "what": "interacción más lenta (ms)",
+   "got": 208,
+   "limit": "≤ 200"
+  },
+  {
+   "route": "/evolucion/",
+   "viewport": "desktop",
+   "what": "Lighthouse rendimiento",
+   "got": 72,
+   "limit": "≥ 80"
+  },
+  {
+   "route": "/evolucion/",
+   "viewport": "desktop",
+   "what": "TBT (ms)",
+   "got": 379,
+   "limit": "≤ 300"
+  },
+  {
+   "route": "/evolucion/",
+   "viewport": "desktop",
+   "what": "axe: reglas incumplidas",
+   "got": 1,
+   "limit": "≤ 0"
+  },
+  {
+   "route": "/servicios/",
+   "viewport": "desktop",
+   "what": "Lighthouse rendimiento",
+   "got": 75,
+   "limit": "≥ 80"
+  },
+  {
+   "route": "/servicios/",
+   "viewport": "desktop",
+   "what": "TBT (ms)",
+   "got": 385,
+   "limit": "≤ 300"
+  },
+  {
+   "route": "/servicios/",
+   "viewport": "desktop",
+   "what": "interacción más lenta (ms)",
+   "got": 240,
+   "limit": "≤ 200"
+  },
+  {
+   "route": "/pagos/",
+   "viewport": "desktop",
+   "what": "Lighthouse rendimiento",
+   "got": 73,
+   "limit": "≥ 80"
+  },
+  {
+   "route": "/pagos/",
+   "viewport": "desktop",
+   "what": "TBT (ms)",
+   "got": 429,
+   "limit": "≤ 300"
+  },
+  {
+   "route": "/pagos/",
+   "viewport": "desktop",
+   "what": "interacción más lenta (ms)",
+   "got": 280,
+   "limit": "≤ 200"
+  },
+  {
+   "route": "/informes/",
+   "viewport": "desktop",
+   "what": "TBT (ms)",
+   "got": 301,
+   "limit": "≤ 300"
+  },
+  {
+   "route": "/documentos/",
+   "viewport": "desktop",
+   "what": "Lighthouse rendimiento",
+   "got": 75,
+   "limit": "≥ 80"
+  },
+  {
+   "route": "/documentos/",
+   "viewport": "desktop",
+   "what": "TBT (ms)",
+   "got": 383,
+   "limit": "≤ 300"
+  },
+  {
+   "route": "/",
+   "viewport": "mobile",
+   "what": "Lighthouse rendimiento",
+   "got": 45,
+   "limit": "≥ 50"
+  },
+  {
+   "route": "/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 8111,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/",
+   "viewport": "mobile",
+   "what": "TBT (ms)",
+   "got": 2353,
+   "limit": "≤ 1200"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 6808,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "mobile",
+   "what": "TBT (ms)",
+   "got": 1408,
+   "limit": "≤ 1200"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "mobile",
+   "what": "JS transferido (KB)",
+   "got": 760,
+   "limit": "≤ 700"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "mobile",
+   "what": "interacción más lenta (ms)",
+   "got": 584,
+   "limit": "≤ 400"
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 6233,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "mobile",
+   "what": "TBT (ms)",
+   "got": 1664,
+   "limit": "≤ 1200"
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "mobile",
+   "what": "JS transferido (KB)",
+   "got": 757,
+   "limit": "≤ 700"
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "mobile",
+   "what": "axe: reglas incumplidas",
+   "got": 1,
+   "limit": "≤ 0"
+  },
+  {
+   "route": "/evolucion/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 5853,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/evolucion/",
+   "viewport": "mobile",
+   "what": "TBT (ms)",
+   "got": 1446,
+   "limit": "≤ 1200"
+  },
+  {
+   "route": "/evolucion/",
+   "viewport": "mobile",
+   "what": "axe: reglas incumplidas",
+   "got": 1,
+   "limit": "≤ 0"
+  },
+  {
+   "route": "/servicios/",
+   "viewport": "mobile",
+   "what": "Lighthouse rendimiento",
+   "got": 49,
+   "limit": "≥ 50"
+  },
+  {
+   "route": "/servicios/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 9677,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/servicios/",
+   "viewport": "mobile",
+   "what": "TBT (ms)",
+   "got": 1395,
+   "limit": "≤ 1200"
+  },
+  {
+   "route": "/pagos/",
+   "viewport": "mobile",
+   "what": "Lighthouse rendimiento",
+   "got": 49,
+   "limit": "≥ 50"
+  },
+  {
+   "route": "/pagos/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 9602,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/pagos/",
+   "viewport": "mobile",
+   "what": "TBT (ms)",
+   "got": 1483,
+   "limit": "≤ 1200"
+  },
+  {
+   "route": "/documentos/",
+   "viewport": "mobile",
+   "what": "Lighthouse rendimiento",
+   "got": 49,
+   "limit": "≥ 50"
+  },
+  {
+   "route": "/documentos/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 9602,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/documentos/",
+   "viewport": "mobile",
+   "what": "TBT (ms)",
+   "got": 1407,
+   "limit": "≤ 1200"
+  }
+ ],
+ "regressions": [
+  {
+   "route": "/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "was": 5488,
+   "now": 8111
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "mobile",
+   "what": "Lighthouse rendimiento",
+   "was": 60,
+   "now": 51
+  },
+  {
+   "route": "/vuelos/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "was": 3979,
+   "now": 6233
+  }
+ ],
+ "experiments": null
+}
