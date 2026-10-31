@@ -103,8 +103,36 @@ export interface SiteInsights {
      * that have at least one such invoice (each flight adds its whole area). Flights without an
      * invoice do not enter the denominator.
      */
-    perUnitBasis: { invoices: number; flights: number; billed: number };
+    perUnitBasis: {
+      invoices: number;
+      flights: number;
+      billed: number;
+      /** Invoices of the site not tied to a completed flight (a service delivered without a flight): left out of `perUnit`. */
+      withoutFlight: number;
+    };
+    /** Every invoice of the site, with or without a flight: what `billed` adds up. */
+    invoiceCount: number;
   };
+}
+
+const plural = (count: number, one: string, many: string) =>
+  `${count} ${count === 1 ? one : many}`;
+
+/** What «costo por vuelo» divides, in words: all the invoices over all the completed flights. */
+export function perFlightNote(cost: SiteInsights["cost"], flights: number) {
+  const base = `${plural(cost.invoiceCount, "factura", "facturas")} entre ${plural(flights, "vuelo completado", "vuelos completados")}`;
+  const loose = cost.perUnitBasis.withoutFlight;
+  return loose > 0
+    ? `${base}; ${plural(loose, "es", "son")} de un servicio sin vuelo.`
+    : `${base}.`;
+}
+
+/** What «costo por área» divides, in words, and which invoices stay out of it. */
+export function perUnitNote(basis: SiteInsights["cost"]["perUnitBasis"]) {
+  const base = `${plural(basis.invoices, "factura", "facturas")} de ${plural(basis.flights, "vuelo", "vuelos")}; el total se divide por el área de esos vuelos`;
+  return basis.withoutFlight > 0
+    ? `${base}. ${plural(basis.withoutFlight, "factura sin vuelo no entra", "facturas sin vuelo no entran")} en esta cuenta.`
+    : `${base}.`;
 }
 
 const WINDY_KMH = 25;
@@ -362,6 +390,7 @@ export function computeInsights(input: InsightInput): SiteInsights {
     cost: {
       billed,
       paid,
+      invoiceCount: invoices.length,
       perFlight: completed.length ? billed / completed.length : 0,
       perUnit: flown > 0 ? basisBilled / flown : null,
       unit,
@@ -371,6 +400,10 @@ export function computeInsights(input: InsightInput): SiteInsights {
         ).length,
         flights: invoicedFlights.length,
         billed: basisBilled,
+        withoutFlight:
+          invoices.length -
+          invoices.filter((invoice) => completedIds.has(invoice.flightId))
+            .length,
       },
     },
   };

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { compareWithHistory, computeInsights } from "./insights.ts";
+import {
+  compareWithHistory,
+  computeInsights,
+  perFlightNote,
+  perUnitNote,
+} from "./insights.ts";
 import type {
   Finding,
   Flight,
@@ -298,7 +303,42 @@ test("cost per hectare divides the invoices by the area of the flights that were
     invoices: 1,
     flights: 1,
     billed: 100000,
+    withoutFlight: 0,
   });
+});
+
+test("the cost notes say how many invoices have no flight, so the counts add up", () => {
+  const invoice = (id: string, flightId: string, total: number) => ({
+    id,
+    siteId: "s",
+    flightId,
+    reference: id,
+    description: "",
+    operator: "",
+    total,
+    paid: 0,
+    dueDate: "",
+  });
+  const result = computeInsights({
+    ...base,
+    flights: [
+      flight("a", "2026-01-01", { zoneIds: ["z1"] }),
+      flight("b", "2026-02-01", { zoneIds: ["z2"] }),
+    ],
+    findings: [],
+    // The second invoice belongs to a service delivered without a flight.
+    invoices: [invoice("i1", "a", 100000), invoice("i2", "", 50000)],
+  });
+  assert.equal(result.cost.invoiceCount, 2);
+  assert.equal(result.cost.perUnitBasis.withoutFlight, 1);
+  assert.equal(
+    perFlightNote(result.cost, result.totals.flights),
+    "2 facturas entre 2 vuelos completados; 1 es de un servicio sin vuelo.",
+  );
+  assert.equal(
+    perUnitNote(result.cost.perUnitBasis),
+    "1 factura de 1 vuelo; el total se divide por el área de esos vuelos. 1 factura sin vuelo no entra en esta cuenta.",
+  );
 });
 
 const measure = (

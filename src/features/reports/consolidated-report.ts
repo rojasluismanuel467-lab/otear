@@ -9,7 +9,13 @@ import {
   summarizeFollowUps,
 } from "../flights/follow-up.ts";
 import { requestInPeriod, serviceDecisionLines } from "./decisions.ts";
-import { computeInsights, ownFindings, type InsightInput } from "./insights.ts";
+import {
+  computeInsights,
+  ownFindings,
+  perFlightNote,
+  perUnitNote,
+  type InsightInput,
+} from "./insights.ts";
 import { operatorSummaries } from "./operators.ts";
 
 export interface ReportSections {
@@ -200,10 +206,12 @@ export function buildConsolidatedReport(
     lines.push(
       "COSTOS",
       `Facturado: ${money(c.billed)} · pagado: ${money(c.paid)}`,
-      `Por vuelo: ${money(c.perFlight)}` +
-        (c.perUnit !== null
-          ? ` · por ${unit} sobrevolada: ${money(c.perUnit)} (${c.perUnitBasis.invoices} ${c.perUnitBasis.invoices === 1 ? "factura" : "facturas"} de ${c.perUnitBasis.flights} ${c.perUnitBasis.flights === 1 ? "vuelo" : "vuelos"}; no es la tarifa pactada en Servicios)`
-          : ""),
+      `Por vuelo: ${money(c.perFlight)}. ${perFlightNote(c, insights.totals.flights)}`,
+      ...(c.perUnit !== null
+        ? [
+            `Por ${unit} sobrevolada: ${money(c.perUnit)}. ${perUnitNote(c.perUnitBasis)} No es la tarifa pactada en Servicios.`,
+          ]
+        : []),
       "",
     );
   }

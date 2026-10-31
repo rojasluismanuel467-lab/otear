@@ -35,7 +35,7 @@ import {
   latestMovement,
   requestsAfter,
 } from "./decisions";
-import { computeInsights } from "./insights";
+import { computeInsights, perFlightNote, perUnitNote } from "./insights";
 import { operatorSummaries } from "./operators";
 import styles from "./reports.module.css";
 
@@ -560,7 +560,15 @@ function ReportsContent() {
                         </div>
                         <div>
                           <dt>Costo por vuelo</dt>
-                          <dd>{formatMoney(insights.cost.perFlight)}</dd>
+                          <dd>
+                            {formatMoney(insights.cost.perFlight)}
+                            <small>
+                              {perFlightNote(
+                                insights.cost,
+                                insights.totals.flights,
+                              )}
+                            </small>
+                          </dd>
                         </div>
                         <div>
                           <dt>Costo por {unit} sobrevolada</dt>
@@ -570,12 +578,8 @@ function ReportsContent() {
                               : formatMoney(insights.cost.perUnit)}
                             {insights.cost.perUnit !== null && (
                               <small>
-                                {basis.invoices}{" "}
-                                {basis.invoices === 1 ? "factura" : "facturas"}{" "}
-                                de {basis.flights}{" "}
-                                {basis.flights === 1 ? "vuelo" : "vuelos"},
-                                divididas por el área de esos vuelos. No es la
-                                tarifa de Servicios.
+                                {perUnitNote(basis)} No es la tarifa de
+                                Servicios.
                               </small>
                             )}
                           </dd>
