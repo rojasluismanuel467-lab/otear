@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   MAX_FIELDS_PER_TARGET,
+  applyPresetFields,
   createField,
   displayValue,
   editField,
@@ -16,6 +17,12 @@ import {
   usedOptions,
   type CustomField,
 } from "./custom-fields.ts";
+import {
+  CANA_AGE_FIELD,
+  CANA_CUT_FIELD,
+  canaExampleValues,
+  canaFields,
+} from "./preset-fields.ts";
 
 const make = (
   fields: CustomField[],
@@ -262,4 +269,54 @@ test("an imported list of fields is cleaned", () => {
     ["f1", "f4"],
   );
   assert.equal(sanitizeFields("nada").length, 0);
+});
+
+test("a preset brings its fields once, archives them when another preset replaces it and keeps the company's own", () => {
+  const own = make([], { target: "flight", type: "text", title: "OT" });
+  const withCana = applyPresetFields([own], canaFields);
+  assert.deepEqual(
+    fieldsFor(withCana, "flight").map((f) => f.id),
+    [own.id, CANA_AGE_FIELD, CANA_CUT_FIELD],
+  );
+  // Applying it again adds nothing.
+  assert.equal(applyPresetFields(withCana, canaFields).length, withCana.length);
+  // Another preset hides the cane fields but keeps them (and their stored values) for later.
+  const without = applyPresetFields(withCana, []);
+  assert.deepEqual(
+    fieldsFor(without, "flight").map((f) => f.id),
+    [own.id],
+  );
+  assert.equal(without.length, withCana.length);
+  const back = applyPresetFields(without, canaFields);
+  assert.equal(fieldsFor(back, "flight").length, 3);
+});
+
+test("a preset field is skipped when the title is taken or the record kind is full", () => {
+  const taken = make([], {
+    target: "flight",
+    type: "text",
+    title: "Estado de corte",
+  });
+  assert.deepEqual(
+    fieldsFor(applyPresetFields([taken], canaFields), "flight").map(
+      (f) => f.id,
+    ),
+    [taken.id, CANA_AGE_FIELD],
+  );
+  let full: CustomField[] = [];
+  for (let i = 0; i < MAX_FIELDS_PER_TARGET; i += 1)
+    full = [
+      ...full,
+      make(full, { target: "flight", type: "text", title: `Campo ${i}` }),
+    ];
+  assert.equal(applyPresetFields(full, canaFields).length, full.length);
+});
+
+test("the example values of the cane fields match the field's options and grow with the date", () => {
+  const options = new Set(canaFields[1].options?.map((o) => o.id));
+  const early = canaExampleValues("2026-07-18");
+  const late = canaExampleValues("2026-10-29");
+  assert.ok(options.has(String(early[CANA_CUT_FIELD])));
+  assert.ok(options.has(String(late[CANA_CUT_FIELD])));
+  assert.ok(late[CANA_AGE_FIELD] > early[CANA_AGE_FIELD]);
 });

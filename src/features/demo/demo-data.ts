@@ -4,6 +4,7 @@ import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
 import { planMission } from "@/features/flights/mission-plan";
 import { ROAD_ILLUSTRATION_URL } from "@/lib/illustration";
+import { canaExampleValues } from "@/features/config/preset-fields";
 import { dayText, FOLLOW_UP_TODAY } from "@/features/flights/follow-up";
 import {
   lineLengthKm,
@@ -711,6 +712,10 @@ export const initialFlights: Flight[] = flightDrafts.map((draft) => {
     distance: Math.round(plan.distanceKm * 10) / 10,
     duration: Math.round(plan.durationMin),
     photoCount: draft.status === "completed" ? plan.photoCount : 0,
+    // Example values for the sugar-cane preset's fields; they stay hidden unless that preset is on.
+    ...(site.sector === "agriculture"
+      ? { customValues: canaExampleValues(draft.date) }
+      : {}),
   };
   if (
     priceUnit(site) !== "ha" ||
