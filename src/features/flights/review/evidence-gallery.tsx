@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Button, Modal } from "@heroui/react";
 import { Columns2, Expand, ImageIcon } from "lucide-react";
 import type { Finding, Flight, Site } from "@/features/demo/types";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SiteImage } from "@/components/ui/site-image";
+import { illustrationLabel } from "@/lib/illustration";
 import { formatDate } from "@/lib/format";
 import { agree } from "../finding-words";
 import { useFindingWords } from "../use-finding-words";
@@ -87,12 +88,11 @@ export function EvidenceGallery({
           <div className={styles.compareGrid}>
             {["A", "B"].map((label) => (
               <figure key={label}>
-                <Image
+                <SiteImage
                   src={site.imageUrl}
                   alt={`Vista ilustrativa ${label}, la misma imagen de muestra`}
                   width={900}
                   height={600}
-                  unoptimized
                 />
                 <figcaption>
                   Vista {label} · misma imagen de muestra ·{" "}
@@ -112,12 +112,11 @@ export function EvidenceGallery({
                 className={styles.photoTrigger}
                 aria-label={`Ampliar ${sample.title}`}
               >
-                <Image
+                <SiteImage
                   src={sample.imageUrl}
                   alt={`Imagen ilustrativa para ${sample.title.toLowerCase()}`}
                   width={900}
                   height={600}
-                  unoptimized
                 />
                 <span className={styles.expand}>
                   <Expand size={17} aria-hidden="true" /> Ampliar
@@ -134,17 +133,21 @@ export function EvidenceGallery({
                       </p>
                     </Modal.Header>
                     <Modal.Body>
-                      <Image
-                        className={styles.viewerImage}
-                        src={sample.imageUrl}
-                        alt={`Imagen ilustrativa ampliada para ${sample.title.toLowerCase()}`}
-                        width={1400}
-                        height={930}
-                        unoptimized
-                      />
+                      <div className={styles.viewerFrame}>
+                        <SiteImage
+                          className={styles.viewerImage}
+                          src={sample.imageUrl}
+                          alt={`Imagen ilustrativa ampliada para ${sample.title.toLowerCase()}`}
+                          width={1400}
+                          height={930}
+                        />
+                      </div>
                       <p className="demo-note">
-                        Fotografía de ambientación. No corresponde a evidencia
-                        técnica ni confirma {words.the} {words.singular}{" "}
+                        {illustrationLabel(sample.imageUrl)
+                          ? "Ilustración de ambientación."
+                          : "Fotografía de ambientación."}{" "}
+                        No corresponde a evidencia técnica ni confirma{" "}
+                        {words.the} {words.singular}{" "}
                         {agree(words, "descrito", "descrita")}.
                       </p>
                     </Modal.Body>

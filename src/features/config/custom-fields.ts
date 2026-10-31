@@ -5,6 +5,8 @@
  * cannot be deleted (it is archived instead); and the number of fields is capped.
  */
 
+import { PRESET_FIELD_PREFIX } from "./preset-fields.ts";
+
 export type FieldTarget = "flight" | "finding" | "aircraft" | "invoice";
 export type FieldType = "text" | "paragraph" | "number" | "list" | "date";
 
@@ -301,6 +303,47 @@ export function restoreField(
       item.id === id ? { ...item, archived: undefined } : item,
     ),
   };
+}
+
+/**
+ * Fields that come with a vocabulary preset. Applying a preset adds its fields (or brings back
+ * the archived ones), and the fields of any other preset are archived, never deleted, so the
+ * values already stored are kept. A field the company created itself is never touched, and a
+ * preset field that would break the per-record cap or repeat an active title is skipped.
+ */
+export function applyPresetFields(
+  fields: CustomField[],
+  presetFields: CustomField[],
+): CustomField[] {
+  const wanted = new Set(presetFields.map((field) => field.id));
+  let next = fields.map((field) =>
+    field.id.startsWith(PRESET_FIELD_PREFIX) &&
+    !wanted.has(field.id) &&
+    !field.archived
+      ? { ...field, archived: true }
+      : field,
+  );
+  for (const field of presetFields) {
+    const current = next.find((item) => item.id === field.id);
+    if (current) {
+      if (current.archived) {
+        const restored = restoreField(next, field.id);
+        if (restored.ok) next = restored.value;
+      }
+      continue;
+    }
+    const active = fieldsFor(next, field.target);
+    const clash = active.some(
+      (item) => item.title.toLowerCase() === field.title.toLowerCase(),
+    );
+    if (
+      clash ||
+      fieldsFor(next, field.target, true).length >= MAX_FIELDS_PER_TARGET
+    )
+      continue;
+    next = [...next, field];
+  }
+  return next;
 }
 
 /** Reads what a person typed into the control of a field; null means "clear the value". */

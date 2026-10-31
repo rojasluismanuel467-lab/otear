@@ -6,6 +6,8 @@ import type {
   TermKey,
   TermForms,
 } from "./config.ts";
+import { applyPresetFields, type CustomField } from "./custom-fields.ts";
+import { canaFields } from "./preset-fields.ts";
 
 export interface Preset {
   id: PresetId;
@@ -15,6 +17,8 @@ export interface Preset {
   modules: Partial<Record<ModuleId, string>>;
   /** Word for the zones of a sector, in plural. */
   zoneWords?: Partial<Record<Sector, string>>;
+  /** Company fields the preset adds (see `preset-fields.ts`). */
+  fields?: CustomField[];
 }
 
 /** Starting points by sector. They only fill in overrides; the company can change any of them. */
@@ -38,7 +42,8 @@ export const presets: Preset[] = [
   {
     id: "cana",
     label: "Caña de azúcar (ingenio o cañicultor)",
-    description: "Habla de suertes, haciendas, zafra y novedades de campo.",
+    description:
+      "Habla de suertes, haciendas, zafra y novedades de campo. Añade a cada vuelo los campos «Edad del cultivo» y «Estado de corte».",
     terms: {
       finding: { singular: "Novedad de campo", plural: "Novedades de campo" },
       operator: { singular: "Aplicador", plural: "Aplicadores" },
@@ -47,6 +52,7 @@ export const presets: Preset[] = [
     },
     modules: { evolucion: "Evolución del cultivo" },
     zoneWords: { agriculture: "Suertes" },
+    fields: canaFields,
   },
   {
     id: "carreteras",
@@ -122,5 +128,6 @@ export function applyPreset(
     terms: { ...preset.terms },
     modules,
     zoneWords: { ...preset.zoneWords },
+    fields: applyPresetFields(config.fields, preset.fields ?? []),
   };
 }
