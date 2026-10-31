@@ -46,7 +46,11 @@ import {
 } from "@/features/agents/image-candidates";
 import { SuggestionDetail } from "@/features/agents/suggestion-detail";
 import { SuggestionSummary } from "@/features/agents/suggestion-summary";
-import { FOLLOW_UP_TODAY, followUpBadge } from "../follow-up";
+import {
+  FOLLOW_UP_TODAY,
+  followUpBadge,
+  isDiscardedMeasure,
+} from "../follow-up";
 import { flightTabs } from "../tab-param";
 import { useTabParam } from "../use-tab-param";
 import { FollowUpPanel } from "./follow-up-panel";
@@ -212,7 +216,7 @@ function FlightContent({
       finding.followUp.status !== "closed"
     ) {
       setNotice(
-        `${words.Singular} tiene una medida sin cerrar. Para descartarla use «Descartar con motivo» en «Medida correctiva»: así el motivo queda escrito y la medida no desaparece de las cuentas.`,
+        `${words.Singular} tiene una medida sin cerrar. Para descartarla use «Descartar con motivo» en «Medida correctiva»: así el motivo queda escrito y la medida se cuenta aparte como descartada.`,
       );
       return;
     }
@@ -551,7 +555,7 @@ function FlightContent({
                             }{" "}
                             · {statusText(finding, words)}
                             {finding.followUp &&
-                              ` · Medida: ${followUpBadge(finding.followUp, FOLLOW_UP_TODAY).label.toLowerCase()}`}
+                              ` · Medida: ${isDiscardedMeasure(finding) ? "descartada sin cerrar" : followUpBadge(finding.followUp, FOLLOW_UP_TODAY).label.toLowerCase()}`}
                           </small>
                         </span>
                         {isSuggested(finding) ? (

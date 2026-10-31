@@ -402,7 +402,13 @@ function ReportsContent() {
                         Las vencidas son parte de las abiertas o en corrección
                         cuyo plazo ya pasó.
                         {insights.measures.withoutMeasure > 0 &&
-                          ` Hay ${insights.measures.withoutMeasure} sin responsable entre los que usted confirmó.`}{" "}
+                          ` Hay ${insights.measures.withoutMeasure} sin responsable entre los que usted confirmó.`}
+                        {insights.measures.discarded > 0 &&
+                          ` ${insights.measures.discarded} ${
+                            insights.measures.discarded === 1
+                              ? "descartada sin cerrar se cuenta aparte"
+                              : "descartadas sin cerrar se cuentan aparte"
+                          }, con el motivo escrito.`}{" "}
                         <Link href="/vuelos?tab=hallazgos">
                           Ver las medidas en Vuelos
                         </Link>
