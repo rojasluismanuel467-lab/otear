@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { operatorSummaries } from "./operators.ts";
-import type { Finding, Flight, Invoice } from "../demo/types";
+import type {
+  Finding,
+  Flight,
+  Invoice,
+  ServiceRequest,
+} from "../demo/types";
 
 const flight = (id: string, operator: string, extra: Partial<Flight> = {}) =>
   ({
@@ -72,6 +77,48 @@ test("billed area is compared with covered area and cost per hectare is reported
   assert.equal(north.coveredHa, 200);
   assert.equal(north.overBilled, 1);
   assert.ok(north.perHa && Math.abs(north.perHa - 3000000 / 210) < 1e-6);
+});
+
+const square = (size: number): [number, number][] => [
+  [-76, 3],
+  [-76 + size, 3],
+  [-76 + size, 3 + size],
+  [-76, 3 + size],
+];
+
+test("a service invoiced without a flight takes covered and ordered hectares from its delivery and zones", () => {
+  const request = {
+    id: "r",
+    invoiceId: "i1",
+    zoneIds: ["z1"],
+    delivery: { coveredHa: 6.4 },
+  } as ServiceRequest;
+  const rows = operatorSummaries({
+    flights: [],
+    findings: [],
+    invoices: [invoice("i1", "", "Pacífico", 192000, 0, 7)],
+    requests: [request],
+    zones: [{ id: "z1", outline: square(0.0065) }],
+    sector: "agriculture",
+  });
+  const row = rows[0];
+  // Billed 7 ha against 6.4 declared: the delivery counts, so it is not «7 / 0 ha».
+  assert.equal(row.billedHa, 7);
+  assert.equal(row.coveredHa, 6.4);
+  assert.equal(row.overBilled, 1);
+  assert.equal(row.invoicesWithoutCovered, 0);
+  assert.ok(row.orderedHa > 0);
+});
+
+test("an invoice with an area but no declared hectares anywhere is counted, not hidden", () => {
+  const rows = operatorSummaries({
+    flights: [],
+    findings: [],
+    invoices: [invoice("i1", "", "Pacífico", 100, 0, 5)],
+    requests: [],
+  });
+  assert.equal(rows[0].coveredHa, 0);
+  assert.equal(rows[0].invoicesWithoutCovered, 1);
 });
 
 test("an operator with invoices but no flights still appears", () => {
