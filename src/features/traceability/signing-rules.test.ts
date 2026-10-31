@@ -4,7 +4,7 @@ import { presets } from "../config/presets.ts";
 import type { Evidence, Flight, Site } from "../demo/types";
 import { findingWords } from "../flights/finding-words.ts";
 import { buildItinerary } from "../flights/itinerary.ts";
-import { signedRecordRows } from "../compliance/signed-rows.ts";
+import { signedRecordRows, signingSummary } from "../compliance/signed-rows.ts";
 import { DEMO_PROFILE_LABEL } from "./demo-profile.ts";
 import { checkDownload, documentText } from "./document-export.ts";
 import {
@@ -26,7 +26,7 @@ import {
   sameName,
   signerProblem,
 } from "./signers.ts";
-import { autofill, templates } from "./templates.ts";
+import { autofill, templateFor, templates } from "./templates.ts";
 
 const NOW = "2026-10-30T10:00:00.000Z";
 
@@ -60,6 +60,8 @@ const flight = {
 
 const input: FlightReportInput = {
   brief: ["Tramo sur: 3 por verificar en campo."],
+  clientBrief: [],
+  reviews: ["Drenaje obstruido\n   Estado: Pendiente de revisión"],
   logRows: [["Piloto", "Camilo Torres"]],
   findingsTitle: "No conformidades incluidas",
   findings: ["Drenaje obstruido"],
@@ -168,7 +170,10 @@ test("the same name with another number, or the same number with another name, c
     name: "Marcela Pineda",
     documentId: "1.111.222.333",
   });
-  assert.match(sameIdOtherName ?? "", /El documento 1\.111\.222\.333 ya firmó/);
+  assert.match(
+    sameIdOtherName ?? "",
+    /La cédula o NIT 1\.111\.222\.333 ya firmó/,
+  );
   assert.equal(
     signingConflict(evidence, "Revisor o interventor", reviewer),
     null,
@@ -267,6 +272,48 @@ test("a downloaded copy is checked against the saved fingerprint", () => {
   assert.equal(checkDownload(evidence, "a".repeat(64)).result, "mismatch");
   assert.equal(checkDownload(evidence, "hola").result, "unreadable");
   assert.equal(checkDownload(evidence, "  ").result, "unreadable");
+});
+
+test("the text of the «Documento» box on screen is also accepted, and a failure says why", () => {
+  let evidence = withSignature(report(), operator, NOW);
+  evidence = withSignature(evidence, reviewer, NOW);
+  const template = templateFor("flight-report", "roads");
+  // What the box shows: the body, with no title and no «Estado:» lines.
+  const screen = template.render(evidence.fields);
+  const fromScreen = checkDownload(evidence, screen);
+  assert.equal(fromScreen.result, "match");
+  assert.match(fromScreen.message, /recuadro «Documento»/);
+  // A trailing line break, Windows line endings or the title on top do not matter.
+  assert.equal(checkDownload(evidence, `${screen}\n\n`).result, "match");
+  assert.equal(
+    checkDownload(evidence, screen.replace(/\n/g, "\r\n")).result,
+    "match",
+  );
+  assert.equal(
+    checkDownload(evidence, `${template.title}\n${screen}`).result,
+    "match",
+  );
+  // One letter changed: different, and it does not say it was «unreadable».
+  const changed = checkDownload(
+    evidence,
+    screen.replace("Drenaje obstruido", "Drenaje obstruida"),
+  );
+  assert.equal(changed.result, "mismatch");
+  // A fingerprint that is too short says how many characters it has.
+  const short = checkDownload(evidence, "abc123");
+  assert.equal(short.result, "unreadable");
+  assert.match(short.message, /64 caracteres/);
+  assert.match(short.message, /escribió 6/);
+  // A copy of a file of another document says what is missing.
+  const other = documentText(evidence).replace(
+    template.title.toUpperCase(),
+    "OTRO DOCUMENTO",
+  );
+  const lost = checkDownload(evidence, other);
+  assert.equal(lost.result, "unreadable");
+  assert.match(lost.message, /INFORME DEL VUELO/);
+  // Too short to be a document.
+  assert.match(checkDownload(evidence, "hola, esto es todo").message, /corto/);
 });
 
 test("the heading agrees with the sector's word in every preset", () => {
@@ -377,4 +424,47 @@ test("signed reports and delivery records are listed with their state, and the i
   // A report started but not signed keeps the stage open.
   const half = withSignature(report(), operator, NOW);
   assert.equal(delivery([actDone, half]).state, "partial");
+});
+
+test("each signed record says who signed and who is missing, without opening it", () => {
+  const partial = withSignature(
+    report(),
+    operator,
+    "2026-10-25T09:00:00.000-05:00",
+  );
+  const [row] = signedRecordRows([partial], [flight]);
+  assert.deepEqual(
+    row.signers.map((signer) => [signer.name, signer.roleLabel]),
+    [["Camilo Torres", "Operador"]],
+  );
+  const text = signingSummary(row);
+  assert.match(
+    text,
+    /^Firmó Camilo Torres \(Operador\) · 25 de oct\.? de 2026/,
+  );
+  assert.match(text, /Falta: Revisor o interventor$/);
+
+  const complete = withSignature(
+    partial,
+    reviewer,
+    "2026-10-25T10:00:00.000-05:00",
+  );
+  const [done] = signedRecordRows([complete], [flight]);
+  const doneText = signingSummary(done);
+  assert.match(
+    doneText,
+    /Firmó Camilo Torres \(Operador\) y Marcela Pineda \(Revisor o interventor\)/,
+  );
+  assert.ok(!doneText.includes("Falta"));
+
+  // A signature made on an older version of the text does not count as signed.
+  const edited = withFields(
+    complete,
+    { ...complete.fields, notes: "Otra nota" },
+    NOW,
+  );
+  const [stale] = signedRecordRows([edited], [flight]);
+  assert.equal(stale.signers.length, 0);
+  assert.match(signingSummary(stale), /^Falta: /);
+  assert.equal(signingSummary({ signers: [], missing: [] }), "Sin firmas");
 });

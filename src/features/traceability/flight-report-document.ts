@@ -3,20 +3,26 @@ import { agree, type FindingWords } from "../flights/finding-words.ts";
 import { templateFor } from "./templates.ts";
 
 /**
- * The part of the signable flight report that comes from the flight's record: the brief, the log
- * the operator wrote, the findings that were included and the notes. The report screen builds it
- * from what it is showing, so what a person signs is what they read.
+ * The part of the signable flight report that comes from the flight's record. It has two parts with
+ * two authors: what the operator declares (the log, the figures, the points they marked) and what
+ * whoever contracts decides (corrective measures, who answers for them and by when, the review
+ * notes). The report screen builds both from what it is showing, so what a person signs is what
+ * they read, and the operator's signature can say which part it confirms.
  */
 export interface FlightReportInput {
-  /** The lines of «En breve». */
+  /** The lines of «En breve» that are not about the client's corrective measures. */
   brief: string[];
+  /** «En breve» lines about the client's corrective measures (see `splitBrief`). */
+  clientBrief: string[];
   /** «Cómo fue el vuelo»: label and value. */
   logRows: [string, string][];
   debrief?: string;
   /** Heading for the findings, in the sector's word («NO CONFORMIDADES INCLUIDAS»). */
   findingsTitle: string;
-  /** One block of text per included finding. */
+  /** One block of text per included finding: what the operator marked. */
   findings: string[];
+  /** One block per included finding, in the same order: status, trend, next step and measure. */
+  reviews: string[];
   notes: string;
   technical: string[];
 }
@@ -24,16 +30,34 @@ export interface FlightReportInput {
 export function flightReportFields(
   input: FlightReportInput,
 ): Record<string, string> {
+  const numbered = (blocks: string[]) =>
+    blocks.map((block, index) => `${index + 1}. ${block}`).join("\n");
   return {
     summary: input.brief.map((line) => `- ${line}`).join("\n"),
+    clientSummary: input.clientBrief.map((line) => `- ${line}`).join("\n"),
     log: input.logRows.map(([label, text]) => `${label}: ${text}`).join("\n"),
     debrief: input.debrief?.trim() ?? "",
     findingsTitle: input.findingsTitle.toUpperCase(),
-    findings: input.findings
-      .map((block, index) => `${index + 1}. ${block}`)
-      .join("\n"),
+    findings: numbered(input.findings),
+    reviews: numbered(input.reviews),
     notes: input.notes.trim(),
     technical: input.technical.map((line) => `- ${line}`).join("\n"),
+  };
+}
+
+/**
+ * Splits the lines of «En breve»: the ones about corrective measures belong to whoever contracts
+ * (they decide the measure, who answers and when), so they go to the client's part of the report
+ * and not to the part the operator signs.
+ */
+export function splitBrief(brief: string[]): {
+  operator: string[];
+  client: string[];
+} {
+  const isMeasure = (line: string) => /\bmedidas? correctivas?\b/i.test(line);
+  return {
+    operator: brief.filter((line) => !isMeasure(line)),
+    client: brief.filter(isMeasure),
   };
 }
 

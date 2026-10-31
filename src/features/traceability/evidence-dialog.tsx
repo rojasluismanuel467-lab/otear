@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Button, Modal } from "@heroui/react";
 import {
+  Copy,
   Download,
   FileUp,
   Fingerprint,
@@ -25,6 +26,7 @@ import {
   printHtml,
   type DownloadCheck,
 } from "./document-export";
+import { DEMO_CLOCK_NOTE, demoNow } from "./demo-clock";
 import { DEMO_PROFILE_LABEL } from "./demo-profile";
 import { flightReportChanges } from "./flight-report-document";
 import {
@@ -178,7 +180,7 @@ function EvidenceBody({
         title: template.title,
         fields,
       },
-      new Date().toISOString(),
+      demoNow(),
       DEMO_PROFILE_LABEL,
     );
   const working: Evidence =
@@ -204,7 +206,7 @@ function EvidenceBody({
   const labelOf = (role: string) => roleLabel(template, role);
 
   function persistFields(): Evidence {
-    const now = new Date().toISOString();
+    const now = demoNow();
     const saved =
       stored && stored.kind === "drafted"
         ? withFields(stored, fields, now, DEMO_PROFILE_LABEL)
@@ -260,7 +262,7 @@ function EvidenceBody({
       setError(conflict);
       return;
     }
-    const now = new Date().toISOString();
+    const now = demoNow();
     const saved = persistFields();
     const signed = withSignature(
       saved,
@@ -290,7 +292,7 @@ function EvidenceBody({
       return;
     }
     const hash = sha256Hex(new Uint8Array(await file.arrayBuffer()));
-    const now = new Date().toISOString();
+    const now = demoNow();
     const attachment = newEvidence(
       {
         ...(stored ? { id: stored.id } : {}),
@@ -327,7 +329,7 @@ function EvidenceBody({
       setError("Escriba a quién se le pide el documento.");
       return;
     }
-    const now = new Date().toISOString();
+    const now = demoNow();
     const text = `Se pidió a ${requestTo.trim()} que revise y firme. En la demo no se envía nada.`;
     const current = stored ?? persistFields();
     saveEvidence({
@@ -355,6 +357,17 @@ function EvidenceBody({
     setDownloadCheck(stored ? checkDownload(stored, text) : null);
   }
 
+  async function copyHash(hash: string) {
+    try {
+      await navigator.clipboard.writeText(hash);
+      setNotice("Huella copiada: son los 64 caracteres completos.");
+    } catch {
+      setNotice(
+        "No se pudo copiar solo. Seleccione la huella con el ratón o el teclado y cópiela.",
+      );
+    }
+  }
+
   const roleSignature = (role: string) =>
     working.signatures.find((signature) => signature.role === role);
 
@@ -364,9 +377,19 @@ function EvidenceBody({
         <StatusBadge tone={tones[state.status]}>
           {statusLabels[state.status]}
         </StatusBadge>
-        <span className={styles.hash} title={state.hash}>
+        <span className={styles.hash}>
           <Fingerprint size={15} aria-hidden="true" />
-          Huella {state.hash.slice(0, 16)}…
+          <span>
+            Huella <code className={styles.hashFull}>{state.hash}</code>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => void copyHash(state.hash)}
+          >
+            <Copy size={14} aria-hidden="true" />
+            Copiar huella
+          </Button>
         </span>
       </div>
       <p className={styles.note}>{template.note}</p>
@@ -567,6 +590,9 @@ function EvidenceBody({
                         ? `${signature.name} · ${time(signature.signedAt)}${valid ? "" : " · sin validez"}`
                         : "Pendiente"}
                     </small>
+                    {template.roleHints?.[item.role] && (
+                      <small>{template.roleHints[item.role]}</small>
+                    )}
                   </span>
                   <Button
                     variant={signature && valid ? "ghost" : "secondary"}
@@ -652,8 +678,8 @@ function EvidenceBody({
                   }
                 />
                 Acepto firmar este documento electrónicamente y entiendo que se
-                guarda con la hora de este dispositivo y la huella de su
-                contenido.
+                guarda con la fecha de la demostración, la hora de este
+                dispositivo y la huella de su contenido.
               </label>
               {template.separateRoles && (
                 <p className={styles.hint}>
@@ -724,10 +750,12 @@ function EvidenceBody({
         >
           <h3>Verificar un archivo descargado</h3>
           <p className={styles.hint}>
-            Pegue el texto del .txt que descargó de este documento (o cárguelo,
-            o escriba la huella de 64 caracteres) y se compara con la huella
-            guardada. Todo ocurre en su navegador; no se envía nada. Solo
-            comprueba que el texto es el mismo, no quién lo firmó ni cuándo.
+            Pegue el texto del .txt que descargó, o el del recuadro «Documento»
+            de arriba (cárguelo con el botón, o escriba la huella de 64
+            caracteres: se copia completa con «Copiar huella») y se compara con
+            la huella guardada. Todo ocurre en su navegador; no se envía nada.
+            Solo comprueba que el texto es el mismo, no quién lo firmó ni
+            cuándo.
           </p>
           <label className="form-field">
             <span className="field-label">Texto del archivo o huella</span>
@@ -816,7 +844,7 @@ function EvidenceBody({
           <p className={styles.hint}>
             La demostración no tiene inicio de sesión: cada cambio queda a
             nombre del perfil de la demostración ({DEMO_PROFILE_LABEL}), que no
-            es una identidad comprobada.
+            es una identidad comprobada. {DEMO_CLOCK_NOTE}
           </p>
         </section>
       )}
@@ -862,14 +890,16 @@ function EvidenceBody({
         {stored && !confirmRemove && (
           <Button variant="ghost" onPress={() => setConfirmRemove(true)}>
             <Trash2 size={16} aria-hidden="true" />
-            Eliminar
+            {evidenceState(stored).validRoles.length
+              ? "Eliminar (tiene firmas)"
+              : "Eliminar"}
           </Button>
         )}
         {stored && confirmRemove && (
           <div role="group" aria-label="Confirmar eliminación">
             <p>
               {evidenceState(stored).validRoles.length
-                ? `Este documento tiene firmas de ${evidenceState(stored).validRoleLabels.join(", ")}. Al eliminarlo se pierden el documento, las firmas y su historial de esta demostración.`
+                ? `Este documento tiene firmas de ${evidenceState(stored).validRoleLabels.join(", ")}. Si lo elimina no queda ningún registro de que existió: se pierden el documento, las firmas y su historial (la demostración no guarda copia ni papelera). Si solo quiere corregirlo, cambie su contenido: las firmas anteriores quedan sin validez y el historial conserva el cambio.`
                 : "Se elimina el documento y su historial de esta demostración."}
             </p>
             <Button
@@ -883,9 +913,16 @@ function EvidenceBody({
               }}
             >
               <Trash2 size={16} aria-hidden="true" />
-              Sí, eliminar
+              {evidenceState(stored).validRoles.length
+                ? "Sí, eliminar el documento firmado"
+                : "Sí, eliminar"}
             </Button>
-            <Button variant="ghost" onPress={() => setConfirmRemove(false)}>
+            <Button
+              variant={
+                evidenceState(stored).validRoles.length ? "secondary" : "ghost"
+              }
+              onPress={() => setConfirmRemove(false)}
+            >
               Cancelar
             </Button>
           </div>

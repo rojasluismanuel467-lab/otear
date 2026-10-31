@@ -14,6 +14,7 @@ import {
   type FollowUpSummary,
 } from "../flights/follow-up.ts";
 import { countPoints, type PointCount } from "../flights/finding-count.ts";
+import { dayWords } from "../traceability/demo-clock.ts";
 import { evidenceState } from "../traceability/integrity.ts";
 import { itemsWithoutSupport } from "../traceability/requirements.ts";
 
@@ -313,7 +314,7 @@ export function computeInsights(input: InsightInput): SiteInsights {
       attention.push({
         id: `prep-${flight.id}`,
         tone: "info",
-        text: `${flight.title} (${flight.date}): preparación ${flight.checklist.length} de ${input.checklistTotal}.`,
+        text: `${flight.title} (${dayWords(flight.date)}): preparación ${flight.checklist.length} de ${input.checklistTotal}.`,
         href: "/programacion",
       });
     }
@@ -328,7 +329,7 @@ export function computeInsights(input: InsightInput): SiteInsights {
         attention.push({
           id: `support-${flight.id}`,
           tone: "warning",
-          text: `${flight.title} (${flight.date}): ${missing.length} ${missing.length === 1 ? "ítem marcado no tiene" : "ítems marcados no tienen"} soporte completo.`,
+          text: `${flight.title} (${dayWords(flight.date)}): ${missing.length} ${missing.length === 1 ? "ítem marcado no tiene" : "ítems marcados no tienen"} soporte completo.`,
           href: "/programacion",
         });
       }
@@ -344,7 +345,7 @@ export function computeInsights(input: InsightInput): SiteInsights {
         attention.push({
           id: `accept-${flight.id}`,
           tone: "warning",
-          text: `El acta de entrega del ${flight.date} espera la firma de: ${state.missingRoles.join(", ")}.`,
+          text: `El acta de entrega del ${dayWords(flight.date)} espera la firma de: ${state.missingRoleLabels.join(", ")}.`,
           href: "/pagos",
         });
       }

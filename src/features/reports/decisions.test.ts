@@ -8,7 +8,9 @@ import {
 } from "./decisions.ts";
 import { buildConsolidatedReport } from "./consolidated-report.ts";
 import { operatorSummaries } from "./operators.ts";
+import { withSignature } from "../traceability/integrity.ts";
 import type {
+  Evidence,
   Flight,
   Invoice,
   Party,
@@ -386,4 +388,83 @@ test("a delivery without hectares (a service priced per flight) says only that i
   }).join("\n");
   assert.ok(text.includes("AeroUno entregó el"));
   assert.ok(!text.includes("cubiertas"));
+});
+
+test("a dispute note that already ends in a full stop does not get a second one", () => {
+  const text = serviceDecisionLines({
+    site,
+    requests: [
+      {
+        ...request,
+        verification: {
+          result: "disputed" as const,
+          note: "Pido facturar solo lo cubierto.",
+          on: "2026-10-25",
+          by: "m",
+        },
+      } as ServiceRequest,
+    ],
+    parties,
+    invoices: [],
+    flights,
+    zoneMeasure: { z1: 10 },
+    operators: [],
+    period,
+  }).join("\n");
+  assert.ok(text.includes("Pido facturar solo lo cubierto."));
+  assert.ok(!text.includes(".."));
+});
+
+test("the consolidated report names what was signed on the period's flights and who is missing", () => {
+  const evidence = {
+    id: "e",
+    siteId: "s",
+    flightId: "f",
+    kind: "drafted",
+    templateId: "delivery-acceptance",
+    title: "Acta de entrega y recibo a satisfacción",
+    fields: {},
+    signatures: [],
+    events: [],
+  } as unknown as Evidence;
+  const input = {
+    site,
+    flights,
+    findings: [],
+    invoices: [],
+    documents: [],
+    zoneMeasure: { z1: 10 },
+    checklistTotal: 15,
+    evidences: [
+      withSignature(
+        evidence,
+        {
+          role: "Operador",
+          name: "Camilo Torres",
+          documentId: "16834201",
+          method: "typed",
+        },
+        "2026-10-25T09:00:00.000-05:00",
+      ),
+    ],
+  };
+  const sections = {
+    summary: false,
+    flights: false,
+    zones: false,
+    operation: false,
+    attention: true,
+    costs: false,
+  };
+  const text = buildConsolidatedReport(input, period, sections);
+  assert.match(text, /INFORMES Y ACTAS DE LOS VUELOS \(FIRMAS\)/);
+  assert.match(
+    text,
+    /Acta de entrega y recibo a satisfacción · Vuelo \(24 de oct/,
+  );
+  assert.ok(text.includes("faltan firmas. Firmó Camilo Torres (Operador)"));
+  assert.ok(text.includes("Falta: Cliente o responsable"));
+  assert.ok(text.includes("no verifica la identidad"));
+  // The dates of the pending lines are words, not ISO.
+  assert.ok(!/2026-10-24/.test(text));
 });

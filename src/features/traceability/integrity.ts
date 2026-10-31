@@ -239,7 +239,7 @@ export function signingConflict(
   const next = roleLabelOf(evidence, role);
   const why =
     found.match === "document"
-      ? `El documento ${signer.documentId.trim()} ya firmó como ${earlier} (${found.signature.name.trim()}).`
+      ? `La cédula o NIT ${signer.documentId.trim()} ya firmó como ${earlier} (${found.signature.name.trim()}).`
       : `El nombre «${signer.name.trim()}» coincide con el de ${found.signature.name.trim()}, que ya firmó como ${earlier}, aunque el número de documento sea otro.`;
   return `${why} En este documento cada rol lo firma una persona distinta; pida a otra persona que firme como ${next}. ${NO_IDENTITY_CHECK}`;
 }

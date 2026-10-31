@@ -8,6 +8,7 @@ import {
   measuresText,
   summarizeFollowUps,
 } from "../flights/follow-up.ts";
+import { signedRecordRows, signingSummary } from "../compliance/signed-rows.ts";
 import { requestInPeriod, serviceDecisionLines } from "./decisions.ts";
 import {
   computeInsights,
@@ -196,6 +197,23 @@ export function buildConsolidatedReport(
     );
   }
   if (sections.attention) {
+    // What was signed (and what is still missing) on the flights of the period, by document.
+    const records = signedRecordRows(input.evidences ?? [], flights);
+    if (input.evidences) {
+      lines.push("INFORMES Y ACTAS DE LOS VUELOS (FIRMAS)");
+      for (const row of records) {
+        lines.push(
+          `- ${row.title} · ${row.flightTitle} (${date(row.flightDate)}): ${row.statusLabel.toLowerCase()}. ${signingSummary(row)}`,
+        );
+      }
+      if (!records.length) {
+        lines.push("- Ningún informe ni acta guardado para estos vuelos.");
+      }
+      lines.push(
+        "Las firmas son de ejemplo, sin valor legal; la demostración no verifica la identidad de quien firma.",
+        "",
+      );
+    }
     lines.push("PENDIENTES Y ALERTAS");
     for (const item of insights.attention) lines.push(`- ${item.text}`);
     if (!insights.attention.length) lines.push("- Sin pendientes.");

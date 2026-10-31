@@ -1,5 +1,6 @@
 import type { Evidence } from "../demo/types";
 import { sha256Hex } from "./sha256.ts";
+import { DEMO_DAY_TEXT } from "./demo-clock.ts";
 import { DEMO_PROFILE_LABEL } from "./demo-profile.ts";
 import {
   displayTitle,
@@ -10,8 +11,7 @@ import {
   templateOf,
 } from "./integrity.ts";
 
-const DISCLAIMER =
-  "Firma electrónica simple. Las leyes colombianas (Ley 527 de 1999, Decreto 2364 de 2012) la reconocen como medio de prueba, pero puede ser controvertida. La hora es la del dispositivo y no es un sello de tiempo certificado. La firma de esta demostración no tiene valor legal.";
+const DISCLAIMER = `Firma electrónica simple. Las leyes colombianas (Ley 527 de 1999, Decreto 2364 de 2012) la reconocen como medio de prueba, pero puede ser controvertida. La fecha es la del escenario de la demostración (${DEMO_DAY_TEXT}), la hora es la del dispositivo y no es un sello de tiempo certificado. La firma de esta demostración no tiene valor legal.`;
 
 const HASH_NOTE =
   "La huella (SHA-256) se calcula con el título y el texto del documento tal como se muestra en pantalla, no con el archivo descargado: si alguien cambia una letra, la huella cambia y las firmas anteriores quedan sin validez. Este archivo trae ese texto, así que en la misma demostración se puede pegar en «Verificar un archivo descargado» para comprobarlo. No prueba quién escribió el nombre de quien firma ni la hora exacta.";
@@ -98,45 +98,93 @@ function bodyFromDownload(evidence: Evidence, text: string): string | null {
   return lines.slice(titleAt + 2, stateAt - 1).join("\n");
 }
 
+/** A text shorter than this cannot be a document: the check says so instead of calling it «different». */
+const MIN_DOCUMENT_TEXT = 40;
+
 /**
- * Compares a downloaded .txt (or a pasted 64-character fingerprint) with the fingerprint this
- * session holds for the document. All local; it says whether the text is the one that was
- * fingerprinted, never who wrote it or when.
+ * The text of the «Documento» box on screen, which is the body without the title: the same text the
+ * fingerprint is calculated with once the title is put in front. A copy may carry the title on its
+ * first line and a trailing line break; neither is part of the document.
+ */
+function bodyFromScreen(evidence: Evidence, text: string): string {
+  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  while (lines.length && !lines[0].trim()) lines.shift();
+  if (lines[0]?.trim().toUpperCase() === displayTitle(evidence).toUpperCase()) {
+    lines.shift();
+  }
+  return lines.join("\n").replace(/\s+$/, "");
+}
+
+/**
+ * Compares what a person has with the fingerprint this session holds for the document: the
+ * downloaded .txt, the text of the «Documento» box on screen, or the 64-character fingerprint. All
+ * local; it says whether the text is the one that was fingerprinted, never who wrote it or when.
+ * When it cannot read what was pasted it says why and what is missing.
  */
 export function checkDownload(evidence: Evidence, text: string): DownloadCheck {
-  const unreadable: DownloadCheck = {
+  const unreadable = (message: string): DownloadCheck => ({
     result: "unreadable",
-    message:
-      "No se pudo leer. Pegue el texto completo del archivo .txt que descargó de este documento, o cárguelo con el botón, o escriba la huella de 64 caracteres.",
-  };
+    message,
+  });
   if (evidence.kind !== "drafted") {
-    return {
-      result: "unreadable",
-      message:
-        "Este documento es un archivo adjunto: su huella es la del archivo original, que esta comprobación no recalcula.",
-    };
+    return unreadable(
+      "Este documento es un archivo adjunto: su huella es la del archivo original, que esta comprobación no recalcula.",
+    );
   }
   const trimmed = text.trim();
-  if (!trimmed) return unreadable;
+  if (!trimmed) {
+    return unreadable(
+      "No hay nada que comprobar. Pegue el texto del recuadro «Documento» o del archivo .txt, cargue el archivo, o escriba la huella de 64 caracteres.",
+    );
+  }
   let fileHash: string;
   let tampered = false;
-  if (HEX64.test(trimmed)) {
-    fileHash = trimmed.toLowerCase();
+  let source: "file" | "screen" | "hash" = "file";
+  const compact = trimmed.replace(/\s/g, "");
+  if (HEX64.test(compact)) {
+    fileHash = compact.toLowerCase();
+    source = "hash";
+  } else if (/^[0-9a-f]+$/i.test(compact)) {
+    const typed = compact.length;
+    return unreadable(
+      `Eso parece una huella, pero la huella tiene 64 caracteres (números del 0 al 9 y letras de la a a la f) y usted escribió ${typed}. Cópiela completa con «Copiar huella».`,
+    );
   } else {
     const body = bodyFromDownload(evidence, text);
-    if (body === null) return unreadable;
-    fileHash = sha256Hex(`${displayTitle(evidence)}\n${body}`);
-    const claimed = text.match(
-      /Huella SHA-256 del contenido actual:\s*([0-9a-f]{64})/i,
-    )?.[1];
-    tampered = Boolean(claimed) && claimed?.toLowerCase() !== fileHash;
+    if (body !== null) {
+      fileHash = sha256Hex(`${displayTitle(evidence)}\n${body}`);
+      const claimed = text.match(
+        /Huella SHA-256 del contenido actual:\s*([0-9a-f]{64})/i,
+      )?.[1];
+      tampered = Boolean(claimed) && claimed?.toLowerCase() !== fileHash;
+    } else if (/Huella SHA-256 del contenido actual:/i.test(text)) {
+      return unreadable(
+        `No se pudo leer: parece el archivo descargado, pero no tiene el título «${displayTitle(evidence).toUpperCase()}» de este documento antes de la línea «Estado:». Es de otro documento o se pegó recortado: descargue el .txt de este documento con «Descargar .txt» y péguelo completo.`,
+      );
+    } else if (trimmed.length < MIN_DOCUMENT_TEXT) {
+      return unreadable(
+        "No se pudo leer: es demasiado corto para ser un documento y no es una huella de 64 caracteres. Pegue el texto completo del recuadro «Documento» o del archivo .txt.",
+      );
+    } else {
+      source = "screen";
+      fileHash = sha256Hex(
+        `${displayTitle(evidence)}\n${bodyFromScreen(evidence, text)}`,
+      );
+    }
   }
   const state = evidenceState(evidence);
   const short = (hash: string) => `${hash.slice(0, 16)}…`;
+  const what =
+    source === "screen"
+      ? "El texto pegado (el del recuadro «Documento»)"
+      : "El texto del archivo";
   if (fileHash === state.hash) {
     return {
       result: "match",
-      message: `Coincide. El texto del archivo es exactamente el de la huella guardada (${short(state.hash)}). Eso no prueba quién lo firmó ni cuándo.`,
+      message:
+        source === "hash"
+          ? `Coincide. La huella escrita es exactamente la guardada para este documento (${short(state.hash)}). Eso no prueba quién lo firmó ni cuándo.`
+          : `Coincide. ${what} es exactamente el de la huella guardada (${short(state.hash)}).${source === "screen" ? " No es el archivo .txt, pero el texto es el mismo." : ""} Eso no prueba quién lo firmó ni cuándo.`,
     };
   }
   if (evidence.signatures.some((s) => s.contentHash === fileHash)) {
@@ -145,11 +193,17 @@ export function checkDownload(evidence: Evidence, text: string): DownloadCheck {
       message: `No coincide con la versión actual, pero sí con una versión anterior que se firmó (${short(fileHash)}). El documento se modificó después de esa descarga.`,
     };
   }
+  if (source === "hash") {
+    return {
+      result: "mismatch",
+      message: `No coincide. Esa huella no es la guardada para este documento (${short(state.hash)}): es de otro documento o el contenido cambió.`,
+    };
+  }
   return {
     result: "mismatch",
     message: tampered
       ? `No coincide. El archivo trae una huella que no corresponde a su propio texto: alguien lo cambió después de descargarlo. La huella guardada es ${short(state.hash)}.`
-      : `No coincide. El texto del archivo no es el de la huella guardada (${short(state.hash)}): se cambió algo o es de otro documento.`,
+      : `No coincide. ${what} no es el de la huella guardada (${short(state.hash)}): se cambió algo, se pegó incompleto o es de otro documento.`,
   };
 }
 
