@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@heroui/react";
-import { Check, ClipboardCheck, RotateCcw, UserRound } from "lucide-react";
+import { Check, ClipboardCheck, RotateCcw, UserRound, X } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
 import type { Finding } from "@/features/demo/types";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -11,6 +11,7 @@ import {
   changeTerms,
   closeFollowUp,
   dayText,
+  discardFollowUp,
   dueText,
   followUpBadge,
   openFollowUp,
@@ -25,12 +26,12 @@ import { useFindingWords } from "../use-finding-words";
 import styles from "./follow-up.module.css";
 
 /** What the person is filling in, if anything: one form at a time. */
-type Form = "none" | "open" | "close" | "reopen" | "terms";
+type Form = "none" | "open" | "close" | "reopen" | "terms" | "discard";
 
 /** «Próximo paso» of a finding: the corrective measure, from naming who answers for it to closing it. */
 export function FollowUpPanel({ finding }: { finding: Finding }) {
   const words = useFindingWords();
-  const { changeFollowUp, setNotice } = useDemo();
+  const { changeFollowUp, updateFinding, setNotice } = useDemo();
   const followUp = finding.followUp;
   const blocked = whyNoFollowUp(finding);
   const [form, setForm] = useState<Form>("none");
@@ -151,8 +152,9 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
 
           {active && form === "none" && (
             <p className={styles.hint}>
-              Cierra la medida quien registra la nota; su nombre queda en el
-              historial. Quién debe hacerlo en su empresa lo decide usted.
+              En la demostración no hay inicio de sesión: el historial anota el
+              perfil de la demostración, no a una persona verificada. Quién debe
+              cerrar la medida en su empresa lo decide usted.
             </p>
           )}
 
@@ -183,6 +185,12 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
               {active && (
                 <Button variant="tertiary" onPress={() => show("terms")}>
                   Cambiar responsable o plazo
+                </Button>
+              )}
+              {active && (
+                <Button variant="tertiary" onPress={() => show("discard")}>
+                  <X size={16} aria-hidden="true" />
+                  Descartar con motivo
                 </Button>
               )}
               {followUp.status === "closed" && (
@@ -218,6 +226,43 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
               <FormError message={error} />
               <FormActions
                 submit="Cerrar la medida"
+                onCancel={() => show("none")}
+              />
+            </form>
+          )}
+
+          {form === "discard" && (
+            <form
+              className={styles.form}
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault();
+                const result = changeFollowUp(finding.id, (current) =>
+                  current.followUp
+                    ? discardFollowUp(current.followUp, note)
+                    : { ok: false, error: "No hay medida abierta." },
+                );
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
+                }
+                updateFinding(finding.id, { status: "dismissed" });
+                setForm("none");
+                setError("");
+                setNotice(
+                  `${words.Singular} ${agree(words, "descartado", "descartada")} con motivo. La medida queda anotada y se cuenta aparte, como «descartada sin cerrar». No se avisó a nadie.`,
+                );
+              }}
+            >
+              <NoteField
+                label="Motivo del descarte"
+                hint="Por qué ya no hay nada que corregir. Queda escrito en el historial de la medida."
+                value={note}
+                onChange={setNote}
+              />
+              <FormError message={error} />
+              <FormActions
+                submit="Descartar y anotar el motivo"
                 onCancel={() => show("none")}
               />
             </form>
@@ -297,7 +342,10 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
               {followUp.history.map((entry, index) => (
                 <li key={`${entry.at}-${index}`}>
                   <time dateTime={entry.at}>{dayText(entry.at)}</time>
-                  <span>{entry.text}</span>
+                  <span>
+                    {entry.text}
+                    {entry.by ? ` · ${entry.by}` : ""}
+                  </span>
                 </li>
               ))}
             </ol>

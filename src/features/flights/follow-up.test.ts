@@ -6,6 +6,7 @@ import {
   canHaveFollowUp,
   changeTerms,
   closeFollowUp,
+  discardFollowUp,
   dueText,
   followUpBadge,
   isOverdue,
@@ -248,6 +249,7 @@ test("the summary counts each state and leaves out dismissed findings and unrevi
     overdue: 2,
     active: 3,
     withoutMeasure: 1,
+    discarded: 1,
   });
 });
 
@@ -256,7 +258,7 @@ test("the demo has one «today»: 25 October 2026", () => {
 });
 
 test("the measures sentence adds the three states and keeps «vencida» as a condition", () => {
-  const base = { active: 0, withoutMeasure: 0 };
+  const base = { active: 0, withoutMeasure: 0, discarded: 0 };
   assert.equal(
     measuresText({ ...base, open: 1, inProgress: 1, closed: 1, overdue: 1 }),
     "3 medidas: 1 abierta, 1 en corrección, 1 cerrada · 1 vencida",
@@ -293,4 +295,62 @@ test("the list puts late measures first, then by deadline, and closed ones last"
   assert.deepEqual(ids("active"), ["late-b", "late-a", "soon", "later"]);
   assert.deepEqual(ids("closed"), ["done"]);
   assert.deepEqual(ids("inProgress"), ["late-b", "later"]);
+});
+
+test("discarding a finding with an open measure needs a reason and leaves it in the history", () => {
+  const open = measure("open", "2026-10-20");
+  assert.equal(discardFollowUp(open, "", TODAY).ok, false);
+  assert.equal(discardFollowUp(open, "no", TODAY).ok, false);
+  const result = discardFollowUp(
+    open,
+    "El contratista lo corrigió antes de la visita.",
+    TODAY,
+  );
+  assert.ok(result.ok);
+  if (result.ok) {
+    const last = result.followUp.history[result.followUp.history.length - 1];
+    assert.ok(last.text.includes("Motivo: El contratista lo corrigió"));
+    assert.ok(last.by, "the entry says whose profile recorded it");
+  }
+  assert.equal(
+    discardFollowUp(measure("closed", "2026-10-10"), "ya estaba cerrada", TODAY)
+      .ok,
+    false,
+  );
+});
+
+test("a measure discarded before it was closed is counted apart, not dropped", () => {
+  const findings = [
+    finding("kept", { followUp: measure("open", "2026-11-06") }),
+    finding("gone", {
+      status: "dismissed",
+      followUp: measure("open", "2026-10-01"),
+    }),
+    finding("gone-closed", {
+      status: "dismissed",
+      followUp: measure("closed", "2026-10-01", { closedOn: "2026-10-02" }),
+    }),
+  ];
+  const summary = summarizeFollowUps(findings, TODAY);
+  assert.equal(summary.discarded, 1);
+  assert.equal(summary.open, 1);
+  assert.ok(measuresText(summary).includes("1 descartada sin cerrar"));
+});
+
+test("every history entry records the demonstration profile that made the change", () => {
+  const opened = openFollowUp(
+    finding("x"),
+    { owner: "Contratista", dueDate: "2026-11-06" },
+    TODAY,
+  );
+  assert.ok(opened.ok);
+  if (!opened.ok) return;
+  const closed = closeFollowUp(
+    opened.followUp,
+    "Se corrigió y se comprobó con foto.",
+    TODAY,
+  );
+  assert.ok(closed.ok);
+  if (!closed.ok) return;
+  for (const entry of closed.followUp.history) assert.ok(entry.by);
 });

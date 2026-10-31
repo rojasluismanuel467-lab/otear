@@ -206,6 +206,16 @@ function FlightContent({
   }
 
   function reviewFinding(finding: Finding, status: Finding["status"]) {
+    if (
+      status === "dismissed" &&
+      finding.followUp &&
+      finding.followUp.status !== "closed"
+    ) {
+      setNotice(
+        `${words.Singular} tiene una medida sin cerrar. Para descartarla use «Descartar con motivo» en «Medida correctiva»: así el motivo queda escrito y la medida no desaparece de las cuentas.`,
+      );
+      return;
+    }
     updateFinding(finding.id, { status });
     setNotice(
       status === "pending"

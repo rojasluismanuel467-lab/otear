@@ -125,7 +125,7 @@ export interface FindingFollowUp {
   /** What was done and with what evidence; required to close. */
   closure?: string;
   /** Every change, oldest first. */
-  history: { at: string; text: string }[];
+  history: { at: string; text: string; by?: string }[];
 }
 
 /** What the image assistant says about a candidate finding; a person still decides. */
@@ -198,6 +198,8 @@ export interface EvidenceSignature {
 export interface EvidenceEvent {
   at: string;
   text: string;
+  /** Who did it: in the demo, the demonstration profile (there is no sign-in). */
+  by?: string;
 }
 
 /** A document that supports a checklist item: drafted in the app and signed, or an attached file. */

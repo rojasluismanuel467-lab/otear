@@ -1,4 +1,5 @@
 import type { Finding, FindingFollowUp } from "../demo/types";
+import { DEMO_PROFILE_LABEL } from "../traceability/demo-profile.ts";
 
 /**
  * Follow-up of a finding until it is closed: who answers for the correction, by when, and how it
@@ -196,6 +197,7 @@ export function openFollowUp(
       history: [
         {
           at: today,
+          by: DEMO_PROFILE_LABEL,
           text: `Se abrió la medida: responsable ${owner}, plazo ${dayText(input.dueDate)}.`,
         },
       ],
@@ -218,7 +220,7 @@ export function startCorrection(
       status: "inProgress",
       history: [
         ...followUp.history,
-        { at: today, text: "Pasó a «en corrección»." },
+        { at: today, by: DEMO_PROFILE_LABEL, text: "Pasó a «en corrección»." },
       ],
     },
   };
@@ -244,7 +246,41 @@ export function closeFollowUp(
       status: "closed",
       closedOn: today,
       closure: note,
-      history: [...followUp.history, { at: today, text: `Cerrada. ${note}` }],
+      history: [
+        ...followUp.history,
+        { at: today, by: DEMO_PROFILE_LABEL, text: `Cerrada. ${note}` },
+      ],
+    },
+  };
+}
+
+/**
+ * Discarding a finding whose measure is not closed needs a reason, and the reason stays in the
+ * measure's history: a late measure must not leave the counts without a trace.
+ */
+export function discardFollowUp(
+  followUp: FindingFollowUp,
+  reason: string,
+  today = FOLLOW_UP_TODAY,
+): FollowUpResult {
+  if (followUp.status === "closed") return fail("La medida ya está cerrada.");
+  const error = checkNote(
+    reason,
+    "Escriba por qué se descarta: queda en el historial de la medida.",
+  );
+  if (error) return fail(error);
+  return {
+    ok: true,
+    followUp: {
+      ...followUp,
+      history: [
+        ...followUp.history,
+        {
+          at: today,
+          by: DEMO_PROFILE_LABEL,
+          text: `Se descartó con la medida sin cerrar. Motivo: ${reason.trim()}`,
+        },
+      ],
     },
   };
 }
@@ -270,6 +306,7 @@ export function reopenFollowUp(
       ...followUp.history,
       {
         at: today,
+        by: DEMO_PROFILE_LABEL,
         text: `Se reabrió: ${input.reason.trim()} Nuevo plazo: ${dayText(input.dueDate)}.`,
       },
     ],
@@ -314,7 +351,11 @@ export function changeTerms(
       dueDate: input.dueDate,
       history: [
         ...followUp.history,
-        { at: today, text: text.charAt(0).toUpperCase() + text.slice(1) },
+        {
+          at: today,
+          by: DEMO_PROFILE_LABEL,
+          text: text.charAt(0).toUpperCase() + text.slice(1),
+        },
       ],
     },
   };
@@ -330,6 +371,8 @@ export interface FollowUpSummary {
   active: number;
   /** Confirmed by a person and still without a responsible person. */
   withoutMeasure: number;
+  /** Discarded while its measure was still not closed (their reason is in the history). */
+  discarded: number;
 }
 
 /**
@@ -347,8 +390,16 @@ export function summarizeFollowUps(
     overdue: 0,
     active: 0,
     withoutMeasure: 0,
+    discarded: 0,
   };
   for (const finding of findings) {
+    if (
+      finding.status === "dismissed" &&
+      finding.followUp &&
+      finding.followUp.status !== "closed"
+    ) {
+      summary.discarded += 1;
+    }
     if (!canHaveFollowUp(finding)) continue;
     const { followUp } = finding;
     if (!followUp) {
@@ -380,7 +431,10 @@ export function measuresText(summary: FollowUpSummary): string {
   const late = summary.overdue
     ? ` · ${summary.overdue} ${summary.overdue === 1 ? "vencida" : "vencidas"}`
     : "";
-  return `${total} ${total === 1 ? "medida" : "medidas"}: ${states.join(", ")}${late}`;
+  const dropped = summary.discarded
+    ? ` · ${summary.discarded} ${summary.discarded === 1 ? "descartada sin cerrar" : "descartadas sin cerrar"}`
+    : "";
+  return `${total} ${total === 1 ? "medida" : "medidas"}: ${states.join(", ")}${late}${dropped}`;
 }
 
 export interface Measure {

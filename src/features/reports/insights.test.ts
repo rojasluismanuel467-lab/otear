@@ -350,6 +350,7 @@ test("measures are counted by state and a late one needs attention; unreviewed s
     overdue: 1,
     active: 2,
     withoutMeasure: 0,
+    discarded: 0,
   });
   const alert = result.attention.find((item) => item.id === "overdue-measures");
   assert.equal(alert?.tone, "danger");

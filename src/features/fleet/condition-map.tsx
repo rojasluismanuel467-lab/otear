@@ -1,5 +1,6 @@
 "use client";
 
+import { DEMO_PROFILE } from "@/features/traceability/demo-profile";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@heroui/react";
@@ -448,7 +449,7 @@ export function ConditionMap({
       condition: editor.condition,
       note: editor.note.trim(),
       date: existing?.date ?? DEMO_DATE,
-      by: existing?.by ?? "Luis Rojas",
+      by: existing?.by ?? DEMO_PROFILE.name,
       photo: editor.photo,
       resolvedOn: existing?.resolvedOn,
     };

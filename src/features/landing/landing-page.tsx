@@ -1,5 +1,6 @@
 "use client";
 
+import { toleranceText } from "@/features/billing/coverage";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -363,8 +364,8 @@ export function LandingPage() {
             </dl>
             <p className={styles.exampleText}>
               Antes de registrar el pago, Otear marca la diferencia: «Facturó{" "}
-              {example.over} ha más de las cubiertas ({example.overPct} %)». La
-              tolerancia de la demo es de 5 %.
+              {example.over} ha más de las cubiertas ({example.overPct} %)».{" "}
+              {toleranceText()}
             </p>
             <p className={styles.exampleNote}>
               Cifras sintéticas de la demo, no de un cliente ni un ahorro real.

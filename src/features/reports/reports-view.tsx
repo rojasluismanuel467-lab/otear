@@ -1,5 +1,7 @@
 "use client";
 
+import { pointsText } from "@/features/flights/finding-count";
+import { useFindingWords } from "@/features/flights/use-finding-words";
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -57,6 +59,7 @@ export function ReportsView() {
 }
 
 function ReportsContent() {
+  const findingWords = useFindingWords();
   const moduleTitle = useModuleTitle("informes");
   const {
     site,
@@ -486,6 +489,8 @@ function ReportsContent() {
                             </span>
                             <span
                               className={styles.single}
+                              title={pointsText(point.count, findingWords)}
+                              aria-label={pointsText(point.count, findingWords)}
                               data-selected={point.flightId === selected?.id}
                               style={
                                 {
