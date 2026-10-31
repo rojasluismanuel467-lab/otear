@@ -9,6 +9,7 @@ import styles from "./evolution.module.css";
 export function TimelineBar({
   dates,
   counts,
+  labels,
   index,
   referenceIndex,
   playing,
@@ -18,6 +19,8 @@ export function TimelineBar({
 }: {
   dates: string[];
   counts: number[];
+  /** What each count is made of («5 hallazgos y 1 alerta calculada»), for assistive technology. */
+  labels: string[];
   index: number;
   referenceIndex: number;
   playing: boolean;
@@ -102,9 +105,7 @@ export function TimelineBar({
                     {formatDate(date, { day: "numeric", month: "short" })}
                   </span>
                   <span className={styles.srOnly}>
-                    {counts[i] === 0
-                      ? `sin ${noun.plural}`
-                      : `${counts[i]} ${counts[i] === 1 ? noun.singular : noun.plural}`}
+                    {counts[i] === 0 ? `sin ${noun.plural}` : labels[i]}
                     {i === referenceIndex && i !== index
                       ? ", fecha de comparación"
                       : ""}

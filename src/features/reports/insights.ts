@@ -13,6 +13,7 @@ import {
   summarizeFollowUps,
   type FollowUpSummary,
 } from "../flights/follow-up.ts";
+import { countPoints, type PointCount } from "../flights/finding-count.ts";
 import { evidenceState } from "../traceability/integrity.ts";
 import { itemsWithoutSupport } from "../traceability/requirements.ts";
 
@@ -55,7 +56,13 @@ export interface AttentionItem {
 export interface TimelinePoint {
   flightId: string;
   date: string;
+  /** Findings the operator reported and a person has not discarded (`count.operator`). */
   findings: number;
+  /**
+   * The flight's shared count (see `flights/finding-count.ts`): say it with `pointsText` so the
+   * number agrees with Evolución and Vuelos, which also count the unreviewed suggestions.
+   */
+  count: PointCount;
   photos: number;
   minutes: number;
 }
@@ -164,14 +171,19 @@ export function computeInsights(input: InsightInput): SiteInsights {
 
   const byZone = findingsByZone(site, findings, flights);
 
-  const timeline = completed.map((flight) => ({
-    flightId: flight.id,
-    date: flight.date,
-    findings: findings.filter((finding) => finding.flightId === flight.id)
-      .length,
-    photos: flight.photoCount,
-    minutes: flight.duration,
-  }));
+  const timeline: TimelinePoint[] = completed.map((flight) => {
+    const count = countPoints(
+      input.findings.filter((finding) => finding.flightId === flight.id),
+    );
+    return {
+      flightId: flight.id,
+      date: flight.date,
+      findings: count.operator,
+      count,
+      photos: flight.photoCount,
+      minutes: flight.duration,
+    };
+  });
 
   const batteryCount = new Map<string, number>();
   for (const flight of completed) {

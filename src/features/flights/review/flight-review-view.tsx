@@ -29,6 +29,7 @@ import {
 } from "@/features/sites/mapping/mapping-model";
 import { agree, type FindingWords } from "../finding-words";
 import { countsText, findingCounts, loggedConditions } from "../flight-brief";
+import { countPoints, pointsText } from "../finding-count";
 import { ExampleNotice } from "../example-notice";
 import { useFindingWords } from "../use-finding-words";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -172,6 +173,8 @@ function FlightContent({
     flightFindings[0];
   const hasSuggestions = flightFindings.some(isSuggested);
   const counts = findingCounts(flightFindings);
+  // The same count Evolución uses, without the alerts Otear calculates (only that screen has them).
+  const pointCount = countPoints(flightFindings);
   const conditions = loggedConditions(flight.log);
   const kind = outlineKindFor(site.sector);
   const orderedHa =
@@ -265,7 +268,7 @@ function FlightContent({
               <Flag size={17} aria-hidden="true" />
               {words.Plural}
               {flightFindings.length > 0 && (
-                <span className={styles.tabCount}>{flightFindings.length}</span>
+                <span className={styles.tabCount}>{pointCount.listed}</span>
               )}
               <Tabs.Indicator />
             </Tabs.Tab>
@@ -297,10 +300,7 @@ function FlightContent({
                   variant="primary"
                   onPress={() => setActiveTab("findings")}
                 >
-                  Revisar {flightFindings.length}{" "}
-                  {flightFindings.length === 1 ? words.singular : words.plural}
-                  {counts.suggestedPending > 0 &&
-                    ` (${counts.suggestedPending} ${counts.suggestedPending === 1 ? "es una sugerencia" : "son sugerencias"} sin revisar)`}
+                  Revisar {pointsText(pointCount, words)}
                   <ArrowRight size={16} aria-hidden="true" />
                 </Button>
               )}
@@ -607,7 +607,7 @@ function FlightContent({
                         />
                       )}
                       <CustomFieldsPanel
-                        key={selectedFinding.id}
+                        key={`custom-${selectedFinding.id}`}
                         target="finding"
                         values={selectedFinding.customValues}
                         onChange={(customValues) =>
@@ -653,7 +653,7 @@ function FlightContent({
                         )}
                       </div>
                       <FollowUpPanel
-                        key={selectedFinding.id}
+                        key={`follow-up-${selectedFinding.id}`}
                         finding={selectedFinding}
                       />
                     </div>
@@ -664,7 +664,8 @@ function FlightContent({
                 <FileText size={21} aria-hidden="true" />
                 <p>
                   <strong>
-                    La fuente acompaña a {words.the} {words.singular}.
+                    La fuente acompaña {agree(words, "al", "a la")}{" "}
+                    {words.singular}.
                   </strong>{" "}
                   Los del operador y las sugerencias automáticas se distinguen,
                   y ninguno es un diagnóstico. En esta demo las sugerencias son
