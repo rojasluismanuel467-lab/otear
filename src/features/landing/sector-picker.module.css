@@ -383,6 +383,36 @@
     padding: 36px 28px;
   }
 
+  /* Apilado, la vista previa va justo debajo de las opciones y antes del botón: así se ve
+     el efecto de lo que se acaba de elegir sin bajar. Los hijos de .controls pasan a ser
+     hijos del panel (display: contents) solo para poder intercalar la tarjeta. */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .controls {
+    display: contents;
+  }
+
+  .controls > * {
+    position: relative;
+  }
+
+  .preview {
+    order: 1;
+    margin-bottom: 22px;
+  }
+
+  .actions {
+    order: 2;
+  }
+
+  .operatorLine {
+    order: 3;
+  }
+
   .cardEmpty {
     min-height: 0;
   }

@@ -29,6 +29,15 @@ const icons = {
   other: Plus,
 } satisfies Record<ChoiceId, typeof Sprout>;
 
+/** How the demo's top bar names each sector (the same words as `Site.sectorLabel`). */
+const demoSectorNames: Partial<Record<ChoiceId, string>> = {
+  agriculture: "Agricultura",
+  roads: "Carreteras",
+  construction: "Construcción",
+  security: "Vigilancia",
+  mining: "Minería",
+};
+
 /**
  * «¿Qué opera usted?»: choosing a sector shows right away how its words would
  * read, and the demo then opens with them. Nothing here pops up or moves on
@@ -136,6 +145,12 @@ export function SectorPicker() {
                 </span>
                 <span className={styles.note}>Ejemplo ilustrativo</span>
               </div>
+              {demoSectorNames[choice.id] && (
+                <p className={styles.otherNote}>
+                  En la demo este sector se llama «{demoSectorNames[choice.id]}»
+                  en la barra de arriba.
+                </p>
+              )}
               <dl className={styles.words}>
                 <div>
                   <dt>Sus zonas se llaman</dt>

@@ -22,7 +22,7 @@ export function HeroProof({
       aria-labelledby={titleId}
     >
       <figcaption className={styles.heroProofHead}>
-        <span id={titleId}>Así se ve antes de pagar</span>
+        <span id={titleId}>Así se ve antes de pagar, en una hacienda</span>
         <span className={styles.heroProofBadge}>Cifras de ejemplo</span>
       </figcaption>
       <dl className={styles.heroProofRows}>
@@ -57,8 +57,9 @@ export function HeroProof({
         más de las cubiertas ({example.overPct} %)».
       </p>
       <p className={styles.heroProofNote}>
-        Cifras de la demo, no de un cliente. Las hectáreas cubiertas las declara
-        el operador; Otear no las mide con las imágenes.
+        Cifras de la hacienda de ejemplo de la demo, no de un cliente. Las
+        hectáreas cubiertas las declara el operador; Otear no las mide con las
+        imágenes. Según el servicio, se compara en hectáreas o por vuelo.
       </p>
     </figure>
   );

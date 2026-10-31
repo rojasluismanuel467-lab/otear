@@ -454,13 +454,16 @@ export function RequestDetail({
                         {nameOf(quote.operatorId)}
                         {quote.note && <small>{quote.note}</small>}
                       </td>
-                      <td className={isCheapest ? styles.best : undefined}>
+                      <td
+                        className={isCheapest ? styles.best : undefined}
+                        data-label={`Precio${request.unit === "ha" ? " / ha" : ""}`}
+                      >
                         {withdrawn ? "—" : formatMoney(quote.price)}
                         {over && <small>Supera el tope</small>}
                         {isCheapest && <small>La más económica</small>}
                       </td>
                       {request.unit === "ha" && ordered > 0 && (
-                        <td>
+                        <td data-label="Total estimado">
                           {withdrawn
                             ? "—"
                             : formatMoney(
@@ -468,8 +471,12 @@ export function RequestDetail({
                               )}
                         </td>
                       )}
-                      <td>{withdrawn ? "—" : formatDate(quote.startDate)}</td>
-                      <td>{workflow.quoteStateLabel(quote)}</td>
+                      <td data-label="Desde">
+                        {withdrawn ? "—" : formatDate(quote.startDate)}
+                      </td>
+                      <td data-label="Estado">
+                        {workflow.quoteStateLabel(quote)}
+                      </td>
                       {canAssign && (
                         <td>
                           {quote.state === "open" && (

@@ -86,6 +86,31 @@
     transform: translateY(10px);
   }
 }
+/* Teléfono: los vuelos van en una sola fila que se desliza, para que el vuelo elegido
+   y su contenido queden a la vista sin recorrer toda la lista. La siguiente tarjeta
+   asoma a propósito: es la pista de que hay más. */
+@media (max-width: 640px) {
+  .timeline {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+  }
+  .item {
+    flex: 0 0 min(74%, 260px);
+    scroll-snap-align: start;
+  }
+  .row {
+    height: 100%;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+  }
+  .row:hover {
+    transform: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .item {
     animation: none;

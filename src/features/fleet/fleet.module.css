@@ -472,6 +472,23 @@
     padding-inline: 24px;
   }
 }
+/* Teléfono: las aeronaves van una debajo de otra, todas a la vista (en una fila que se
+   desliza la segunda queda fuera de la pantalla sin que nada lo avise). */
+@media (max-width: 640px) {
+  .fleetStrip {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+  }
+  .stripList {
+    flex: none;
+    flex-direction: column;
+    overflow-x: visible;
+  }
+  .stripList li {
+    min-width: 0;
+  }
+}
 @media (max-width: 900px) {
   .facts {
     grid-template-columns: 1fr;
