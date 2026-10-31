@@ -58,7 +58,8 @@ export function HeroProof({
       </p>
       <p className={styles.heroProofNote}>
         Cifras de la demo, no de un cliente. Las hectáreas cubiertas las declara
-        el operador; Otear no las mide con las imágenes.
+        el operador; Otear no las mide con las imágenes. El operador puede dejar
+        una nota que quien paga lee junto a esta marca.
       </p>
     </figure>
   );
