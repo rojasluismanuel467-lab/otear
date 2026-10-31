@@ -4,7 +4,7 @@ import { presets } from "../config/presets.ts";
 import type { Evidence, Flight, Site } from "../demo/types";
 import { findingWords } from "../flights/finding-words.ts";
 import { buildItinerary } from "../flights/itinerary.ts";
-import { signedRecordRows } from "../compliance/signed-rows.ts";
+import { signedRecordRows, signingSummary } from "../compliance/signed-rows.ts";
 import { DEMO_PROFILE_LABEL } from "./demo-profile.ts";
 import { checkDownload, documentText } from "./document-export.ts";
 import {
@@ -424,4 +424,47 @@ test("signed reports and delivery records are listed with their state, and the i
   // A report started but not signed keeps the stage open.
   const half = withSignature(report(), operator, NOW);
   assert.equal(delivery([actDone, half]).state, "partial");
+});
+
+test("each signed record says who signed and who is missing, without opening it", () => {
+  const partial = withSignature(
+    report(),
+    operator,
+    "2026-10-25T09:00:00.000-05:00",
+  );
+  const [row] = signedRecordRows([partial], [flight]);
+  assert.deepEqual(
+    row.signers.map((signer) => [signer.name, signer.roleLabel]),
+    [["Camilo Torres", "Operador"]],
+  );
+  const text = signingSummary(row);
+  assert.match(
+    text,
+    /^Firmó Camilo Torres \(Operador\) · 25 de oct\.? de 2026/,
+  );
+  assert.match(text, /Falta: Revisor o interventor$/);
+
+  const complete = withSignature(
+    partial,
+    reviewer,
+    "2026-10-25T10:00:00.000-05:00",
+  );
+  const [done] = signedRecordRows([complete], [flight]);
+  const doneText = signingSummary(done);
+  assert.match(
+    doneText,
+    /Firmó Camilo Torres \(Operador\) y Marcela Pineda \(Revisor o interventor\)/,
+  );
+  assert.ok(!doneText.includes("Falta"));
+
+  // A signature made on an older version of the text does not count as signed.
+  const edited = withFields(
+    complete,
+    { ...complete.fields, notes: "Otra nota" },
+    NOW,
+  );
+  const [stale] = signedRecordRows([edited], [flight]);
+  assert.equal(stale.signers.length, 0);
+  assert.match(signingSummary(stale), /^Falta: /);
+  assert.equal(signingSummary({ signers: [], missing: [] }), "Sin firmas");
 });

@@ -890,14 +890,16 @@ function EvidenceBody({
         {stored && !confirmRemove && (
           <Button variant="ghost" onPress={() => setConfirmRemove(true)}>
             <Trash2 size={16} aria-hidden="true" />
-            Eliminar
+            {evidenceState(stored).validRoles.length
+              ? "Eliminar (tiene firmas)"
+              : "Eliminar"}
           </Button>
         )}
         {stored && confirmRemove && (
           <div role="group" aria-label="Confirmar eliminación">
             <p>
               {evidenceState(stored).validRoles.length
-                ? `Este documento tiene firmas de ${evidenceState(stored).validRoleLabels.join(", ")}. Al eliminarlo se pierden el documento, las firmas y su historial de esta demostración.`
+                ? `Este documento tiene firmas de ${evidenceState(stored).validRoleLabels.join(", ")}. Si lo elimina no queda ningún registro de que existió: se pierden el documento, las firmas y su historial (la demostración no guarda copia ni papelera). Si solo quiere corregirlo, cambie su contenido: las firmas anteriores quedan sin validez y el historial conserva el cambio.`
                 : "Se elimina el documento y su historial de esta demostración."}
             </p>
             <Button
@@ -911,9 +913,16 @@ function EvidenceBody({
               }}
             >
               <Trash2 size={16} aria-hidden="true" />
-              Sí, eliminar
+              {evidenceState(stored).validRoles.length
+                ? "Sí, eliminar el documento firmado"
+                : "Sí, eliminar"}
             </Button>
-            <Button variant="ghost" onPress={() => setConfirmRemove(false)}>
+            <Button
+              variant={
+                evidenceState(stored).validRoles.length ? "secondary" : "ghost"
+              }
+              onPress={() => setConfirmRemove(false)}
+            >
               Cancelar
             </Button>
           </div>

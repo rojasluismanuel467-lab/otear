@@ -481,13 +481,31 @@
 
 .signedRecords {
   display: grid;
-  gap: 8px;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  gap: 12px;
+  padding: 22px 24px;
+  scroll-margin-top: 24px;
+}
+.signedRecords h2 {
+  font-size: var(--heading-section);
+  font-weight: 700;
+  margin: 0;
 }
 .signedRecords h3 {
   font-size: var(--heading-group);
   font-weight: 700;
-  margin: 0;
+  margin: 8px 0 0;
+}
+.signedList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 6px 18px;
+}
+.recordsLink {
+  color: var(--accent);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.signedWho {
+  color: var(--foreground);
 }

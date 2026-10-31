@@ -26,6 +26,7 @@ import { downloadText, formatDate } from "@/lib/format";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import { revealDetail } from "@/lib/reveal-detail";
 import { SignedRecords } from "./signed-records";
+import { signedRecordRows } from "./signed-rows";
 import styles from "./compliance.module.css";
 
 const categoryLabels = {
@@ -75,7 +76,8 @@ function documentSummary(document: FlightDocument, siteName: string) {
 
 export function DocumentView() {
   const moduleTitle = useModuleTitle("documentos");
-  const { site, documents, updateDocument, setNotice } = useDemo();
+  const { site, documents, evidences, flights, updateDocument, setNotice } =
+    useDemo();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
@@ -86,6 +88,7 @@ export function DocumentView() {
   const [dateDraft, setDateDraft] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const uploadTarget = useRef<string | null>(null);
+  const signedCount = signedRecordRows(evidences, flights).length;
   const visible = documents.filter(
     (document) =>
       (category === "all" || category === document.category) &&
@@ -267,6 +270,14 @@ export function DocumentView() {
               <p>
                 {visible.length} de {documents.length} documentos
               </p>
+              <p>
+                <a href="#signed-records" className={styles.recordsLink}>
+                  {signedCount === 1
+                    ? "1 informe o acta"
+                    : `${signedCount} informes y actas`}{" "}
+                  con firmas, abajo
+                </a>
+              </p>
             </header>
             <label className={styles.search}>
               <Search size={17} aria-hidden="true" />
@@ -362,7 +373,6 @@ export function DocumentView() {
                 description="Pruebe con otro sujeto, estado o texto de búsqueda."
               />
             )}
-            <SignedRecords />
             <div className={styles.railFooter}>
               {(query || category !== "all" || status !== "all") && (
                 <button
@@ -509,6 +519,7 @@ export function DocumentView() {
           </div>
         )}
       </section>
+      <SignedRecords />
       <details className={styles.explain}>
         <summary>¿Qué garantiza una firma o una huella digital aquí?</summary>
         <p>
@@ -519,16 +530,17 @@ export function DocumentView() {
           archivo que se descarga). Si alguien cambia una letra, el código
           cambia y las firmas anteriores quedan sin validez: sirve para notar
           que algo se modificó después de firmar. El .txt que se descarga trae
-          ese mismo texto: en «Informes y actas firmados», al abrir el
-          documento, «Verificar un archivo descargado» recalcula la huella y
-          dice si coincide con la guardada en esta sesión.
+          ese mismo texto: en «Informes y actas», al abrir el documento,
+          «Verificar un archivo descargado» recalcula la huella y dice si
+          coincide con la guardada en esta sesión.
         </p>
         <p>
           No es un sello de tiempo certificado ni una firma con certificado
-          digital. El nombre lo escribe quien firma y la hora la toma el equipo
-          de esa persona, así que ante un tercero (un auditor, una interventoría
-          o un juez) no prueba por sí sola quién firmó ni cuándo. Su valor legal
-          está pendiente de validar con asesoría jurídica.
+          digital. El nombre lo escribe quien firma y la fecha es la del
+          escenario de la demostración y la hora la toma el equipo de esa
+          persona, así que ante un tercero (un auditor, una interventoría o un
+          juez) no prueba por sí sola quién firmó ni cuándo. Su valor legal está
+          pendiente de validar con asesoría jurídica.
         </p>
       </details>
       <p className="demo-note">
