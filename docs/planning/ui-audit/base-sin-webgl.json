@@ -1,0 +1,581 @@
+{
+ "meta": {
+  "label": "base-sin-webgl",
+  "date": "2026-10-31 16:16",
+  "commit": "58c4228 (+cambios sin confirmar)",
+  "browser": "Chrome/155.0.8059.12",
+  "source": "/tmp/claude-1000/keep/out-base/ (local)",
+  "routes": [
+   "/",
+   "/programacion/"
+  ],
+  "viewports": [
+   "desktop",
+   "mobile"
+  ],
+  "lhRuns": 3
+ },
+ "results": [
+  {
+   "route": "/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 520,
+    "pageHeight": 9210,
+    "backdropFilters": 19,
+    "filters": 4,
+    "willChange": 1,
+    "mixBlend": 3,
+    "manyShadows": 0,
+    "fixedLayers": 9,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 17,
+    "images": 2,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 26
+   },
+   "title": "Otear — Información aérea de su proyecto, en un solo lugar",
+   "frames": {
+    "idle": {
+     "frames": 98,
+     "fps": 48.41418832128539,
+     "p50": 16.699999999999818,
+     "p95": 33.399999999999636,
+     "max": 50,
+     "jank": 1,
+     "scrolledPx": 7000
+    },
+    "scroll": {
+     "frames": 259,
+     "fps": 48.76579239704497,
+     "p50": 16.699999999999818,
+     "p95": 33.399999999999636,
+     "max": 50,
+     "jank": 6,
+     "scrolledPx": 7000
+    }
+   },
+   "lcpCandidates": [
+    {
+     "t": 212,
+     "size": 156927,
+     "el": "h1.MkS3jW_title"
+    }
+   ],
+   "lcpObserved": {
+    "t": 212,
+    "size": 156927,
+    "el": "h1.MkS3jW_title"
+   },
+   "cls": 0.3083588286713287,
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "inpProxyMs": 0,
+   "interactionsTried": 0,
+   "consoleErrors": [
+    "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  disabled by enterprise policy or commandline switch",
+    "THREE.WebGLRenderer: THREE.WebGLRenderer: Error creating WebGL context."
+   ],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.99,
+    "accessibility": 0.96,
+    "bestPractices": 0.96,
+    "fcpMs": 362.05949999999996,
+    "lcpMs": 1022.746,
+    "cls": 0.0002043033889187735,
+    "tbtMs": 0,
+    "siMs": 362.05949999999996,
+    "mainThreadMs": 490.70199999999886,
+    "bootupMs": 68.2049999999998,
+    "domSize": 483,
+    "jsKbTransfer": 502.9638671875,
+    "cssKbTransfer": 77.5390625,
+    "imgKbTransfer": 533.0390625,
+    "fontKbTransfer": 76.56640625,
+    "totalKbTransfer": 1257.2421875,
+    "requests": 42,
+    "unusedJsKb": 203.330078125,
+    "lcpElement": "<h1 class=\"MkS3jW_title\">",
+    "a11yFailing": [
+     "color-contrast"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 0,
+      "kb": 203
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 56
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 0,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "desktop",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 813,
+    "pageHeight": 2635,
+    "backdropFilters": 2,
+    "filters": 3,
+    "willChange": 1,
+    "mixBlend": 34,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 33,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 7
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.88023952093583,
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999727,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 1735
+    },
+    "scroll": {
+     "frames": 88,
+     "fps": 56.94687115771774,
+     "p50": 16.699999999999818,
+     "p95": 16.800000000000182,
+     "max": 33.30000000000018,
+     "jank": 0,
+     "scrolledPx": 1735
+    }
+   },
+   "lcpCandidates": [
+    {
+     "t": 112,
+     "size": 21899,
+     "el": "p._6NP6Jq_bannerHint"
+    },
+    {
+     "t": 212,
+     "size": 48400,
+     "el": "header.app-topbar"
+    },
+    {
+     "t": 512,
+     "size": 158932,
+     "el": "aside.CWmW1q_rail"
+    }
+   ],
+   "lcpObserved": {
+    "t": 512,
+    "size": 158932,
+    "el": "aside.CWmW1q_rail"
+   },
+   "cls": 0.004476123654172168,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 193,
+    "maxMs": 193
+   },
+   "inpProxyMs": 48,
+   "interactionsTried": 4,
+   "consoleErrors": [
+    "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  disabled by enterprise policy or commandline switch",
+    "THREE.WebGLRenderer: THREE.WebGLRenderer: Error creating WebGL context."
+   ],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.92,
+    "accessibility": 1,
+    "bestPractices": 0.96,
+    "fcpMs": 362.08124999999995,
+    "lcpMs": 1256.86825,
+    "cls": 0,
+    "tbtMs": 189.99999999999977,
+    "siMs": 704.0596015368374,
+    "mainThreadMs": 854.489999999983,
+    "bootupMs": 422.3859999999896,
+    "domSize": 749,
+    "jsKbTransfer": 771.9091796875,
+    "cssKbTransfer": 80.5322265625,
+    "imgKbTransfer": 651.23828125,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1622.306640625,
+    "requests": 123,
+    "unusedJsKb": 196.771484375,
+    "lcpElement": "<aside class=\"CWmW1q_rail\">",
+    "a11yFailing": [
+     "label-content-name-mismatch"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 0,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 190,
+      "kb": 197
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 55
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 0,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 520,
+    "pageHeight": 14884,
+    "backdropFilters": 19,
+    "filters": 4,
+    "willChange": 1,
+    "mixBlend": 3,
+    "manyShadows": 0,
+    "fixedLayers": 9,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 17,
+    "images": 2,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 26
+   },
+   "title": "Otear — Información aérea de su proyecto, en un solo lugar",
+   "frames": {
+    "idle": {
+     "frames": 119,
+     "fps": 59.29247633284609,
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 7000
+    },
+    "scroll": {
+     "frames": 317,
+     "fps": 59.67171146750999,
+     "p50": 16.69999999999891,
+     "p95": 16.799999999999272,
+     "max": 16.80000000000109,
+     "jank": 0,
+     "scrolledPx": 7000
+    }
+   },
+   "lcpCandidates": [
+    {
+     "t": 232,
+     "size": 40826,
+     "el": "h1.MkS3jW_title"
+    }
+   ],
+   "lcpObserved": {
+    "t": 232,
+    "size": 40826,
+    "el": "h1.MkS3jW_title"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "inpProxyMs": 0,
+   "interactionsTried": 0,
+   "consoleErrors": [
+    "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  disabled by enterprise policy or commandline switch",
+    "THREE.WebGLRenderer: THREE.WebGLRenderer: Error creating WebGL context."
+   ],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.79,
+    "accessibility": 0.96,
+    "bestPractices": 0.96,
+    "fcpMs": 1651.5307500000001,
+    "lcpMs": 5485.316625,
+    "cls": 0.08865565331744914,
+    "tbtMs": 118,
+    "siMs": 1651.5307500000001,
+    "mainThreadMs": 1602.0999999999967,
+    "bootupMs": 355.0279999999996,
+    "domSize": 483,
+    "jsKbTransfer": 502.9638671875,
+    "cssKbTransfer": 77.5390625,
+    "imgKbTransfer": 533.0390625,
+    "fontKbTransfer": 76.56640625,
+    "totalKbTransfer": 1257.2421875,
+    "requests": 42,
+    "unusedJsKb": 203.330078125,
+    "lcpElement": "<h1 class=\"MkS3jW_title\">",
+    "a11yFailing": [
+     "color-contrast"
+    ],
+    "perfOpportunities": [
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 150,
+      "kb": 203
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 49
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 0,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "mobile",
+   "overflow": {
+    "px": 0,
+    "offenders": []
+   },
+   "smallText": {
+    "count": 0,
+    "groups": []
+   },
+   "weight": {
+    "domNodes": 799,
+    "pageHeight": 4048,
+    "backdropFilters": 2,
+    "filters": 3,
+    "willChange": 1,
+    "mixBlend": 20,
+    "manyShadows": 0,
+    "fixedLayers": 6,
+    "canvases": 0,
+    "webglCanvases": 0,
+    "cssAnimationsRunning": 0,
+    "images": 19,
+    "imagesNoDims": 0
+   },
+   "headings": {
+    "h1": 1,
+    "total": 7
+   },
+   "title": "Otear",
+   "frames": {
+    "idle": {
+     "frames": 120,
+     "fps": 59.63325547878327,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 3204
+    },
+    "scroll": {
+     "frames": 154,
+     "fps": 59.33803413862672,
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "max": 16.800000000000182,
+     "jank": 0,
+     "scrolledPx": 3204
+    }
+   },
+   "lcpCandidates": [
+    {
+     "t": 64,
+     "size": 25584,
+     "el": "p._6NP6Jq_bannerHint"
+    },
+    {
+     "t": 440,
+     "size": 85831,
+     "el": "aside.CWmW1q_rail"
+    }
+   ],
+   "lcpObserved": {
+    "t": 440,
+    "size": 85831,
+    "el": "aside.CWmW1q_rail"
+   },
+   "cls": 0,
+   "longTasks": {
+    "count": 1,
+    "totalMs": 176,
+    "maxMs": 176
+   },
+   "inpProxyMs": 32,
+   "interactionsTried": 4,
+   "consoleErrors": [
+    "THREE.WebGLRenderer: A WebGL context could not be created. Reason:  disabled by enterprise policy or commandline switch",
+    "THREE.WebGLRenderer: THREE.WebGLRenderer: Error creating WebGL context."
+   ],
+   "failedRequests": [],
+   "lighthouse": {
+    "performance": 0.55,
+    "accessibility": 1,
+    "bestPractices": 0.96,
+    "fcpMs": 1522.1246,
+    "lcpMs": 6511.373799999999,
+    "cls": 0,
+    "tbtMs": 1000.0000000000023,
+    "siMs": 1860.004008208058,
+    "mainThreadMs": 2908.403999999912,
+    "bootupMs": 1702.9759999999267,
+    "domSize": 735,
+    "jsKbTransfer": 771.9091796875,
+    "cssKbTransfer": 80.5322265625,
+    "imgKbTransfer": 643.0400390625,
+    "fontKbTransfer": 29.568359375,
+    "totalKbTransfer": 1614.1083984375,
+    "requests": 109,
+    "unusedJsKb": 197.2216796875,
+    "lcpElement": "<aside class=\"CWmW1q_rail\">",
+    "a11yFailing": [],
+    "perfOpportunities": [
+     {
+      "id": "prioritize-lcp-image",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "render-blocking-resources",
+      "ms": 0,
+      "kb": 0
+     },
+     {
+      "id": "unused-css-rules",
+      "ms": 0,
+      "kb": 17
+     },
+     {
+      "id": "unused-javascript",
+      "ms": 900,
+      "kb": 197
+     },
+     {
+      "id": "uses-responsive-images",
+      "ms": 0,
+      "kb": 45
+     },
+     {
+      "id": "legacy-javascript",
+      "ms": 0,
+      "kb": 13
+     }
+    ],
+    "runs": 3
+   }
+  }
+ ],
+ "fails": [
+  {
+   "route": "/programacion/",
+   "viewport": "desktop",
+   "what": "JS transferido (KB)",
+   "got": 772,
+   "limit": "≤ 700"
+  },
+  {
+   "route": "/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 5485,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "mobile",
+   "what": "LCP (ms)",
+   "got": 6511,
+   "limit": "≤ 4000"
+  },
+  {
+   "route": "/programacion/",
+   "viewport": "mobile",
+   "what": "JS transferido (KB)",
+   "got": 772,
+   "limit": "≤ 700"
+  }
+ ],
+ "regressions": null,
+ "experiments": null
+}

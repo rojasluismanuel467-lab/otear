@@ -1,0 +1,76 @@
+{
+  "_nota": "Umbrales de scripts/ui-audit.mjs. Un valor fuera de umbral hace fallar el script (código 1). Se ajustan por decisión del equipo, no para que «pase». Explicación en docs/planning/ui-audit/README.md.",
+  "routes": [
+    "/",
+    "/programacion/",
+    "/vuelos/",
+    "/evolucion/",
+    "/servicios/",
+    "/pagos/",
+    "/informes/",
+    "/documentos/"
+  ],
+  "viewports": {
+    "desktop": { "width": 1440, "height": 900, "mobile": false },
+    "mobile": { "width": 390, "height": 844, "mobile": true }
+  },
+  "thresholds": {
+    "lighthouse": {
+      "performance": { "desktop": 0.8, "mobile": 0.5 },
+      "accessibility": { "desktop": 0.95, "mobile": 0.95 },
+      "bestPractices": { "desktop": 0.9, "mobile": 0.9 },
+      "lcpMs": { "desktop": 2500, "mobile": 4000 },
+      "cls": { "desktop": 0.1, "mobile": 0.1 },
+      "tbtMs": { "desktop": 300, "mobile": 1200 },
+      "jsKbTransfer": { "desktop": 700, "mobile": 700 }
+    },
+    "axe": { "maxViolations": 0, "contrastMaxNodes": 0 },
+    "overflowPx": 0,
+    "smallTextMaxCount": 0,
+    "inpProxyMs": { "desktop": 200, "mobile": 400 },
+    "scrollP95FrameMs": { "desktop": 50, "mobile": 50 }
+  },
+  "regression": {
+    "_nota": "Solo se usa con --compare <base>.json. Tolerancias frente a la medición base.",
+    "lighthousePerformanceDrop": 0.05,
+    "lighthouseAccessibilityDrop": 0.01,
+    "lcpIncreasePct": 15,
+    "jsTransferIncreasePct": 10,
+    "newAxeViolations": 0,
+    "newSmallText": 0,
+    "newOverflow": 0
+  },
+  "ignoreSmallTextSelectors": [
+    ".leaflet-control-attribution",
+    ".leaflet-control-attribution *"
+  ],
+  "experiments": {
+    "routes": ["/", "/vuelos/", "/evolucion/"],
+    "variants": [
+      {
+        "name": "sin backdrop-filter",
+        "css": "*,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}"
+      },
+      {
+        "name": "sin filter (blur, sombras con filtro)",
+        "css": "*,*::before,*::after{filter:none!important}"
+      },
+      {
+        "name": "sin pseudo-elementos de fondo (carta, grano, brillo)",
+        "css": "html::before,html::after,body::before,body::after,[class*='__page']::before,[class*='__page']::after{display:none!important}"
+      },
+      {
+        "name": "sin animaciones ni transiciones CSS",
+        "css": "*,*::before,*::after{animation:none!important;transition:none!important}"
+      },
+      {
+        "name": "sin canvas (avión, mapas WebGL, 3D)",
+        "css": "canvas{display:none!important}"
+      },
+      {
+        "name": "sin sombras (box-shadow)",
+        "css": "*,*::before,*::after{box-shadow:none!important;text-shadow:none!important}"
+      }
+    ]
+  }
+}
