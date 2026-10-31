@@ -175,6 +175,9 @@ function behindText() {
 export function LandingPage() {
   return (
     <div className={styles.page}>
+      <a href="#contenido" className="skip-link">
+        Saltar al contenido
+      </a>
       <DroneCursor />
       <DroneFlight />
       <VisitCounter />
@@ -204,486 +207,512 @@ export function LandingPage() {
         </div>
       </header>
 
-      <section className={styles.hero} data-cursor-theme="dark">
-        <div className={styles.heroContours} aria-hidden />
-        <div className={styles.heroInner}>
-          <div className={styles.heroCopy}>
-            <h1 className={styles.title}>
-              La plataforma para{" "}
-              <span className={styles.titleAccent}>comparar</span> los vuelos de
-              dron de su operación.
-            </h1>
-            <HeroProof placement="inline" />
-            <p className={styles.subtitle}>
-              Reúna en un solo lugar los vuelos de su finca, vía, obra, predio o
-              mina, o de lo que usted supervise. Compare cada zona con su vuelo
-              anterior, convierta lo que vio en tareas e informes y, antes de
-              pagar, contraste lo pedido, lo que el operador dice haber cubierto
-              y lo que facturó.
+      <main id="contenido">
+        <section className={styles.hero} data-cursor-theme="dark">
+          <div className={styles.heroContours} aria-hidden />
+          <div className={styles.heroInner}>
+            <div className={styles.heroCopy}>
+              <h1 className={styles.title}>
+                La plataforma para{" "}
+                <span className={styles.titleAccent}>comparar</span> los vuelos
+                de dron de su operación.
+              </h1>
+              <HeroProof placement="inline" />
+              <p className={styles.subtitle}>
+                Reúna en un solo lugar los vuelos de su finca, vía, obra, predio
+                o mina, o de lo que usted supervise. Compare cada zona con su
+                vuelo anterior, convierta lo que vio en tareas e informes y,
+                antes de pagar, contraste lo pedido, lo que el operador dice
+                haber cubierto y lo que facturó.
+              </p>
+              <p className={styles.heroNote}>
+                <strong>Otear no hace los vuelos.</strong> Los hace su operador
+                de dron, el que ya tiene o el que usted elija, y es él quien los
+                entrega; Otear es donde usted los reúne, los verifica y los
+                compara.
+              </p>
+              <div className={styles.ctaRow}>
+                <DemoLink className={`${styles.linkBtn} ${styles.primary}`}>
+                  Abrir la demo <ArrowRight size={16} aria-hidden />
+                </DemoLink>
+                <Link
+                  href="#contacto"
+                  className={`${styles.linkBtn} ${styles.ghost}`}
+                >
+                  Hablemos sin compromiso
+                </Link>
+              </div>
+              <div className={styles.heroMeta}>
+                <span>Sin registro</span>
+                <span>Datos de ejemplo: nada es real</span>
+                <span>Los mapas necesitan internet</span>
+                <span>En validación: aún sin prueba con un cliente</span>
+              </div>
+              <Link href="#estado" className={styles.inlineLink}>
+                Qué hay hoy, qué falta y qué se acuerda con usted{" "}
+                <ArrowRight size={14} aria-hidden />
+              </Link>
+              <p className={styles.heroBehind}>
+                {behindOtear.who ? (
+                  <>
+                    <strong>Quién está detrás.</strong> {behindText()} Escriba
+                    a{" "}
+                  </>
+                ) : (
+                  <>
+                    <strong>Contacto.</strong> Escríbanos a{" "}
+                  </>
+                )}
+                <a href="mailto:hola@otear.app">hola@otear.app</a>.
+              </p>
+            </div>
+
+            <div className={styles.heroVisual}>
+              <HeroProof placement="side" />
+              {/* The aircraft is drawn by <DroneFlight /> on a fixed layer; it
+                first circles over this slot. The placeholder reserves the
+                space. */}
+              <div
+                className={styles.droneWrap}
+                data-drone-slot
+                aria-hidden="true"
+              />
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionDivider} aria-hidden />
+
+        <SectorPicker />
+
+        <section className={styles.section} id="que-resuelve">
+          <header className={styles.sectionHead} data-flight-perch="head">
+            <div className={styles.sectionLabel}>Qué resuelve</div>
+            <h2 className={styles.sectionTitle}>
+              Tres cosas que hoy duelen cuando pide un vuelo y mañana lo quiere
+              volver a mirar.
+            </h2>
+            <p className={styles.sectionSubtitle}>
+              Lo que Otear hace distinto: no es más PDFs ni más carpetas.
             </p>
-            <p className={styles.heroNote}>
-              <strong>Otear no hace los vuelos.</strong> Los hace su operador de
-              dron, el que ya tiene o el que usted elija, y es él quien los
-              entrega; Otear es donde usted los reúne, los verifica y los
-              compara.
+          </header>
+
+          <ol className={styles.stepper}>
+            {steps.map((step, index) => (
+              <li
+                key={step.title}
+                className={styles.step}
+                style={{ ["--i" as string]: index }}
+              >
+                <div className={styles.stepNumber}>
+                  {String(index + 1).padStart(2, "0")}
+                </div>
+                <div className={styles.stepBody}>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </div>
+                <span className={styles.stepTag}>{step.tag}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className={styles.section} id="casos-de-uso">
+          <header className={styles.sectionHead} data-flight-perch="head">
+            <div className={styles.sectionLabel}>Ejemplos de uso</div>
+            <h2 className={styles.sectionTitle}>
+              Empezamos por el campo. Sirve a{" "}
+              <span className="accent">cualquier</span> sector.
+            </h2>
+            <p className={styles.sectionSubtitle}>
+              La historia más completa de la demo es la de una hacienda; otros
+              cuatro sectores tienen proyecto de muestra, y ninguno es el límite
+              del producto: el vocabulario cambia con el suyo.
             </p>
-            <div className={styles.ctaRow}>
+          </header>
+
+          <article
+            className={`${styles.example} ${styles.mainCase}`}
+            aria-labelledby="caso-principal-title"
+            data-flight-clear
+          >
+            <div className={styles.mainCaseCopy}>
+              <div className={styles.caseHead}>
+                <span className={styles.caseIcon} aria-hidden>
+                  <mainCase.Icon size={18} />
+                </span>
+                <span className={styles.roleName}>
+                  {mainCase.sector} · caso principal
+                </span>
+              </div>
+              <h3 id="caso-principal-title" className={styles.mainCaseTitle}>
+                {mainCase.title}: la hacienda de ejemplo
+              </h3>
+              <p className={styles.roleLine}>{mainCase.line}</p>
+              <div className={styles.roleTags}>
+                {mainCase.tags.map((tag) => (
+                  <span key={tag} className={styles.roleTag}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.mainCaseFigures}>
+              <div className={styles.exampleHead}>
+                <h4>Pedido, cubierto y facturado</h4>
+                <span className={styles.exampleBadge}>Cifras de ejemplo</span>
+              </div>
+              <dl className={styles.figureRow}>
+                <div>
+                  <dt>Se pidieron</dt>
+                  <dd>{example.ordered} ha</dd>
+                </div>
+                <div>
+                  <dt>El operador declara</dt>
+                  <dd>{example.covered} ha</dd>
+                </div>
+                <div>
+                  <dt>Facturó</dt>
+                  <dd>{example.billed} ha</dd>
+                </div>
+              </dl>
+              <p className={styles.exampleText}>
+                Antes de registrar el pago, Otear marca la diferencia: «Facturó{" "}
+                {example.over} ha más de las cubiertas ({example.overPct} %)».{" "}
+                {toleranceText()}
+              </p>
+              <p className={styles.exampleNote}>
+                Cifras sintéticas de la demo, no de un cliente ni un ahorro
+                real. La hectárea cubierta la declara el operador; Otear no la
+                mide con las imágenes.
+              </p>
+              <div className={styles.sectionActions}>
+                <Link
+                  href="/pagos/"
+                  prefetch={false}
+                  className={styles.inlineLink}
+                >
+                  Verlo en la demo: Pagos, «Antes de pagar»{" "}
+                  <ArrowRight size={14} aria-hidden />
+                </Link>
+                <Link
+                  href="/evolucion/"
+                  prefetch={false}
+                  className={styles.inlineLink}
+                >
+                  Evolución del cultivo <ArrowRight size={14} aria-hidden />
+                </Link>
+              </div>
+            </div>
+          </article>
+
+          <h3 className={styles.otherCasesTitle}>
+            También con proyecto de muestra en la demo
+          </h3>
+          <ul className={styles.sectorGrid} data-flight-clear>
+            {cases.map(({ sector, title, line, Icon }) => (
+              <li
+                key={sector}
+                className={`${styles.role} ${styles.sectorCard}`}
+              >
+                <span className={styles.caseIcon} aria-hidden>
+                  <Icon size={18} />
+                </span>
+                <span className={styles.roleName}>{sector}</span>
+                <h4 className={styles.sectorTitle}>{title}</h4>
+                <p className={styles.sectorLine}>{line}</p>
+              </li>
+            ))}
+          </ul>
+
+          <article
+            className={`${styles.role} ${styles.sectorOpen}`}
+            aria-labelledby="su-sector-title"
+            data-flight-clear
+          >
+            <div className={styles.sectorOpenCopy}>
+              <div className={styles.caseHead}>
+                <span className={styles.caseIcon} aria-hidden>
+                  <Plus size={18} />
+                </span>
+                <span className={styles.roleName}>Su sector</span>
+              </div>
+              <h4 id="su-sector-title" className={styles.sectorTitle}>
+                Lo que usted opere
+              </h4>
+              <p className={styles.sectorLine}>
+                Si hay un terreno, una instalación o un activo que se mira mejor
+                desde arriba y se compara en el tiempo, Otear se adapta. Todavía
+                no hay un piloto con sus propios vuelos en estos sectores:
+                queremos oír el suyo.
+              </p>
+            </div>
+            <div className={styles.sectorOpenSide}>
+              <div className={styles.roleTags}>
+                {otherSectors.map((name) => (
+                  <span key={name} className={styles.roleTag}>
+                    {name}
+                  </span>
+                ))}
+              </div>
+              <Link href="#contacto" className={styles.inlineLink}>
+                Cuéntenos cuál es el suyo <ArrowRight size={14} aria-hidden />
+              </Link>
+            </div>
+          </article>
+        </section>
+
+        <section className={styles.section} id="para-quien">
+          <header className={styles.sectionHead} data-flight-perch="head">
+            <div className={styles.sectionLabel}>Para quién</div>
+            <h2 className={styles.sectionTitle}>
+              Pensado para quienes conviven con{" "}
+              <span className="accent">el terreno</span>.
+            </h2>
+            <p className={styles.sectionSubtitle}>
+              Lenguaje de su sector, no de software.
+            </p>
+          </header>
+
+          <div className={`${styles.rolesRail} ${styles.rolesRailTwo}`}>
+            {roles.map((role) => (
+              <article key={role.name} className={styles.role}>
+                <div className={styles.roleInner}>
+                  <div className={styles.roleName}>{role.name}</div>
+                  <p className={styles.roleLine}>{role.line}</p>
+                  <div className={styles.roleTags}>
+                    {role.tags.map((tag) => (
+                      <span key={tag} className={styles.roleTag}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <article
+            className={`${styles.role} ${styles.operatorCard}`}
+            aria-labelledby="operador-title"
+          >
+            <div className={styles.roleInner}>
+              <div className={styles.roleName}>Operador de dron</div>
+              <h3 id="operador-title" className={styles.caseTitle}>
+                Usted sigue volando. Otear ordena el pedido y la cuenta.
+              </h3>
+              <p className={styles.roleLine}>
+                Otear no presta vuelos ni los reemplaza: usted sigue siendo
+                quien vuela.
+              </p>
+              <details className={styles.operatorMore}>
+                <summary>
+                  Qué recibe, qué entrega y qué se define con usted
+                </summary>
+                <div className={styles.operatorCols}>
+                  {operatorColumns.map((column) => (
+                    <div key={column.title}>
+                      <h4>{column.title}</h4>
+                      <ul>
+                        {column.items.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </details>
+              <DemoLink viewAs="operator" className={styles.inlineLink}>
+                Ver la demo como operador <ArrowRight size={14} aria-hidden />
+              </DemoLink>
+            </div>
+          </article>
+        </section>
+
+        <section className={styles.section} id="a-su-medida">
+          <header className={styles.sectionHead} data-flight-perch="head">
+            <div className={styles.sectionLabel}>
+              <Blocks size={14} aria-hidden /> A su medida
+            </div>
+            <h2 className={styles.sectionTitle}>
+              Cada sector tiene sus propias piezas.{" "}
+              <span className="accent">Cree las suyas</span>.
+            </h2>
+            <p className={styles.sectionSubtitle}>
+              La base es la misma: sitios, zonas, vuelos, comparación e
+              informes. Lo propio de su sector se agrega encima.
+            </p>
+          </header>
+
+          <ol className={styles.stepper}>
+            {customSteps.map((step, index) => (
+              <li
+                key={step.title}
+                className={styles.step}
+                style={{ ["--i" as string]: index }}
+              >
+                <div className={styles.stepNumber}>
+                  {String(index + 1).padStart(2, "0")}
+                </div>
+                <div className={styles.stepBody}>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </div>
+                <span className={styles.stepTag}>{step.tag}</span>
+              </li>
+            ))}
+          </ol>
+
+          <div className={styles.sectionActions}>
+            <Link
+              href="/configuracion/"
+              prefetch={false}
+              className={styles.inlineLink}
+            >
+              Ver Configuración en la demo <ArrowRight size={14} aria-hidden />
+            </Link>
+            <Link href="#contacto" className={styles.inlineLink}>
+              Pedir una pieza para mi sector{" "}
+              <ArrowRight size={14} aria-hidden />
+            </Link>
+          </div>
+        </section>
+
+        <section>
+          <div className={styles.demoStrip} data-cursor-theme="dark">
+            <div className={styles.demoStripInner}>
+              <h3 className={styles.demoStripTitle}>
+                Entre a la demo. Sin registro, sin instalar{" "}
+                <span className="accent">nada</span>.
+              </h3>
+              <p className={styles.demoStripText}>
+                Son datos de ejemplo de cinco proyectos (una hacienda, una vía,
+                una obra, una mina y un parque). Programe un vuelo, marque lo
+                que encuentra, compare en el tiempo y firme un documento de
+                soporte. Lo que haga se borra al recargar; solo lo que elija en
+                Configuración se queda en este navegador. Los vuelos ya vienen
+                cargados: en la práctica los entrega el operador, y la carga
+                real de archivos todavía no existe.
+              </p>
               <DemoLink className={`${styles.linkBtn} ${styles.primary}`}>
                 Abrir la demo <ArrowRight size={16} aria-hidden />
               </DemoLink>
-              <Link
-                href="#contacto"
-                className={`${styles.linkBtn} ${styles.ghost}`}
-              >
-                Hablemos sin compromiso
-              </Link>
             </div>
-            <div className={styles.heroMeta}>
-              <span>Sin registro</span>
-              <span>Datos de ejemplo: nada es real</span>
-              <span>Los mapas necesitan internet</span>
-              <span>En validación: aún sin prueba con un cliente</span>
-            </div>
-            <Link href="#estado" className={styles.inlineLink}>
-              Qué hay hoy, qué falta y qué se acuerda con usted{" "}
-              <ArrowRight size={14} aria-hidden />
-            </Link>
-            <p className={styles.heroBehind}>
-              {behindOtear.who ? (
-                <>
-                  <strong>Quién está detrás.</strong> {behindText()} Escriba
-                  a{" "}
-                </>
-              ) : (
-                <>
-                  <strong>Contacto.</strong> Escríbanos a{" "}
-                </>
-              )}
-              <a href="mailto:hola@otear.app">hola@otear.app</a>.
-            </p>
-          </div>
 
-          <div className={styles.heroVisual}>
-            <HeroProof placement="side" />
-            {/* The aircraft is drawn by <DroneFlight /> on a fixed layer; it
-                first circles over this slot. The placeholder reserves the
-                space. */}
-            <div
-              className={styles.droneWrap}
-              data-drone-slot
-              aria-hidden="true"
-            />
-          </div>
-        </div>
-      </section>
-
-      <div className={styles.sectionDivider} aria-hidden />
-
-      <SectorPicker />
-
-      <section className={styles.section} id="que-resuelve">
-        <header className={styles.sectionHead} data-flight-perch="head">
-          <div className={styles.sectionLabel}>Qué resuelve</div>
-          <h2 className={styles.sectionTitle}>
-            Tres cosas que hoy duelen cuando pide un vuelo y mañana lo quiere
-            volver a mirar.
-          </h2>
-          <p className={styles.sectionSubtitle}>
-            Lo que Otear hace distinto: no es más PDFs ni más carpetas.
-          </p>
-        </header>
-
-        <ol className={styles.stepper}>
-          {steps.map((step, index) => (
-            <li
-              key={step.title}
-              className={styles.step}
-              style={{ ["--i" as string]: index }}
-            >
-              <div className={styles.stepNumber}>
-                {String(index + 1).padStart(2, "0")}
-              </div>
-              <div className={styles.stepBody}>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </div>
-              <span className={styles.stepTag}>{step.tag}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className={styles.section} id="casos-de-uso">
-        <header className={styles.sectionHead} data-flight-perch="head">
-          <div className={styles.sectionLabel}>Ejemplos de uso</div>
-          <h2 className={styles.sectionTitle}>
-            Empezamos por el campo. Sirve a{" "}
-            <span className="accent">cualquier</span> sector.
-          </h2>
-          <p className={styles.sectionSubtitle}>
-            La historia más completa de la demo es la de una hacienda; otros
-            cuatro sectores tienen proyecto de muestra, y ninguno es el límite
-            del producto: el vocabulario cambia con el suyo.
-          </p>
-        </header>
-
-        <article
-          className={`${styles.example} ${styles.mainCase}`}
-          aria-labelledby="caso-principal-title"
-          data-flight-clear
-        >
-          <div className={styles.mainCaseCopy}>
-            <div className={styles.caseHead}>
-              <span className={styles.caseIcon} aria-hidden>
-                <mainCase.Icon size={18} />
-              </span>
-              <span className={styles.roleName}>
-                {mainCase.sector} · caso principal
-              </span>
-            </div>
-            <h3 id="caso-principal-title" className={styles.mainCaseTitle}>
-              {mainCase.title}: la hacienda de ejemplo
-            </h3>
-            <p className={styles.roleLine}>{mainCase.line}</p>
-            <div className={styles.roleTags}>
-              {mainCase.tags.map((tag) => (
-                <span key={tag} className={styles.roleTag}>
-                  {tag}
+            <div className={styles.demoStats} aria-label="Qué incluye la demo">
+              <div className={styles.demoStatRow}>
+                <span className={styles.demoStatLabel}>
+                  Proyectos de ejemplo
                 </span>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.mainCaseFigures}>
-            <div className={styles.exampleHead}>
-              <h4>Pedido, cubierto y facturado</h4>
-              <span className={styles.exampleBadge}>Cifras de ejemplo</span>
-            </div>
-            <dl className={styles.figureRow}>
-              <div>
-                <dt>Se pidieron</dt>
-                <dd>{example.ordered} ha</dd>
-              </div>
-              <div>
-                <dt>El operador declara</dt>
-                <dd>{example.covered} ha</dd>
-              </div>
-              <div>
-                <dt>Facturó</dt>
-                <dd>{example.billed} ha</dd>
-              </div>
-            </dl>
-            <p className={styles.exampleText}>
-              Antes de registrar el pago, Otear marca la diferencia: «Facturó{" "}
-              {example.over} ha más de las cubiertas ({example.overPct} %)».{" "}
-              {toleranceText()}
-            </p>
-            <p className={styles.exampleNote}>
-              Cifras sintéticas de la demo, no de un cliente ni un ahorro real.
-              La hectárea cubierta la declara el operador; Otear no la mide con
-              las imágenes.
-            </p>
-            <div className={styles.sectionActions}>
-              <Link href="/pagos/" className={styles.inlineLink}>
-                Verlo en la demo: Pagos, «Antes de pagar»{" "}
-                <ArrowRight size={14} aria-hidden />
-              </Link>
-              <Link href="/evolucion/" className={styles.inlineLink}>
-                Evolución del cultivo <ArrowRight size={14} aria-hidden />
-              </Link>
-            </div>
-          </div>
-        </article>
-
-        <h3 className={styles.otherCasesTitle}>
-          También con proyecto de muestra en la demo
-        </h3>
-        <ul className={styles.sectorGrid} data-flight-clear>
-          {cases.map(({ sector, title, line, Icon }) => (
-            <li key={sector} className={`${styles.role} ${styles.sectorCard}`}>
-              <span className={styles.caseIcon} aria-hidden>
-                <Icon size={18} />
-              </span>
-              <span className={styles.roleName}>{sector}</span>
-              <h4 className={styles.sectorTitle}>{title}</h4>
-              <p className={styles.sectorLine}>{line}</p>
-            </li>
-          ))}
-        </ul>
-
-        <article
-          className={`${styles.role} ${styles.sectorOpen}`}
-          aria-labelledby="su-sector-title"
-          data-flight-clear
-        >
-          <div className={styles.sectorOpenCopy}>
-            <div className={styles.caseHead}>
-              <span className={styles.caseIcon} aria-hidden>
-                <Plus size={18} />
-              </span>
-              <span className={styles.roleName}>Su sector</span>
-            </div>
-            <h4 id="su-sector-title" className={styles.sectorTitle}>
-              Lo que usted opere
-            </h4>
-            <p className={styles.sectorLine}>
-              Si hay un terreno, una instalación o un activo que se mira mejor
-              desde arriba y se compara en el tiempo, Otear se adapta. Todavía
-              no hay un piloto con sus propios vuelos en estos sectores:
-              queremos oír el suyo.
-            </p>
-          </div>
-          <div className={styles.sectorOpenSide}>
-            <div className={styles.roleTags}>
-              {otherSectors.map((name) => (
-                <span key={name} className={styles.roleTag}>
-                  {name}
+                <span className={styles.demoStatValue}>
+                  5 proyectos ·{" "}
+                  <span className={styles.demoStatValueAccent}>5 sectores</span>
                 </span>
-              ))}
+              </div>
+              <div className={styles.demoStatRow}>
+                <span className={styles.demoStatLabel}>Vuelos registrados</span>
+                <span className={styles.demoStatValue}>
+                  35 vuelos ·{" "}
+                  <span className={styles.demoStatValueAccent}>
+                    2 operadores
+                  </span>
+                </span>
+              </div>
+              <div className={styles.demoStatRow}>
+                <span className={styles.demoStatLabel}>Módulos activos</span>
+                <span className={styles.demoStatValue}>
+                  10 vistas interactivas
+                </span>
+              </div>
+              <div className={styles.demoStatRow}>
+                <span className={styles.demoStatLabel}>
+                  Marca de integridad
+                </span>
+                <span className={styles.demoStatValue}>
+                  Se calcula en{" "}
+                  <span className={styles.demoStatValueAccent}>
+                    su navegador
+                  </span>
+                </span>
+              </div>
             </div>
-            <Link href="#contacto" className={styles.inlineLink}>
-              Cuéntenos cuál es el suyo <ArrowRight size={14} aria-hidden />
-            </Link>
           </div>
-        </article>
-      </section>
+        </section>
 
-      <section className={styles.section} id="para-quien">
-        <header className={styles.sectionHead} data-flight-perch="head">
-          <div className={styles.sectionLabel}>Para quién</div>
-          <h2 className={styles.sectionTitle}>
-            Pensado para quienes conviven con{" "}
-            <span className="accent">el terreno</span>.
-          </h2>
-          <p className={styles.sectionSubtitle}>
-            Lenguaje de su sector, no de software.
-          </p>
-        </header>
+        <section className={styles.section} id="estado">
+          <header className={styles.sectionHead} data-flight-perch="head">
+            <div className={styles.sectionLabel}>Sin letra pequeña</div>
+            <h2 className={styles.sectionTitle}>
+              Qué hay hoy y <span className="accent">qué falta</span>.
+            </h2>
+            <p className={styles.sectionSubtitle}>
+              Otear está en validación: todavía no hay una prueba con los vuelos
+              de un cliente. Esto es lo que ya puede probar y lo que se acuerda
+              con usted.
+            </p>
+          </header>
 
-        <div className={`${styles.rolesRail} ${styles.rolesRailTwo}`}>
-          {roles.map((role) => (
-            <article key={role.name} className={styles.role}>
-              <div className={styles.roleInner}>
-                <div className={styles.roleName}>{role.name}</div>
-                <p className={styles.roleLine}>{role.line}</p>
-                <div className={styles.roleTags}>
-                  {role.tags.map((tag) => (
-                    <span key={tag} className={styles.roleTag}>
-                      {tag}
-                    </span>
-                  ))}
+          <div className={styles.rolesRail}>
+            {[
+              { name: "Ya puede probarlo", items: today },
+              { name: "Se acuerda con usted", items: toDefine },
+              { name: "Propuestas por validar", items: proposals },
+            ].map((group) => (
+              <article key={group.name} className={styles.role}>
+                <div className={styles.roleInner}>
+                  <h3 className={styles.roleName}>{group.name}</h3>
+                  <ul className={styles.stateList}>
+                    {group.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <article
-          className={`${styles.role} ${styles.operatorCard}`}
-          aria-labelledby="operador-title"
-        >
-          <div className={styles.roleInner}>
-            <div className={styles.roleName}>Operador de dron</div>
-            <h3 id="operador-title" className={styles.caseTitle}>
-              Usted sigue volando. Otear ordena el pedido y la cuenta.
-            </h3>
-            <p className={styles.roleLine}>
-              Otear no presta vuelos ni los reemplaza: usted sigue siendo quien
-              vuela.
-            </p>
-            <details className={styles.operatorMore}>
-              <summary>
-                Qué recibe, qué entrega y qué se define con usted
-              </summary>
-              <div className={styles.operatorCols}>
-                {operatorColumns.map((column) => (
-                  <div key={column.title}>
-                    <h4>{column.title}</h4>
-                    <ul>
-                      {column.items.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </details>
-            <DemoLink viewAs="operator" className={styles.inlineLink}>
-              Ver la demo como operador <ArrowRight size={14} aria-hidden />
-            </DemoLink>
+              </article>
+            ))}
           </div>
-        </article>
-      </section>
+        </section>
 
-      <section className={styles.section} id="a-su-medida">
-        <header className={styles.sectionHead} data-flight-perch="head">
-          <div className={styles.sectionLabel}>
-            <Blocks size={14} aria-hidden /> A su medida
-          </div>
-          <h2 className={styles.sectionTitle}>
-            Cada sector tiene sus propias piezas.{" "}
-            <span className="accent">Cree las suyas</span>.
-          </h2>
-          <p className={styles.sectionSubtitle}>
-            La base es la misma: sitios, zonas, vuelos, comparación e informes.
-            Lo propio de su sector se agrega encima.
-          </p>
-        </header>
-
-        <ol className={styles.stepper}>
-          {customSteps.map((step, index) => (
-            <li
-              key={step.title}
-              className={styles.step}
-              style={{ ["--i" as string]: index }}
-            >
-              <div className={styles.stepNumber}>
-                {String(index + 1).padStart(2, "0")}
+        <section className={styles.contact} id="contacto">
+          <div className={styles.contactInner} data-flight-clear>
+            <div className={styles.contactIntro}>
+              <h3 id="contacto-title">Hablemos sin compromiso.</h3>
+              <p>
+                Estamos validando Otear empezando por agricultura, carreteras,
+                construcción, minería y vigilancia, pero no es solo para ellos.
+                Si su sector no aparece, es justo la conversación que queremos
+                tener: nos sentamos 30 minutos a entender su operación y le
+                mostramos cómo encajaría y qué piezas haría falta crear.
+              </p>
+              <ul className={styles.contactBullets}>
+                <li>
+                  <Check size={16} aria-hidden /> Primera reunión de 30 minutos,
+                  sin costo, por videollamada o en su sitio de trabajo.
+                </li>
+                <li>
+                  <Check size={16} aria-hidden /> Cuánto cuesta lo que sigue:
+                  por definir. Se acuerda según su operación, después de esa
+                  conversación.
+                </li>
+                <li>
+                  <Check size={16} aria-hidden /> No le pedimos cambiar de
+                  operador de dron: Otear no presta vuelos. Los entrega el
+                  operador y usted los verifica.
+                </li>
+                <li>
+                  <Check size={16} aria-hidden /> Si no le cuadra, le pasamos
+                  igual el resumen de la conversación.
+                </li>
+              </ul>
+              <div className={styles.contactMeta}>
+                O escríbanos directo a{" "}
+                <a href="mailto:hola@otear.app">hola@otear.app</a>.
               </div>
-              <div className={styles.stepBody}>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </div>
-              <span className={styles.stepTag}>{step.tag}</span>
-            </li>
-          ))}
-        </ol>
-
-        <div className={styles.sectionActions}>
-          <Link href="/configuracion/" className={styles.inlineLink}>
-            Ver Configuración en la demo <ArrowRight size={14} aria-hidden />
-          </Link>
-          <Link href="#contacto" className={styles.inlineLink}>
-            Pedir una pieza para mi sector <ArrowRight size={14} aria-hidden />
-          </Link>
-        </div>
-      </section>
-
-      <section>
-        <div className={styles.demoStrip} data-cursor-theme="dark">
-          <div className={styles.demoStripInner}>
-            <h3 className={styles.demoStripTitle}>
-              Entre a la demo. Sin registro, sin instalar{" "}
-              <span className="accent">nada</span>.
-            </h3>
-            <p className={styles.demoStripText}>
-              Son datos de ejemplo de cinco proyectos (una hacienda, una vía,
-              una obra, una mina y un parque). Programe un vuelo, marque lo que
-              encuentra, compare en el tiempo y firme un documento de soporte.
-              Lo que haga se borra al recargar; solo lo que elija en
-              Configuración se queda en este navegador. Los vuelos ya vienen
-              cargados: en la práctica los entrega el operador, y la carga real
-              de archivos todavía no existe.
-            </p>
-            <DemoLink className={`${styles.linkBtn} ${styles.primary}`}>
-              Abrir la demo <ArrowRight size={16} aria-hidden />
-            </DemoLink>
+            </div>
+            <LeadForm />
           </div>
-
-          <div className={styles.demoStats} aria-label="Qué incluye la demo">
-            <div className={styles.demoStatRow}>
-              <span className={styles.demoStatLabel}>Proyectos de ejemplo</span>
-              <span className={styles.demoStatValue}>
-                5 proyectos ·{" "}
-                <span className={styles.demoStatValueAccent}>5 sectores</span>
-              </span>
-            </div>
-            <div className={styles.demoStatRow}>
-              <span className={styles.demoStatLabel}>Vuelos registrados</span>
-              <span className={styles.demoStatValue}>
-                35 vuelos ·{" "}
-                <span className={styles.demoStatValueAccent}>2 operadores</span>
-              </span>
-            </div>
-            <div className={styles.demoStatRow}>
-              <span className={styles.demoStatLabel}>Módulos activos</span>
-              <span className={styles.demoStatValue}>
-                10 vistas interactivas
-              </span>
-            </div>
-            <div className={styles.demoStatRow}>
-              <span className={styles.demoStatLabel}>Marca de integridad</span>
-              <span className={styles.demoStatValue}>
-                Se calcula en{" "}
-                <span className={styles.demoStatValueAccent}>su navegador</span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.section} id="estado">
-        <header className={styles.sectionHead} data-flight-perch="head">
-          <div className={styles.sectionLabel}>Sin letra pequeña</div>
-          <h2 className={styles.sectionTitle}>
-            Qué hay hoy y <span className="accent">qué falta</span>.
-          </h2>
-          <p className={styles.sectionSubtitle}>
-            Otear está en validación: todavía no hay una prueba con los vuelos
-            de un cliente. Esto es lo que ya puede probar y lo que se acuerda
-            con usted.
-          </p>
-        </header>
-
-        <div className={styles.rolesRail}>
-          {[
-            { name: "Ya puede probarlo", items: today },
-            { name: "Se acuerda con usted", items: toDefine },
-            { name: "Propuestas por validar", items: proposals },
-          ].map((group) => (
-            <article key={group.name} className={styles.role}>
-              <div className={styles.roleInner}>
-                <h3 className={styles.roleName}>{group.name}</h3>
-                <ul className={styles.stateList}>
-                  {group.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.contact} id="contacto">
-        <div className={styles.contactInner} data-flight-clear>
-          <div className={styles.contactIntro}>
-            <h3 id="contacto-title">Hablemos sin compromiso.</h3>
-            <p>
-              Estamos validando Otear empezando por agricultura, carreteras,
-              construcción, minería y vigilancia, pero no es solo para ellos. Si
-              su sector no aparece, es justo la conversación que queremos tener:
-              nos sentamos 30 minutos a entender su operación y le mostramos
-              cómo encajaría y qué piezas haría falta crear.
-            </p>
-            <ul className={styles.contactBullets}>
-              <li>
-                <Check size={16} aria-hidden /> Primera reunión de 30 minutos,
-                sin costo, por videollamada o en su sitio de trabajo.
-              </li>
-              <li>
-                <Check size={16} aria-hidden /> Cuánto cuesta lo que sigue: por
-                definir. Se acuerda según su operación, después de esa
-                conversación.
-              </li>
-              <li>
-                <Check size={16} aria-hidden /> No le pedimos cambiar de
-                operador de dron: Otear no presta vuelos. Los entrega el
-                operador y usted los verifica.
-              </li>
-              <li>
-                <Check size={16} aria-hidden /> Si no le cuadra, le pasamos
-                igual el resumen de la conversación.
-              </li>
-            </ul>
-            <div className={styles.contactMeta}>
-              O escríbanos directo a{" "}
-              <a href="mailto:hola@otear.app">hola@otear.app</a>.
-            </div>
-          </div>
-          <LeadForm />
-        </div>
-      </section>
+        </section>
+      </main>
 
       <footer className={styles.footer} data-cursor-theme="dark">
         <Image

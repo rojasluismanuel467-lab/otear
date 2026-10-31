@@ -153,6 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <Link
           href="/programacion"
+          prefetch={false}
           className="brand"
           aria-label={`${companyName || "Otear"}, inicio`}
         >
@@ -184,7 +185,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           {navigation.map(({ href, label, icon: Icon }) => (
             <Link
               href={href}
+              prefetch={false}
               key={href}
+              // Prefetch on intent (hover or focus), not for every link in view: the
+              // automatic one pulled in the JS of every other screen, 3D and maps included.
+              onPointerEnter={() => router.prefetch(href)}
+              onFocus={() => router.prefetch(href)}
               onClick={() => setMobileOpen(false)}
               className={`nav-item ${pathname.startsWith(href) ? "nav-item--active" : ""}`}
               aria-current={pathname.startsWith(href) ? "page" : undefined}
@@ -200,6 +206,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="sidebar-bottom">
           <Link
             href="/configuracion"
+            prefetch={false}
             className={`help-link ${pathname.startsWith("/configuracion") ? "help-link--active" : ""}`}
             aria-current={
               pathname.startsWith("/configuracion") ? "page" : undefined
@@ -254,7 +261,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <PanelLeftClose size={19} />
               )}
             </button>
-            <strong>{activeNav?.label ?? "Otear"}</strong>
+            <strong className="topbar-page">
+              {activeNav?.label ?? "Otear"}
+            </strong>
           </div>
           <SiteSwitcher />
           <div className="topbar-actions">

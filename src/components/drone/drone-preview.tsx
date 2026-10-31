@@ -27,7 +27,7 @@ export function DronePreview({
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isUnavailable, setIsUnavailable] = useState(false);
   // The 3D scene (three.js chunk, shaders, a render loop) starts only once this panel is
-  // near the screen and the page is idle, so it never competes with the first paint.
+  // within about a screen of the viewport and the page is idle, so it never competes with the first paint.
   const [wanted, setWanted] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +41,7 @@ export function DronePreview({
         observer.disconnect();
         cancelIdle = whenIdle(() => setWanted(true), 1500);
       },
-      { rootMargin: "200px" },
+      { rootMargin: "600px" },
     );
     observer.observe(stage);
     return () => {

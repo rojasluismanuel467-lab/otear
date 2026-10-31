@@ -340,6 +340,9 @@ export function DroneScene({
       shadowMaterial.opacity = drone.shadow ?? 1;
       applyLights(drone);
       resize();
+      // Compile the shaders in parallel (KHR_parallel_shader_compile) instead of
+      // stalling the first frame; where it is unsupported three falls back to sync.
+      renderer.compileAsync(scene, camera).catch(() => {});
     };
 
     swapRef.current = (next) => {

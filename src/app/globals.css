@@ -685,6 +685,19 @@ textarea {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+.topbar-search span {
+  white-space: nowrap;
+}
+/* En escritorio el título de la pantalla ya está debajo (h1) y resaltado en el menú: repetirlo
+   en la barra, partido en dos renglones, solo estorba. Se conserva donde no hay menú lateral. */
+.topbar-page {
+  white-space: nowrap;
+}
+@media (min-width: 1101px) {
+  .topbar-page {
+    display: none;
+  }
+}
 .topbar-search kbd {
   display: grid;
   place-items: center;
