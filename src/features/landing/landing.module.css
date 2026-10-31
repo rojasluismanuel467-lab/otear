@@ -50,8 +50,9 @@
   }
 }
 
-/* Superficies de cristal: desenfocan lo que pasa por detrás para que el texto se lea
-   sobre un fondo calmado. Mismos valores que los diálogos de la app. */
+/* Superficies de cristal: casi blancas sobre un fondo que ya está desenfocado. Un segundo
+   desenfoque (backdrop-filter) por tarjeta no se veía y costaba repintar 19 capas al desplazar
+   (ver docs/planning/ui-audit): el desenfoque queda solo en el fondo fijo y en las barras. */
 .role,
 .example,
 .stepper {
@@ -59,40 +60,18 @@
      El borde es un trazo oscuro fino (uno blanco no se vería) y la sombra refuerza el borde.
      El texto secundario se oscurece para mantener 4.5:1. */
   --glass-tint: #f7f7f8;
-  --glass-fill: 74%;
+  --glass-fill: 90%;
   --muted: #43484c;
   background-color: color-mix(
     in srgb,
     var(--glass-tint) var(--glass-fill),
     transparent
   );
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  backdrop-filter: blur(18px) saturate(1.5);
   border: 1px solid rgb(24 26 28 / 0.15);
   box-shadow:
     0 1px 0 rgb(255 255 255 / 0.55) inset,
     0 22px 44px -20px rgb(20 22 24 / 0.4),
     0 3px 10px -4px rgb(20 22 24 / 0.15);
-}
-
-@supports not (
-  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
-) {
-  .role,
-  .example,
-  .stepper {
-    --glass-fill: 94%;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .role,
-  .example,
-  .stepper {
-    --glass-fill: 96%;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 
 /* El formulario y el contacto son superficies opacas: llevan campos y texto pequeño. */
@@ -412,7 +391,6 @@
   border: 1px solid #ffffff26;
   border-radius: 16px;
   background: #0b1a24cc;
-  backdrop-filter: blur(10px);
   color: #e3eef3;
   box-shadow: 0 18px 40px -24px #000000b3;
 }
@@ -533,7 +511,7 @@
   color: #d3e5ec;
   padding: 8px 12px;
   border-radius: 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   backdrop-filter: blur(8px);
   display: inline-flex;
@@ -931,6 +909,28 @@
   margin-top: 16px;
 }
 
+/* Los tres bloques del operador van plegados: la línea de arriba ya dice lo esencial. */
+.operatorMore {
+  margin: 4px 0 8px;
+}
+
+.operatorMore > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.operatorMore[open] > summary {
+  margin-bottom: 8px;
+}
+
 .operatorCols {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1251,7 +1251,6 @@
   align-items: baseline;
   padding: 14px 18px;
   background: #0b1a24cc;
-  backdrop-filter: blur(6px);
 }
 
 .demoStatLabel {

@@ -28,17 +28,17 @@ const steps = [
   {
     tag: "Historia completa",
     title: "Deje de recibir PDFs sueltos.",
-    body: "Cada vuelo queda ligado a su sitio y a su zona (un lote, un tramo, un frente de obra, un sector… lo que su operación llame zona), con fecha. Abre el de la semana pasada y lo compara con el de hoy, en el mismo panel.",
+    body: "Cada vuelo queda ligado a su sitio y a su zona (lote, tramo, frente o lo que su operación llame zona), con fecha. Abre el de la semana pasada y lo compara con el de hoy, en el mismo panel.",
   },
   {
     tag: "Antes de pagar",
     title: "Revise lo facturado, no las promesas.",
-    body: "Pone lado a lado lo pedido, lo que el operador dice haber cubierto y lo que facturó, en hectáreas o por vuelo según el servicio. Si la factura pide más de lo declarado, lo ve antes de registrar el pago. Las hectáreas cubiertas las declara el operador: Otear todavía no las mide con las imágenes.",
+    body: "Pone lado a lado lo pedido, lo que el operador dice haber cubierto y lo que facturó. Si la factura pide más de lo declarado, lo ve antes de registrar el pago. Las hectáreas cubiertas las declara el operador: Otear todavía no las mide con las imágenes.",
   },
   {
     tag: "Trazabilidad",
     title: "Un documento que no se cambia sin dejar rastro.",
-    body: "Los soportes del vuelo (la autorización del sitio, la inspección del equipo, la charla de seguridad) y el informe del vuelo se pueden firmar: el informe, por el operador y por quien lo revisa o interviene. Cada documento guarda una marca que cambia si alguien edita una cifra: la firma queda sin validez y el historial dice qué campo cambió. Es una firma electrónica simple de ejemplo, sin valor legal, y el informe sigue siendo un borrador de demostración.",
+    body: "Los soportes del vuelo y el informe se pueden firmar. Cada documento guarda una marca que cambia si alguien edita una cifra: la firma queda sin validez y el historial dice qué campo cambió. Es una firma electrónica simple de ejemplo, sin valor legal.",
   },
 ];
 
@@ -56,7 +56,7 @@ const cases = [
   {
     sector: "Carreteras",
     title: "Interventoría y mantenimiento vial",
-    line: "Recorra la vía por tramos, deje constancia de cada vuelo, marque drenajes, taludes y deterioros y compárelos con la visita anterior. Cada medida correctiva tiene responsable, plazo y se cierra con una nota de lo que se hizo; en la demo nada se avisa a nadie.",
+    line: "Recorra la vía por tramos, marque drenajes, taludes y deterioros y compárelos con la visita anterior. Cada medida correctiva tiene responsable, plazo y se cierra con una nota.",
     Icon: Route,
   },
   {
@@ -68,13 +68,13 @@ const cases = [
   {
     sector: "Minería",
     title: "Minas a cielo abierto",
-    line: "Mida el avance de cada banco frente al plan, vigile las crestas y los taludes en cada vuelo y deje constancia de cada novedad con su evidencia. Cada novedad se sigue con responsable, plazo y cierre con nota hasta que se atienda; en la demo nada se avisa a nadie.",
+    line: "Mida el avance de cada banco frente al plan, vigile crestas y taludes y deje cada novedad con su evidencia, responsable, plazo y cierre con nota.",
     Icon: Pickaxe,
   },
   {
     sector: "Vigilancia",
     title: "Perímetros y predios",
-    line: "Revise por sectores los cerramientos y accesos, compare un vuelo con el anterior y deje cada novedad con su evidencia y una tarea de revisión.",
+    line: "Revise por sectores cerramientos y accesos, compare un vuelo con el anterior y deje cada novedad con su evidencia y una tarea de revisión.",
     Icon: ShieldCheck,
   },
 ];
@@ -91,17 +91,17 @@ const customSteps = [
   {
     tag: "Ya en la demo",
     title: "Póngale las palabras de su sector.",
-    body: "Renombre «zona», «hallazgo» o «informe» (suertes, tramos, frentes, rondas), oculte y reordene módulos y use su color y su logo. Hay puntos de partida por sector; si el suyo no está, se empieza en blanco.",
+    body: "Renombre «zona», «hallazgo» o «informe» (suertes, tramos, frentes, rondas), oculte y reordene módulos y use su color y su logo. Hay puntos de partida por sector.",
   },
   {
     tag: "Ya en la demo",
     title: "Agregue los datos que su sector mide.",
-    body: "Cree campos propios (texto, número, lista o fecha) en vuelos, hallazgos, equipos y pagos: la densidad de siembra, el PK de una alcantarilla, el piso de una losa, el código de una cámara.",
+    body: "Cree campos propios (texto, número, lista o fecha) en vuelos, hallazgos, equipos y pagos: la densidad de siembra, el PK de una alcantarilla, el piso de una losa.",
   },
   {
     tag: "Se construye con usted",
     title: "Pida una pieza que hoy no existe.",
-    body: "Un conteo, un inventario, una ronda de verificación o un panel propio de su sector. Lo diseñamos con su operación y se suma a lo que ya existe, sin rehacer lo demás. Es una propuesta que estamos validando, no un catálogo cerrado.",
+    body: "Un conteo, un inventario, una ronda de verificación o un panel propio de su sector. Lo diseñamos con su operación y se suma a lo que ya existe. Es una propuesta que estamos validando, no un catálogo cerrado.",
   },
 ];
 
@@ -113,7 +113,7 @@ const roles = [
   },
   {
     name: "Gerente o contratante",
-    line: "Ve cuánto pagó por vuelos, cuánto dice el operador que cubrió y qué se cobró de más. El informe consolidado resume los vuelos, los hallazgos y las medidas, y recoge lo que usted decidió: la solicitud, la cotización elegida y su motivo, y las hectáreas por operador. Es de un solo sitio a la vez.",
+    line: "Ve cuánto pagó por vuelos, cuánto dice el operador que cubrió y qué se cobró de más. El informe consolidado resume vuelos, hallazgos y medidas, y recoge lo que usted decidió, incluida la cotización elegida y su motivo.",
     tags: ["Pagos", "Informes"],
   },
 ];
@@ -289,8 +289,7 @@ export function LandingPage() {
             volver a mirar.
           </h2>
           <p className={styles.sectionSubtitle}>
-            Esto es lo que Otear hace distinto. No es más PDFs ni más carpetas
-            compartidas.
+            Lo que Otear hace distinto: no es más PDFs ni más carpetas.
           </p>
         </header>
 
@@ -322,10 +321,9 @@ export function LandingPage() {
             <span className="accent">cualquier</span> sector.
           </h2>
           <p className={styles.sectionSubtitle}>
-            La historia más completa de la demo es la de una hacienda. Otros
-            cuatro sectores también tienen proyecto de muestra, y ninguno es el
-            límite del producto: el vocabulario cambia con el suyo (lotes,
-            tramos, frentes, bancos, sectores o lo que use).
+            La historia más completa de la demo es la de una hacienda; otros
+            cuatro sectores tienen proyecto de muestra, y ninguno es el límite
+            del producto: el vocabulario cambia con el suyo.
           </p>
         </header>
 
@@ -424,8 +422,8 @@ export function LandingPage() {
               <p className={styles.roleLine}>
                 Si hay un terreno, una instalación o un activo que se mira mejor
                 desde arriba y se compara en el tiempo, Otear se adapta. Todavía
-                no hay un piloto (una prueba con sus propios vuelos) en estos
-                sectores: lo estamos definiendo y queremos oír el suyo.
+                no hay un piloto con sus propios vuelos en estos sectores:
+                queremos oír el suyo.
               </p>
               <div className={styles.roleTags}>
                 {otherSectors.map((name) => (
@@ -450,8 +448,7 @@ export function LandingPage() {
             <span className="accent">el terreno</span>.
           </h2>
           <p className={styles.sectionSubtitle}>
-            Lenguaje de su sector, no de software. Quien supervisa lo abre y lo
-            entiende sin capacitación.
+            Lenguaje de su sector, no de software.
           </p>
         </header>
 
@@ -486,18 +483,23 @@ export function LandingPage() {
               Otear no presta vuelos ni los reemplaza: usted sigue siendo quien
               vuela.
             </p>
-            <div className={styles.operatorCols}>
-              {operatorColumns.map((column) => (
-                <div key={column.title}>
-                  <h4>{column.title}</h4>
-                  <ul>
-                    {column.items.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            <details className={styles.operatorMore}>
+              <summary>
+                Qué recibe, qué entrega y qué se define con usted
+              </summary>
+              <div className={styles.operatorCols}>
+                {operatorColumns.map((column) => (
+                  <div key={column.title}>
+                    <h4>{column.title}</h4>
+                    <ul>
+                      {column.items.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </details>
             <DemoLink viewAs="operator" className={styles.inlineLink}>
               Ver la demo como operador <ArrowRight size={14} aria-hidden />
             </DemoLink>
@@ -515,9 +517,8 @@ export function LandingPage() {
             <span className="accent">Cree las suyas</span>.
           </h2>
           <p className={styles.sectionSubtitle}>
-            La base es la misma: sitios, zonas, vuelos, comparación, lo que se
-            encuentra en cada vuelo e informes. Lo propio de su sector se agrega
-            encima.
+            La base es la misma: sitios, zonas, vuelos, comparación e informes.
+            Lo propio de su sector se agrega encima.
           </p>
         </header>
 
@@ -559,11 +560,10 @@ export function LandingPage() {
             </h3>
             <p className={styles.demoStripText}>
               Son datos de ejemplo de cinco proyectos (una hacienda, una vía,
-              una obra, una mina y un parque) para mostrar cómo se adapta a cada
-              sector. Programe un vuelo, marque lo que encuentra, compare en el
-              tiempo y firme un documento de soporte. Lo que haga se borra al
-              recargar la página; solo los nombres que elija en Configuración se
-              quedan en este navegador. Los vuelos de ejemplo ya vienen
+              una obra, una mina y un parque). Programe un vuelo, marque lo que
+              encuentra, compare en el tiempo y firme un documento de soporte.
+              Lo que haga se borra al recargar; solo lo que elija en
+              Configuración se queda en este navegador. Los vuelos ya vienen
               cargados: en la práctica los entrega el operador, y la carga real
               de archivos todavía no existe.
             </p>
