@@ -168,7 +168,10 @@ test("the same name with another number, or the same number with another name, c
     name: "Marcela Pineda",
     documentId: "1.111.222.333",
   });
-  assert.match(sameIdOtherName ?? "", /El documento 1\.111\.222\.333 ya firmó/);
+  assert.match(
+    sameIdOtherName ?? "",
+    /La cédula o NIT 1\.111\.222\.333 ya firmó/,
+  );
   assert.equal(
     signingConflict(evidence, "Revisor o interventor", reviewer),
     null,

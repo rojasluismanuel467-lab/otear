@@ -1,4 +1,5 @@
 import type { Flight, Sector, Site } from "../demo/types";
+import { DEMO_DAY_TEXT } from "./demo-clock.ts";
 
 export type TemplateId =
   | "landowner-authorization"
@@ -687,7 +688,7 @@ export const templates: Record<TemplateId, TemplateDef> = {
         "QUÉ ES ESTA FIRMA Y QUÉ NO",
         "La firma de esta demostración no tiene valor legal: ensaya el mecanismo con datos de ejemplo.",
         "La huella digital es un código calculado con el título y el texto de este informe. Si alguien cambia una letra, el código cambia y las firmas anteriores quedan sin validez.",
-        "La huella no prueba quién escribió el nombre de quien firma, ni la hora exacta (es la del dispositivo), ni que las cifras, el clima, la autorización o las fotografías del vuelo sean ciertos: eso lo declara el operador. Cubre este texto, no las fotografías ni los archivos entregados.",
+        `La huella no prueba quién escribió el nombre de quien firma, ni la hora exacta (la fecha de la firma es la del escenario de la demostración, ${DEMO_DAY_TEXT}, y la hora es la del dispositivo), ni que las cifras, el clima, la autorización o las fotografías del vuelo sean ciertos: eso lo declara el operador. Cubre este texto, no las fotografías ni los archivos entregados.`,
         "Quien firma como operador y quien firma como revisor o interventor deben ser personas distintas.",
       ].join("\n"),
   },

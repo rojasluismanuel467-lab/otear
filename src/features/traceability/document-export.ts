@@ -1,5 +1,6 @@
 import type { Evidence } from "../demo/types";
 import { sha256Hex } from "./sha256.ts";
+import { DEMO_DAY_TEXT } from "./demo-clock.ts";
 import { DEMO_PROFILE_LABEL } from "./demo-profile.ts";
 import {
   displayTitle,
@@ -10,8 +11,7 @@ import {
   templateOf,
 } from "./integrity.ts";
 
-const DISCLAIMER =
-  "Firma electrónica simple. Las leyes colombianas (Ley 527 de 1999, Decreto 2364 de 2012) la reconocen como medio de prueba, pero puede ser controvertida. La hora es la del dispositivo y no es un sello de tiempo certificado. La firma de esta demostración no tiene valor legal.";
+const DISCLAIMER = `Firma electrónica simple. Las leyes colombianas (Ley 527 de 1999, Decreto 2364 de 2012) la reconocen como medio de prueba, pero puede ser controvertida. La fecha es la del escenario de la demostración (${DEMO_DAY_TEXT}), la hora es la del dispositivo y no es un sello de tiempo certificado. La firma de esta demostración no tiene valor legal.`;
 
 const HASH_NOTE =
   "La huella (SHA-256) se calcula con el título y el texto del documento tal como se muestra en pantalla, no con el archivo descargado: si alguien cambia una letra, la huella cambia y las firmas anteriores quedan sin validez. Este archivo trae ese texto, así que en la misma demostración se puede pegar en «Verificar un archivo descargado» para comprobarlo. No prueba quién escribió el nombre de quien firma ni la hora exacta.";

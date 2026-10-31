@@ -26,6 +26,7 @@ import {
   printHtml,
   type DownloadCheck,
 } from "./document-export";
+import { DEMO_CLOCK_NOTE, demoNow } from "./demo-clock";
 import { DEMO_PROFILE_LABEL } from "./demo-profile";
 import { flightReportChanges } from "./flight-report-document";
 import {
@@ -179,7 +180,7 @@ function EvidenceBody({
         title: template.title,
         fields,
       },
-      new Date().toISOString(),
+      demoNow(),
       DEMO_PROFILE_LABEL,
     );
   const working: Evidence =
@@ -205,7 +206,7 @@ function EvidenceBody({
   const labelOf = (role: string) => roleLabel(template, role);
 
   function persistFields(): Evidence {
-    const now = new Date().toISOString();
+    const now = demoNow();
     const saved =
       stored && stored.kind === "drafted"
         ? withFields(stored, fields, now, DEMO_PROFILE_LABEL)
@@ -261,7 +262,7 @@ function EvidenceBody({
       setError(conflict);
       return;
     }
-    const now = new Date().toISOString();
+    const now = demoNow();
     const saved = persistFields();
     const signed = withSignature(
       saved,
@@ -291,7 +292,7 @@ function EvidenceBody({
       return;
     }
     const hash = sha256Hex(new Uint8Array(await file.arrayBuffer()));
-    const now = new Date().toISOString();
+    const now = demoNow();
     const attachment = newEvidence(
       {
         ...(stored ? { id: stored.id } : {}),
@@ -328,7 +329,7 @@ function EvidenceBody({
       setError("Escriba a quién se le pide el documento.");
       return;
     }
-    const now = new Date().toISOString();
+    const now = demoNow();
     const text = `Se pidió a ${requestTo.trim()} que revise y firme. En la demo no se envía nada.`;
     const current = stored ?? persistFields();
     saveEvidence({
@@ -674,8 +675,8 @@ function EvidenceBody({
                   }
                 />
                 Acepto firmar este documento electrónicamente y entiendo que se
-                guarda con la hora de este dispositivo y la huella de su
-                contenido.
+                guarda con la fecha de la demostración, la hora de este
+                dispositivo y la huella de su contenido.
               </label>
               {template.separateRoles && (
                 <p className={styles.hint}>
@@ -840,7 +841,7 @@ function EvidenceBody({
           <p className={styles.hint}>
             La demostración no tiene inicio de sesión: cada cambio queda a
             nombre del perfil de la demostración ({DEMO_PROFILE_LABEL}), que no
-            es una identidad comprobada.
+            es una identidad comprobada. {DEMO_CLOCK_NOTE}
           </p>
         </section>
       )}
