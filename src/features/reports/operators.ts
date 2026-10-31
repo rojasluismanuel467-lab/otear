@@ -1,5 +1,13 @@
-import type { Finding, Flight, Invoice, ServiceRequest } from "../demo/types";
-import { coveredHaFor } from "../services/links.ts";
+import { orderedHa as zonesHa } from "../billing/coverage.ts";
+import type {
+  Finding,
+  Flight,
+  Invoice,
+  Position,
+  Sector,
+  ServiceRequest,
+} from "../demo/types";
+import { coveredHaForInvoice } from "../services/links.ts";
 
 export interface OperatorSummary {
   operator: string;
@@ -13,9 +21,16 @@ export interface OperatorSummary {
   billed: number;
   paid: number;
   balance: number;
-  /** Hectares covered (from its flight records) and billed on the invoices that state an area. */
+  /**
+   * Hectares ordered, covered and billed, all over the same invoices (the ones that state an
+   * area). Ordered comes from the zones behind each invoice (needs `zones`); covered is what the
+   * operator declared, from the flight record or, with no flight, from the delivery.
+   */
+  orderedHa: number;
   coveredHa: number;
   billedHa: number;
+  /** Invoices with an area for which the operator declared no covered hectares anywhere. */
+  invoicesWithoutCovered: number;
   /** Invoices where the billed area exceeds the covered area by more than the tolerance. */
   overBilled: number;
   /** All the invoices of the operator, and how many of them state an area. */
@@ -42,6 +57,9 @@ export function operatorSummaries(input: {
   invoices: Invoice[];
   /** Service requests, whose deliveries also state the hectares covered. */
   requests?: ServiceRequest[];
+  /** Zones and sector of the site, to put the hectares ordered beside the covered ones. */
+  zones?: { id: string; outline: Position[] }[];
+  sector?: Sector;
   tolerancePct?: number;
 }): OperatorSummary[] {
   const tolerance = input.tolerancePct ?? 5;
@@ -60,8 +78,10 @@ export function operatorSummaries(input: {
         billed: 0,
         paid: 0,
         balance: 0,
+        orderedHa: 0,
         coveredHa: 0,
         billedHa: 0,
+        invoicesWithoutCovered: 0,
         overBilled: 0,
         invoices: 0,
         invoicesWithArea: 0,
@@ -91,8 +111,11 @@ export function operatorSummaries(input: {
       else summary.pending += 1;
     }
   }
+  const requests = input.requests ?? [];
   for (const invoice of input.invoices) {
     const flight = byFlight.get(invoice.flightId);
+    // A service invoiced without a flight still has its zones and its delivery.
+    const request = requests.find((item) => item.invoiceId === invoice.id);
     const summary = row(invoice.operator || flight?.operator || "Sin operador");
     summary.billed += invoice.total;
     summary.paid += invoice.paid;
@@ -102,8 +125,13 @@ export function operatorSummaries(input: {
       summary.invoicesWithArea += 1;
       summary.billedWithArea += invoice.total;
       summary.billedHa += invoice.billedHa;
-      const covered = coveredHaFor(flight, input.requests ?? []);
-      if (covered !== undefined) {
+      if (input.zones) {
+        const zoneIds = flight?.zoneIds ?? request?.zoneIds ?? [];
+        summary.orderedHa += zonesHa(input.zones, zoneIds, input.sector);
+      }
+      const covered = coveredHaForInvoice(invoice, input.flights, requests);
+      if (covered === undefined) summary.invoicesWithoutCovered += 1;
+      else {
         summary.coveredHa += covered;
         if (
           covered > 0 &&

@@ -7,7 +7,7 @@ import {
   measureList,
   summarizeFollowUps,
 } from "../flights/follow-up.ts";
-import { serviceDecisionLines } from "./decisions.ts";
+import { requestInPeriod, serviceDecisionLines } from "./decisions.ts";
 import { computeInsights, ownFindings, type InsightInput } from "./insights.ts";
 import { operatorSummaries } from "./operators.ts";
 
@@ -66,8 +66,16 @@ export function buildConsolidatedReport(
   // Unreviewed suggestions of the image assistant are not counted; the report says how many.
   const findings = ownFindings(allFindings);
   const suggested = allFindings.length - findings.length;
-  const invoices = input.invoices.filter((invoice) =>
-    ids.has(invoice.flightId),
+  // The invoices of the period's flights, and those of services invoiced without a flight whose
+  // request is in the period: the same ones the cost figures of Informes count.
+  const requestsInPeriod = (input.serviceRequests ?? []).filter((request) =>
+    requestInPeriod(request, period),
+  );
+  const invoices = input.invoices.filter(
+    (invoice) =>
+      ids.has(invoice.flightId) ||
+      (!input.flights.some((flight) => flight.id === invoice.flightId) &&
+        requestsInPeriod.some((request) => request.invoiceId === invoice.id)),
   );
   const insights = computeInsights({
     ...input,
@@ -215,6 +223,8 @@ export function buildConsolidatedReport(
           findings: input.findings,
           invoices: input.invoices,
           requests: input.serviceRequests,
+          zones: input.site.zones,
+          sector: input.site.sector,
         }),
         period,
       }),

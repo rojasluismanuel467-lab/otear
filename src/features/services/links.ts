@@ -1,4 +1,4 @@
-import type { Aircraft, Flight, ServiceRequest } from "../demo/types";
+import type { Aircraft, Flight, Invoice, ServiceRequest } from "../demo/types";
 
 /**
  * Hectares an operator says it covered for a flight: from its flight record when it filled one in,
@@ -13,6 +13,24 @@ export function coveredHaFor(
     flight.log?.coveredHa ??
     requests.find((request) => request.flightId === flight.id)?.delivery
       ?.coveredHa
+  );
+}
+
+/**
+ * Hectares covered behind an invoice, one rule for every screen: the flight record or, when the
+ * invoice has no flight (a service invoiced without one), the delivery of the service that
+ * produced it. Undefined when neither declares hectares.
+ */
+export function coveredHaForInvoice(
+  invoice: Pick<Invoice, "id" | "flightId">,
+  flights: Pick<Flight, "id" | "log">[],
+  requests: Pick<ServiceRequest, "flightId" | "invoiceId" | "delivery">[],
+): number | undefined {
+  const flight = flights.find((item) => item.id === invoice.flightId);
+  const request = requests.find((item) => item.invoiceId === invoice.id);
+  return (
+    coveredHaFor(flight, requests) ??
+    (request ? request.delivery?.coveredHa : undefined)
   );
 }
 

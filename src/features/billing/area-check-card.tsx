@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { Ruler } from "lucide-react";
 import { formatMoney } from "@/lib/format";
-import { areaHeadline, type AreaCheck, type AreaValue } from "./coverage";
+import {
+  areaHeadline,
+  toleranceText,
+  type AreaCheck,
+  type AreaValue,
+} from "./coverage";
 import styles from "./area-check.module.css";
 
 const stateText = {
@@ -24,8 +29,14 @@ export function AreaCheckCard({
   zoneWord,
   value,
   invoiceTotal,
+  coveredSource = "flight",
+  operatorNote,
   onBilledChange,
 }: {
+  /** Where the covered hectares come from: the flight record, or the delivery when there is no flight. */
+  coveredSource?: "flight" | "delivery";
+  /** What the operator wrote when invoicing, if anything. */
+  operatorNote?: string;
   check: AreaCheck;
   /** The same difference in pesos, when the invoice or the service gives a price. */
   value?: AreaValue;
@@ -71,7 +82,11 @@ export function AreaCheckCard({
         <div>
           <dt>Cubierto</dt>
           <dd>{ha(check.coveredHa)}</dd>
-          <small>Según el registro de vuelo del operador</small>
+          <small>
+            {coveredSource === "delivery"
+              ? "Según la entrega del operador"
+              : "Según el registro de vuelo del operador"}
+          </small>
         </div>
         <div>
           <dt>Facturado (la factura dice)</dt>
@@ -120,8 +135,13 @@ export function AreaCheckCard({
       )}
       <p className={styles.note}>
         El área cubierta es la que reporta el operador; Otear no la mide con las
-        imágenes. La tolerancia es de {check.tolerancePct} %.
+        imágenes. {toleranceText(check.tolerancePct)}
       </p>
+      {operatorNote && (
+        <p className={styles.note}>
+          <strong>Nota del operador:</strong> {operatorNote}
+        </p>
+      )}
     </section>
   );
 }

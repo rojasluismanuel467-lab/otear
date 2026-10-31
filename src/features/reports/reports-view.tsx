@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { SectionTabs } from "@/components/ui/section-tabs";
 import { useDemo } from "@/features/demo/demo-context";
+import { DEMO_DATE } from "@/features/demo/demo-data";
 import { useModuleTitle, useTerm } from "@/features/config/use-config";
 import { FlightTimeline } from "@/features/flights/flight-timeline";
 import { FOLLOW_UP_TODAY } from "@/features/flights/follow-up";
@@ -26,6 +27,11 @@ import {
   buildConsolidatedReport,
   type ReportSections,
 } from "./consolidated-report";
+import {
+  defaultReportPeriod,
+  latestMovement,
+  requestsAfter,
+} from "./decisions";
 import { computeInsights } from "./insights";
 import { operatorSummaries } from "./operators";
 import styles from "./reports.module.css";
@@ -38,6 +44,8 @@ function number(value: number, digits = 1) {
     maximumFractionDigits: digits,
   }).format(value);
 }
+
+const hectaresText = (value: number) => number(value);
 
 export function ReportsView() {
   // The tab comes from the address, which needs a Suspense boundary above it.
@@ -111,10 +119,18 @@ function ReportsContent() {
     services: true,
     followUp: true,
   });
+  // Open on everything that happened up to the demo's «today», decisions included, not only up
+  // to the last flight.
+  const defaults = defaultReportPeriod({
+    flightDates: dates,
+    requests: serviceRequests,
+    today: DEMO_DATE,
+  });
   const period = {
-    from: from || dates[0] || "2026-01-01",
-    to: to || dates[dates.length - 1] || "2026-12-31",
+    from: from || defaults.from,
+    to: to || defaults.to,
   };
+  const afterPeriod = requestsAfter(serviceRequests, period.to);
   const history = [...insights.completed].sort((a, b) =>
     b.date.localeCompare(a.date),
   );
@@ -165,6 +181,8 @@ function ReportsContent() {
     findings,
     invoices,
     requests: serviceRequests,
+    zones: site.zones,
+    sector: site.sector,
   });
 
   if (!history.length) {
@@ -570,7 +588,7 @@ function ReportsContent() {
                               <th scope="col">Vuelos y {findingWord.plural}</th>
                               <th scope="col">Cobro</th>
                               <th scope="col">
-                                Hectáreas facturadas / cubiertas
+                                Hectáreas pedidas / cubiertas / facturadas
                               </th>
                             </tr>
                           </thead>
@@ -621,8 +639,28 @@ function ReportsContent() {
                                 </td>
                                 <td>
                                   {row.billedHa || row.coveredHa
-                                    ? `${row.billedHa.toLocaleString("es-CO", { maximumFractionDigits: 1 })} / ${row.coveredHa.toLocaleString("es-CO", { maximumFractionDigits: 1 })} ha`
+                                    ? `${hectaresText(row.orderedHa)} / ${hectaresText(row.coveredHa)} / ${hectaresText(row.billedHa)} ha`
                                     : "—"}
+                                  {row.invoicesWithoutCovered > 0 && (
+                                    <small data-bad="true">
+                                      {row.invoicesWithoutCovered}{" "}
+                                      {row.invoicesWithoutCovered === 1
+                                        ? "factura sin"
+                                        : "facturas sin"}{" "}
+                                      hectáreas cubiertas declaradas
+                                    </small>
+                                  )}
+                                  {row.orderedHa > 0 &&
+                                    row.coveredHa - row.orderedHa > 0.05 && (
+                                      <small>
+                                        Declaró{" "}
+                                        {hectaresText(
+                                          row.coveredHa - row.orderedHa,
+                                        )}{" "}
+                                        ha más de las que miden las zonas
+                                        pedidas.
+                                      </small>
+                                    )}
                                   {row.invoicesWithArea > 0 && (
                                     <small>
                                       De {row.invoicesWithArea} de{" "}
@@ -687,6 +725,23 @@ function ReportsContent() {
                           />
                         </label>
                       </div>
+                      {afterPeriod.length > 0 && !invalidPeriod && (
+                        <p className={styles.muted} role="status">
+                          Hay {afterPeriod.length}{" "}
+                          {afterPeriod.length === 1
+                            ? "solicitud con movimientos"
+                            : "solicitudes con movimientos"}{" "}
+                          después del {formatDate(period.to)}, que este informe
+                          deja fuera.{" "}
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onPress={() => setTo(latestMovement(afterPeriod))}
+                          >
+                            Incluirlas
+                          </Button>
+                        </p>
+                      )}
                       <fieldset className={styles.sections}>
                         <legend className="field-label">Incluir</legend>
                         {(Object.keys(sectionLabels) as SectionKey[]).map(

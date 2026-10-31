@@ -282,6 +282,49 @@ export function createRequest(
   };
 }
 
+/** A price this many times the ceiling the requester set is taken for a typing mistake. */
+export const PRICE_MISTAKE_FACTOR = 5;
+/** Without a ceiling, a price above this (per hectare or per flight, COP) is taken for a typing mistake. */
+export const PRICE_MISTAKE_CAP = { ha: 10_000_000, flight: 50_000_000 };
+
+export type PriceCheck =
+  | { ok: true; overCeiling: boolean; warning?: string }
+  | { ok: false; error: string };
+
+/**
+ * Whether a quoted price can be sent. It must be a positive number, and not so far above the
+ * ceiling the requester asked for (or, with no ceiling, above a plausibility cap) that it can only
+ * be a slip of the keyboard. Above the ceiling but plausible it passes with a warning: the quote
+ * is allowed and the requester will see it marked. The numbers are guards, not tariffs.
+ */
+export function checkQuotePrice(
+  request: Pick<ServiceRequest, "maxPrice" | "unit">,
+  price: number,
+): PriceCheck {
+  if (!Number.isFinite(price) || !(price > 0))
+    return { ok: false, error: "Escriba un precio mayor que cero." };
+  const unitWord = request.unit === "ha" ? "por hectárea" : "por vuelo";
+  const ceiling = request.maxPrice;
+  if (ceiling !== undefined && price > ceiling * PRICE_MISTAKE_FACTOR)
+    return {
+      ok: false,
+      error: `${money(price)} ${unitWord} es más de ${PRICE_MISTAKE_FACTOR} veces el tope que pidió el cliente (${money(ceiling)}). Parece un error de digitación: revise los ceros.`,
+    };
+  const cap = PRICE_MISTAKE_CAP[request.unit];
+  if (price > cap)
+    return {
+      ok: false,
+      error: `${money(price)} ${unitWord} parece un error de digitación (pasa de ${money(cap)}). Revise los ceros.`,
+    };
+  if (ceiling !== undefined && price > ceiling)
+    return {
+      ok: true,
+      overCeiling: true,
+      warning: `Supera el tope que pidió el cliente (${money(ceiling)}). Puede enviarla; él la verá marcada.`,
+    };
+  return { ok: true, overCeiling: false };
+}
+
 export function quote(
   request: ServiceRequest,
   input: { price: number; startDate: string; note: string },
@@ -294,8 +337,8 @@ export function quote(
     };
   if (request.status !== "requested" && request.status !== "quoted")
     return { ok: false, error: "Ya no se reciben cotizaciones." };
-  if (!(input.price > 0))
-    return { ok: false, error: "Escriba un precio mayor que cero." };
+  const priceCheck = checkQuotePrice(request, input.price);
+  if (!priceCheck.ok) return priceCheck;
   if (!input.startDate)
     return { ok: false, error: "Indique desde qué fecha puede volar." };
   const next: ServiceQuote = {
@@ -658,9 +701,25 @@ export function verify(
   };
 }
 
+/** The sentence the operator's note about an invoice starts with in the history. */
+export const INVOICE_NOTE_PREFIX = "Nota para el cliente sobre la factura: ";
+export const INVOICE_NOTE_TYPE = "invoice-note";
+
+/** The note the operator left with the invoice, for whoever checks the area before paying. */
+export function invoiceNote(
+  request: Pick<ServiceRequest, "events">,
+): string | undefined {
+  const event = [...request.events]
+    .reverse()
+    .find((item) => item.type === INVOICE_NOTE_TYPE);
+  return event?.text.startsWith(INVOICE_NOTE_PREFIX)
+    ? event.text.slice(INVOICE_NOTE_PREFIX.length)
+    : undefined;
+}
+
 export function invoice(
   request: ServiceRequest,
-  input: { invoiceId: string; billedHa?: number },
+  input: { invoiceId: string; billedHa?: number; note?: string },
   ctx: Context,
 ): Result {
   if (ctx.actor.id !== request.operatorId || request.status !== "verified")
@@ -668,19 +727,34 @@ export function invoice(
       ok: false,
       error: "Se factura después de que la entrega esté verificada.",
     };
+  const invoiced = record(
+    request,
+    { status: "invoiced", invoiceId: input.invoiceId },
+    {
+      on: ctx.today,
+      by: ctx.actor.id,
+      role: "operator",
+      type: "invoiced",
+      text: `${ctx.actor.name} facturó${input.billedHa !== undefined ? ` ${haText(input.billedHa)}` : ""}. El pago se gestiona en Pagos y costos.`,
+    },
+  );
+  const note = (input.note ?? "").trim().slice(0, 300);
   return {
     ok: true,
-    request: record(
-      request,
-      { status: "invoiced", invoiceId: input.invoiceId },
-      {
-        on: ctx.today,
-        by: ctx.actor.id,
-        role: "operator",
-        type: "invoiced",
-        text: `${ctx.actor.name} facturó${input.billedHa !== undefined ? ` ${input.billedHa} ha` : ""}. El pago se gestiona en Pagos y costos.`,
-      },
-    ),
+    // The note is a step of its own in the history, so the area check can read it back.
+    request: note
+      ? record(
+          invoiced,
+          {},
+          {
+            on: ctx.today,
+            by: ctx.actor.id,
+            role: "operator",
+            type: INVOICE_NOTE_TYPE,
+            text: `${INVOICE_NOTE_PREFIX}${note}`,
+          },
+        )
+      : invoiced,
   };
 }
 

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aircraftForOperator, coveredHaFor } from "./links.ts";
+import {
+  aircraftForOperator,
+  coveredHaFor,
+  coveredHaForInvoice,
+} from "./links.ts";
 
 test("hectares covered come from the flight log first, then from the delivery", () => {
   const requests = [{ flightId: "f2", delivery: { coveredHa: 80 } }];
@@ -17,6 +21,41 @@ test("hectares covered come from the flight log first, then from the delivery", 
     undefined,
   );
   assert.equal(coveredHaFor(undefined, requests as never), undefined);
+});
+
+test("an invoice without a flight takes the hectares from the delivery of its service", () => {
+  const requests = [
+    { invoiceId: "i1", delivery: { coveredHa: 6.4 } },
+    { flightId: "f2", invoiceId: "i2", delivery: { coveredHa: 9 } },
+  ];
+  const flights = [{ id: "f1", log: { coveredHa: 50 } }, { id: "f2" }] as never;
+  // No flight at all: the delivery of the service that produced the invoice.
+  assert.equal(
+    coveredHaForInvoice({ id: "i1", flightId: "" }, flights, requests as never),
+    6.4,
+  );
+  // With a flight the record wins; otherwise the delivery of its service.
+  assert.equal(
+    coveredHaForInvoice(
+      { id: "x", flightId: "f1" },
+      flights,
+      requests as never,
+    ),
+    50,
+  );
+  assert.equal(
+    coveredHaForInvoice(
+      { id: "i2", flightId: "f2" },
+      flights,
+      requests as never,
+    ),
+    9,
+  );
+  // Nothing declares hectares.
+  assert.equal(
+    coveredHaForInvoice({ id: "z", flightId: "" }, flights, requests as never),
+    undefined,
+  );
 });
 
 test("a scheduled service takes the aircraft its operator flies most, if it is in service", () => {
