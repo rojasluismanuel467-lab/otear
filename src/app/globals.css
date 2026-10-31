@@ -911,11 +911,12 @@ textarea {
     border-color 160ms,
     box-shadow 160ms;
 }
-.field-input:focus,
-.field-select:focus {
-  outline: none;
-  border-color: #5f7a8e;
-  box-shadow: 0 0 0 3px #3b835515;
+/* Foco visible con contraste suficiente (WCAG 2.4.7 y 1.4.11): un anillo sólido, no un halo del 8 %. */
+.field-input:focus-visible,
+.field-select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-color: var(--focus);
 }
 .field-input::placeholder {
   color: #73797e;
