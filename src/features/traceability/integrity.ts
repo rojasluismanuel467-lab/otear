@@ -1,5 +1,6 @@
-import type { Evidence, EvidenceSignature } from "../demo/types";
+import type { Evidence, EvidenceEvent, EvidenceSignature } from "../demo/types";
 import { sha256Hex } from "./sha256.ts";
+import { matchPerson, type PersonMatch } from "./signers.ts";
 import {
   roleLabel,
   sectorOf,
@@ -103,6 +104,24 @@ export const statusLabels: Record<EvidenceStatus, string> = {
   requested: "Solicitado",
 };
 
+/**
+ * A history line. `by` is who made the change; the demo has no sign-in, so it is the demo profile
+ * (see `demo-profile.ts`), and lines written without it (the examples) say that no author was kept.
+ * `EvidenceEvent` in `demo/types.ts` has no `by` field yet: it travels as an extra property.
+ */
+export type AuthoredEvent = EvidenceEvent & { by?: string };
+
+export function eventOf(at: string, text: string, by?: string): EvidenceEvent {
+  const event: AuthoredEvent = by ? { at, text, by } : { at, text };
+  return event;
+}
+
+/** Who made a change, when the history line kept it. */
+export function eventAuthor(event: EvidenceEvent): string | undefined {
+  const by = (event as AuthoredEvent).by;
+  return typeof by === "string" && by ? by : undefined;
+}
+
 export function isComplete(evidence: Evidence | undefined): boolean {
   if (!evidence) return false;
   const { status } = evidenceState(evidence);
@@ -114,6 +133,7 @@ export function withFields(
   evidence: Evidence,
   fields: Record<string, string>,
   now: string,
+  by?: string,
 ): Evidence {
   const before = evidenceState(evidence);
   const next: Evidence = { ...evidence, fields };
@@ -132,17 +152,23 @@ export function withFields(
         const label = template?.fields.find((f) => f.key === key)?.label ?? key;
         return `${label}: ${shown(evidence.fields[key])} → ${shown(fields[key])}`;
       });
-    events.push({
-      at: now,
-      text: changes.length
-        ? `Se modificó el contenido del documento. ${changes.join("; ")}.`
-        : "Se modificó el contenido del documento.",
-    });
+    events.push(
+      eventOf(
+        now,
+        changes.length
+          ? `Se modificó el contenido del documento. ${changes.join("; ")}.`
+          : "Se modificó el contenido del documento.",
+        by,
+      ),
+    );
     if (before.validRoles.length) {
-      events.push({
-        at: now,
-        text: `Las firmas anteriores (${before.validRoleLabels.join(", ")}) quedaron sin validez porque el contenido cambió.`,
-      });
+      events.push(
+        eventOf(
+          now,
+          `Las firmas anteriores (${before.validRoleLabels.join(", ")}) quedaron sin validez porque el contenido cambió.`,
+          by,
+        ),
+      );
     }
   }
   return { ...next, events };
@@ -152,6 +178,7 @@ export function withSignature(
   evidence: Evidence,
   signer: Omit<EvidenceSignature, "contentHash" | "signedAt">,
   now: string,
+  by?: string,
 ): Evidence {
   const hash = contentHash(evidence);
   const signature: EvidenceSignature = {
@@ -168,41 +195,32 @@ export function withSignature(
     ],
     events: [
       ...evidence.events,
-      {
-        at: now,
-        text: `Firmó ${signer.name} (${roleLabelOf(evidence, signer.role)}) sobre la versión ${hash.slice(0, 12)}.`,
-      },
+      eventOf(
+        now,
+        `Firmó ${signer.name} (${roleLabelOf(evidence, signer.role)}) sobre la versión ${hash.slice(0, 12)}.`,
+        by,
+      ),
     ],
   };
 }
 
-const plain = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-
-const idOf = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-/** True when two signers are, as far as the form can tell, the same person: same document number, or same name. */
+/** True when two signers are, as far as the form can tell, the same person (same document number or same name). */
 export function samePerson(
   a: { name: string; documentId: string },
   b: { name: string; documentId: string },
 ): boolean {
-  const idA = idOf(a.documentId);
-  const idB = idOf(b.documentId);
-  if (idA.length >= 3 && idB.length >= 3) return idA === idB;
-  const nameA = plain(a.name);
-  return nameA.length >= 3 && nameA === plain(b.name);
+  return matchPerson(a, b) !== null;
 }
+
+/** Said wherever the rule appears: the demo compares what was typed, it does not check anyone. */
+export const NO_IDENTITY_CHECK =
+  "En la demostración no hay verificación de identidad real: solo se compara lo que se escribe (nombre y número de documento).";
 
 /**
  * Some documents need a different person for each role (the operator cannot also be the reviewer of
  * their own report). Returns the reason a signature must be refused, or null when it can go ahead.
- * The form cannot prove who someone is: it only stops the same name or document number from
- * signing two roles.
+ * The name is compared without accents, case or word order, and the document number without dots;
+ * the form cannot prove who someone is.
  */
 export function signingConflict(
   evidence: Evidence,
@@ -210,30 +228,40 @@ export function signingConflict(
   signer: { name: string; documentId: string },
 ): string | null {
   if (!templateOf(evidence)?.separateRoles) return null;
-  const other = evidence.signatures.find(
-    (signature) => signature.role !== role && samePerson(signature, signer),
-  );
-  if (!other) return null;
-  return `${signer.name.trim()} ya firmó como ${roleLabelOf(evidence, other.role)}. En este documento cada rol lo firma una persona distinta; pida a otra persona que firme como ${roleLabelOf(evidence, role)}.`;
+  let found: { signature: EvidenceSignature; match: PersonMatch } | undefined;
+  for (const signature of evidence.signatures) {
+    if (signature.role === role) continue;
+    const match = matchPerson(signature, signer);
+    if (match && (!found || match === "document")) found = { signature, match };
+  }
+  if (!found) return null;
+  const earlier = roleLabelOf(evidence, found.signature.role);
+  const next = roleLabelOf(evidence, role);
+  const why =
+    found.match === "document"
+      ? `El documento ${signer.documentId.trim()} ya firmó como ${earlier} (${found.signature.name.trim()}).`
+      : `El nombre «${signer.name.trim()}» coincide con el de ${found.signature.name.trim()}, que ya firmó como ${earlier}, aunque el número de documento sea otro.`;
+  return `${why} En este documento cada rol lo firma una persona distinta; pida a otra persona que firme como ${next}. ${NO_IDENTITY_CHECK}`;
 }
 
 export function newEvidence(
   base: Pick<Evidence, "siteId" | "flightId" | "kind" | "title"> &
     Partial<Evidence>,
   now: string,
+  by?: string,
 ): Evidence {
   return {
     id: `evidence-${now}-${Math.random().toString(36).slice(2, 8)}`,
     fields: {},
     signatures: [],
     events: [
-      {
-        at: now,
-        text:
-          base.kind === "attachment"
-            ? "Se registró la solicitud de un archivo."
-            : "Se creó el documento desde la plantilla.",
-      },
+      eventOf(
+        now,
+        base.kind === "attachment"
+          ? "Se registró la solicitud de un archivo."
+          : "Se creó el documento desde la plantilla.",
+        by,
+      ),
     ],
     ...base,
   };
