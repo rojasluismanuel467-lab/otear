@@ -229,7 +229,7 @@ export function ActionForm({
                 type="date"
                 min={request.windowStart}
                 max={request.windowEnd}
-                defaultValue={request.windowStart}
+                defaultValue={ownQuote?.startDate ?? request.windowStart}
               />
             </label>
           </div>
@@ -239,6 +239,7 @@ export function ActionForm({
               className="field-input"
               name="note"
               maxLength={300}
+              defaultValue={ownQuote?.note ?? ""}
               placeholder="Ej. incluye el transporte del equipo"
             />
           </label>
