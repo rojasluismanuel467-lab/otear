@@ -33,6 +33,8 @@ export interface ItineraryInput {
   checklistTotal: number;
   /** The company's word for a finding; «hallazgo» when not given. */
   findingWords?: FindingWords;
+  /** «del predio», «de la vía», «de la mina»: the place the flight authorization is about. */
+  placeOf?: string;
 }
 
 function acceptance(evidences: Evidence[], flightId: string) {
@@ -123,7 +125,7 @@ export function buildItinerary(input: ItineraryInput): Stage[] {
           : reviewedDocs || authorization
             ? "partial"
             : "todo",
-      detail: `Soportes ${reviewedDocs} de ${documents.length} · permiso del predio: ${authDone ? "firmado" : authorization ? "en trámite" : "sin documento"}`,
+      detail: `Soportes ${reviewedDocs} de ${documents.length} · permiso ${input.placeOf ?? "del predio"}: ${authDone ? "firmado" : authorization ? "en trámite" : "sin documento"}`,
       href: "/documentos",
     },
     {

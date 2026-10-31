@@ -43,7 +43,7 @@ export function DronePreview({
               aria-hidden="true"
             >
               <Hand size={14} />
-              Arrastra para girar
+              Arrastre para girar
             </span>
             <button
               type="button"

@@ -9,7 +9,10 @@ import {
   lacksSupport,
   requirementFor,
 } from "@/features/traceability/requirements";
-import type { TemplateId } from "@/features/traceability/templates";
+import {
+  placeWordsFor,
+  type TemplateId,
+} from "@/features/traceability/templates";
 import { preparationGroups, preparationTotal } from "./preparation-items";
 import styles from "./preparation-checklist.module.css";
 
@@ -131,7 +134,13 @@ export function PreparationChecklist({
                           checked={checklist.includes(item)}
                           onChange={() => toggleItem(item)}
                         />
-                        <span>{item}</span>
+                        {/* Only the reading changes: the stored label stays as seeded. */}
+                        <span>
+                          {item.replace(
+                            "permiso del predio",
+                            `permiso ${placeWordsFor(site.sector).of}`,
+                          )}
+                        </span>
                       </label>
                       <EvidenceControl
                         item={item}

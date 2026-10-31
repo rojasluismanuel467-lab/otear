@@ -122,8 +122,9 @@ export function OverviewStep({
       ) : null}
       {kind === "line" && site.zones.length > 0 && (
         <p className="demo-note">
-          Los PK cuentan los tramos desde 0+000, en el orden de la lista. Son de
-          ejemplo: no vienen de un contrato.
+          Los PK de este ejemplo son inventados: los tramos con PK propio lo
+          conservan y los demás se cuentan uno tras otro, en el orden de la
+          lista. No vienen de un contrato.
         </p>
       )}
       <div className={styles.callout}>
