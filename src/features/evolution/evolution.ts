@@ -54,6 +54,14 @@ export function buildCaptures(
     .flatMap((flight) => {
       let values = flight.capture?.values;
       if (indicator.kind === "count") {
+        // A flight with no flight log and no findings (for example another operator's mapping
+        // delivered as a service) says nothing about the site: counting it would read as «0 news».
+        if (
+          !flight.log &&
+          !findings.some((item) => item.flightId === flight.id)
+        ) {
+          return [];
+        }
         values = Object.fromEntries(
           site.zones.map((zone) => [
             zone.id,

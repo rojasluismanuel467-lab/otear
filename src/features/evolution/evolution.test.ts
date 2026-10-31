@@ -142,6 +142,28 @@ test("buildCaptures keeps completed flights in date order and counts findings fo
   assert.equal(captures[0].values.z1, 2);
 });
 
+test("buildCaptures leaves out a security flight with no log and no findings", () => {
+  const site = {
+    sector: "security",
+    zones: [{ id: "z1" }],
+  } as unknown as Site;
+  const flights = [
+    { id: "round", date: "2026-10-24", status: "completed" },
+    { id: "mapping", date: "2026-10-24", status: "completed" },
+    {
+      id: "quiet",
+      date: "2026-10-01",
+      status: "completed",
+      log: { weather: "clear" },
+    },
+  ] as Flight[];
+  const findings = [{ flightId: "round", zoneId: "z1" }] as never;
+  assert.deepEqual(
+    buildCaptures(site, flights, findings).map((item) => item.flightId),
+    ["quiet", "round"],
+  );
+});
+
 test("mining reports its progress as a percentage of the plan", () => {
   const indicator = indicatorFor("mining");
   assert.equal(indicator.kind, "progress");
