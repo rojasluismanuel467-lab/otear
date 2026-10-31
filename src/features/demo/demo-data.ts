@@ -3,7 +3,13 @@ import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
 import { planMission } from "@/features/flights/mission-plan";
-import { ROAD_ILLUSTRATION_URL } from "@/lib/illustration";
+import {
+  illustrationView,
+  MINE_ILLUSTRATION_URL,
+  PERIMETER_ILLUSTRATION_URL,
+  ROAD_ILLUSTRATION_URL,
+  WORKSITE_ILLUSTRATION_URL,
+} from "@/lib/illustration";
 import { canaExampleValues } from "@/features/config/preset-fields";
 import { dayText, FOLLOW_UP_TODAY } from "@/features/flights/follow-up";
 import {
@@ -177,7 +183,7 @@ const baseSites: Site[] = [
     location: "Cali, Valle del Cauca",
     zoneLabel: "Frentes",
     center: [3.40872, -76.53076],
-    imageUrl: "/images/aerial-road.jpg",
+    imageUrl: WORKSITE_ILLUSTRATION_URL,
     zones: [
       {
         id: "zone-oa-1",
@@ -211,7 +217,7 @@ const baseSites: Site[] = [
     location: "Yumbo, Valle del Cauca",
     zoneLabel: "Sectores",
     center: [3.5404, -76.4983],
-    imageUrl: "/images/aerial-road.jpg",
+    imageUrl: PERIMETER_ILLUSTRATION_URL,
     zones: [
       {
         id: "zone-pp-1",
@@ -251,7 +257,7 @@ const baseSites: Site[] = [
     location: "Mulaló, Yumbo, Valle del Cauca",
     zoneLabel: "Bancos",
     center: [3.64204, -76.47632],
-    imageUrl: "/images/aerial-road.jpg",
+    imageUrl: MINE_ILLUSTRATION_URL,
     zones: [
       {
         id: "zone-mm-1",
@@ -996,7 +1002,7 @@ const currentFindings: Finding[] = sites.flatMap((site) =>
         0.35 + index * 0.15,
       ),
       ...location,
-      imageUrl: site.imageUrl,
+      imageUrl: illustrationView(site.imageUrl, index),
       source: exampleSource(
         site,
         `${operatorSourceWord[site.sector]} del operador · ejemplo`,
@@ -1037,7 +1043,7 @@ const historyFindings: Finding[] = sites.flatMap((site) =>
             0.35 + index * 0.15,
           ),
           ...location,
-          imageUrl: site.imageUrl,
+          imageUrl: illustrationView(site.imageUrl, index),
           source: exampleSource(
             site,
             `${operatorSourceWord[site.sector]} del operador · ejemplo`,
@@ -1245,7 +1251,7 @@ function suggestedFinding(
       0.55 - candidate * 0.15,
     ),
     ...location,
-    imageUrl: site.imageUrl,
+    imageUrl: illustrationView(site.imageUrl, 3 + candidate),
     source: suggestedSource(status),
     taskAssigned: false,
     suggestion: {

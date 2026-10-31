@@ -8,8 +8,8 @@
 }
 .tag {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
+  left: 10px;
+  top: 10px;
   max-width: calc(100% - 24px);
   padding: 6px 10px;
   border-radius: 8px;
