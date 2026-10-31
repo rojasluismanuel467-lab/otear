@@ -329,6 +329,7 @@ export function validateConfig(
           "carreteras",
           "construccion",
           "vigilancia",
+          "mineria",
           "custom",
         ] as const
       ).find((id) => id === data.presetId) ?? "custom",

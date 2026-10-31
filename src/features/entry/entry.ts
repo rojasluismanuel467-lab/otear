@@ -224,6 +224,8 @@ export interface DemoStart {
   preset: PresetId | null;
   /** Example project to select, or null to keep the one it starts with. */
   sector: Sector | null;
+  /** Word for the zones of a sector, in plural, when it differs from the preset's. */
+  zoneWords?: Partial<Record<Sector, string>>;
 }
 
 const GUIDE = "La «Guía de la demo», abajo a la izquierda, explica el resto.";
@@ -239,6 +241,7 @@ export function demoStart(entry: Entry | null): DemoStart {
     return {
       route: routeOf("servicios"),
       preset: choice?.preset ?? null,
+      zoneWords: choice?.id === "other" ? { agriculture: "Zonas" } : undefined,
       sector: choice && choice.id !== "other" ? choice.id : null,
       notice: `${WELCOME_NOTICE}. Ve la demo como la vería un operador de dron: los pedidos que recibe con sus zonas, la ventana y el tope de precio, y lo que cotiza, entrega y factura. Son datos de ejemplo. ${GUIDE}`,
     };
@@ -258,11 +261,13 @@ export function demoStart(entry: Entry | null): DemoStart {
   const first = firstScreens[choice.id];
   const words =
     choice.id === "other"
-      ? `Eligió ${entry.other ?? "otro sector"}: la demo usa los nombres generales; en Configuración los cambia.`
+      ? `Eligió ${entry.other ? `«${entry.other}»` : "otro sector"}: no hay un proyecto de ejemplo de ese sector. Verá una hacienda con nombres generales («zonas», «hallazgos»); los datos son de cultivo. En Configuración cambia las palabras.`
       : `Eligió ${choice.label.toLowerCase()}: ya ve «${choice.words.zones.toLowerCase()}» y «${choice.words.finding.toLowerCase()}» como en su sector.`;
   return {
     route: routeOf(first.module),
     preset: choice.preset,
+    // The example behind «other» is the farm: its zones take the general word.
+    zoneWords: choice.id === "other" ? { agriculture: "Zonas" } : undefined,
     sector: choice.id === "other" ? null : choice.id,
     notice: `${WELCOME_NOTICE}. ${words} Empiece por «${screenName(choice.preset, first.module)}»: ${first.because}. Luego «${screenName(choice.preset, first.next.module)}», ${first.next.because}. ${GUIDE}`,
   };

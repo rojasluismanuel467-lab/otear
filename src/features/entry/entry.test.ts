@@ -74,6 +74,15 @@ test("the welcome names the screens with the sector's own words", () => {
   assert.match(mining.notice, /«Avance de la excavación»/);
 });
 
+test("«otro sector» says there is no example of it and calls the zones by the general word", () => {
+  const start = demoStart({ choice: "other", other: "Puertos" });
+  assert.equal(start.preset, "general");
+  assert.deepEqual(start.zoneWords, { agriculture: "Zonas" });
+  assert.match(start.notice, /«Puertos»: no hay un proyecto de ejemplo/);
+  assert.match(start.notice, /hacienda/);
+  assert.equal(demoStart({ choice: "roads" }).zoneWords, undefined);
+});
+
 test("opening the demo from a button chooses nothing and says it is an example", () => {
   const start = demoStart(launchEntry(null));
   assert.equal(start.route, "/evolucion");

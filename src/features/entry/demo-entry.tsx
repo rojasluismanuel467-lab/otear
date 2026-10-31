@@ -53,7 +53,12 @@ export function DemoEntry() {
       : undefined;
     if (site) setSiteId(site.id);
     const preset = start.preset;
-    if (preset) update((current) => applyPreset(current, preset));
+    const zoneWords = start.zoneWords;
+    if (preset)
+      update((current) => {
+        const next = applyPreset(current, preset);
+        return zoneWords ? { ...next, zoneWords } : next;
+      });
     if (entry.viewAs === "operator") setActingAs(OPERATOR_A);
     // The welcome says where to look, so it leaves by itself and when the visitor
     // goes to another screen; another notice replaces it earlier.

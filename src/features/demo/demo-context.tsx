@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { can } from "@/features/config/licence";
+import { withZoneWord } from "@/features/config/zone-word";
 import {
   getServerSnapshot,
   getSnapshot,
@@ -79,7 +80,7 @@ function useDemoState() {
     ? (config.zoneWords?.[baseSite.sector]?.trim() ?? "")
     : "";
   const site = useMemo(
-    () => (zoneWord ? { ...baseSite, zoneLabel: zoneWord } : baseSite),
+    () => (zoneWord ? withZoneWord(baseSite, zoneWord) : baseSite),
     [baseSite, zoneWord],
   );
 
