@@ -566,7 +566,143 @@ async function runLighthouse(url, vpName, vp) {
     if (typeof out[k] === "number" || out[k] == null)
       out[k] = median(runs.map((r) => r[k]));
   out.runs = runs.length;
+  const perfs = runs.map((r) => r.performance).filter((x) => x != null);
+  out.performanceRange = [Math.min(...perfs), Math.max(...perfs)]; // dispersión entre corridas: la varianza de Lighthouse en móvil es grande
   return out;
+}
+
+// ───────────────────────── teclado y movimiento reducido ─────────────────────────
+/** Recorre la página con Tab: ¿cada parada se ve, tiene indicador de foco y no queda tapada? */
+async function keyboardCheck(page) {
+  await page.evaluate(() => {
+    document.activeElement?.blur();
+    scrollTo({ top: 0, behavior: "instant" });
+  });
+  const stops = [];
+  const MAX = 60;
+  for (let i = 0; i < MAX; i++) {
+    await page.keyboard.press("Tab");
+    const info = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return null;
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      const name = (
+        el.getAttribute("aria-label") ||
+        el.textContent ||
+        el.getAttribute("title") ||
+        el.getAttribute("placeholder") ||
+        ""
+      )
+        .trim()
+        .replace(/\s+/g, " ")
+        .slice(0, 40);
+      const outline =
+        cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) >= 1;
+      const shadow = cs.boxShadow && cs.boxShadow !== "none";
+      const cx = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2));
+      const cy = Math.min(innerHeight - 1, Math.max(0, r.top + r.height / 2));
+      const top = document.elementFromPoint(cx, cy);
+      const visible =
+        r.width > 0 &&
+        r.height > 0 &&
+        cs.visibility !== "hidden" &&
+        cs.opacity !== "0";
+      return {
+        tag: el.tagName.toLowerCase() + (el.id ? "#" + el.id : ""),
+        name,
+        indicator: outline || shadow,
+        visible,
+        obscured:
+          visible &&
+          !!top &&
+          top !== el &&
+          !el.contains(top) &&
+          !top.contains(el),
+        tabindex: el.tabIndex > 0,
+        inViewport:
+          r.bottom > 0 &&
+          r.top < innerHeight &&
+          r.right > 0 &&
+          r.left < innerWidth,
+      };
+    });
+    if (!info) break; // salió de la página (vuelve al navegador): se terminó el ciclo
+    stops.push(info);
+    if (
+      stops.length > 3 &&
+      stops.slice(-4).every((x) => x.tag === info.tag && x.name === info.name)
+    ) {
+      return {
+        stops: stops.length,
+        trap: true,
+        noIndicator: [],
+        hidden: [],
+        obscured: [],
+        positiveTabindex: 0,
+      };
+    }
+  }
+  await page.evaluate(() => {
+    document.activeElement?.blur();
+    scrollTo({ top: 0, behavior: "instant" });
+  });
+  const label = (x) => `${x.tag} «${x.name}»`;
+  return {
+    stops: stops.length,
+    trap: false,
+    noIndicator: stops.filter((x) => x.visible && !x.indicator).map(label),
+    hidden: stops.filter((x) => !x.visible).map(label),
+    obscured: stops.filter((x) => x.obscured && x.inViewport).map(label),
+    positiveTabindex: stops.filter((x) => x.tabindex).length,
+    firstStop: stops[0] ? label(stops[0]) : null,
+  };
+}
+
+/** Con prefers-reduced-motion: reduce no debe quedar ninguna animación infinita ni larga en marcha. */
+async function reducedMotionCheck(browser, url, vp, route) {
+  const context = await browser.newContext({
+    viewport: { width: vp.width, height: vp.height },
+    isMobile: vp.mobile,
+    hasTouch: vp.mobile,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  try {
+    await page.goto(url, { waitUntil: "load", timeout: 45000 });
+    await page.waitForTimeout(route === "/" ? 5000 : 1800);
+    return await page.evaluate(() => {
+      const running = document
+        .getAnimations()
+        .filter((a) => a.playState === "running")
+        .map((a) => {
+          const t = a.effect?.getComputedTiming?.();
+          const target = a.effect?.target;
+          return {
+            name: a.animationName ?? a.transitionProperty ?? "?",
+            infinite: t?.iterations === Infinity,
+            ms: Math.round(t?.duration ?? 0),
+            el: target
+              ? target.tagName.toLowerCase() +
+                (typeof target.className === "string" && target.className
+                  ? "." + target.className.split(" ")[0]
+                  : "")
+              : "",
+          };
+        });
+      // Una transición de color/opacidad breve (< 400 ms) es aceptable; infinita o larga, no.
+      const offenders = running.filter((a) => a.infinite || a.ms > 400);
+      return {
+        running: running.length,
+        offenders: offenders.slice(0, 6),
+        offenderCount: offenders.length,
+      };
+    });
+  } catch (e) {
+    return { error: String(e).slice(0, 200), offenderCount: 0, offenders: [] };
+  } finally {
+    await context.close();
+  }
 }
 
 async function auditPage(browser, base, route, vpName, vp) {
@@ -681,6 +817,7 @@ async function auditPage(browser, base, route, vpName, vp) {
         result.screenshotFull = `${label}/capturas/${full}`;
       }
     }
+    result.keyboard = await keyboardCheck(page);
     // La sonda va al final: un clic puede abrir un diálogo que falsearía axe y la captura.
     // Sonda de interacción (sustituto de INP): clic real en pestañas, resúmenes y botones desplegables.
     const targets = page.locator(
@@ -721,6 +858,8 @@ async function auditPage(browser, base, route, vpName, vp) {
   result.consoleErrors = [...new Set(consoleErrors)].slice(0, 5);
   result.failedRequests = [...new Set(failedRequests)].slice(0, 5);
   await context.close();
+  if (!flag("no-keyboard"))
+    result.reducedMotion = await reducedMotionCheck(browser, url, vp, route);
   if (doLighthouse) {
     try {
       result.lighthouse = await runLighthouse(url, vpName, vp);
@@ -870,6 +1009,36 @@ function evaluate(results) {
         "cuadro p95 al desplazar (ms)",
         r.frames.scroll.p95.toFixed(1),
         `≤ ${t.scrollP95FrameMs[v]}`,
+      );
+    if (r.keyboard) {
+      if (r.keyboard.trap)
+        add(r, "trampa de teclado (Tab se queda en un elemento)", "sí", "no");
+      if (r.keyboard.noIndicator.length > t.keyboard.noIndicatorMax)
+        add(
+          r,
+          "paradas de Tab sin indicador de foco",
+          r.keyboard.noIndicator.length,
+          `≤ ${t.keyboard.noIndicatorMax}`,
+        );
+      if (r.keyboard.obscured.length > t.keyboard.obscuredMax)
+        add(
+          r,
+          "paradas de Tab tapadas por otro elemento",
+          r.keyboard.obscured.length,
+          `≤ ${t.keyboard.obscuredMax}`,
+        );
+      if (r.keyboard.positiveTabindex > 0)
+        add(r, "tabindex positivo", r.keyboard.positiveTabindex, "0");
+    }
+    if (
+      r.reducedMotion &&
+      r.reducedMotion.offenderCount > t.reducedMotionOffendersMax
+    )
+      add(
+        r,
+        "animaciones largas o infinitas con movimiento reducido",
+        r.reducedMotion.offenderCount,
+        `≤ ${t.reducedMotionOffendersMax}`,
       );
     if (r.headings && r.headings.h1 !== 1)
       add(r, "encabezados h1 visibles", r.headings.h1, "= 1");
@@ -1037,7 +1206,7 @@ function renderReport({
             .reduce((s, x) => s + x.nodes, 0)
         : null;
       L.push(
-        `| \`${r.route}\` | ${pct(lh.performance)} | ${pct(lh.accessibility)} | ${pct(lh.bestPractices)} | ${f0(lh.lcpMs)} | ${lh.cls == null ? "—" : lh.cls.toFixed(3)} | ${f0(lh.tbtMs)} | ${f0(lh.jsKbTransfer)} | ${f0(lh.unusedJsKb)} | ${f0(lh.totalKbTransfer)} | ${r.axe ? r.axe.violations.length : "—"} | ${contrast ?? "—"} | ${r.overflow ? r.overflow.px : "—"} | ${r.smallText ? r.smallText.count : "—"} | ${f0(r.inpProxyMs)} | ${r.frames ? f1(r.frames.scroll.p95) : "—"} |`,
+        `| \`${r.route}\` | ${pct(lh.performance)}${lh.performanceRange ? ` (${pct(lh.performanceRange[0])}–${pct(lh.performanceRange[1])})` : ""} | ${pct(lh.accessibility)} | ${pct(lh.bestPractices)} | ${f0(lh.lcpMs)} | ${lh.cls == null ? "—" : lh.cls.toFixed(3)} | ${f0(lh.tbtMs)} | ${f0(lh.jsKbTransfer)} | ${f0(lh.unusedJsKb)} | ${f0(lh.totalKbTransfer)} | ${r.axe ? r.axe.violations.length : "—"} | ${contrast ?? "—"} | ${r.overflow ? r.overflow.px : "—"} | ${r.smallText ? r.smallText.count : "—"} | ${f0(r.inpProxyMs)} | ${r.frames ? f1(r.frames.scroll.p95) : "—"} |`,
       );
     }
     L.push("");
@@ -1112,6 +1281,14 @@ function renderReport({
     if (r.lcpObserved)
       L.push(
         `- LCP observado (sin throttling): ${r.lcpObserved.t} ms en \`${r.lcpObserved.el}\``,
+      );
+    if (r.keyboard)
+      L.push(
+        `- Teclado (Tab): ${r.keyboard.stops} paradas${r.keyboard.firstStop ? `, la primera es ${r.keyboard.firstStop}` : ""}; sin indicador de foco: ${r.keyboard.noIndicator.length}${r.keyboard.noIndicator.length ? " (" + r.keyboard.noIndicator.slice(0, 4).join("; ") + ")" : ""}; tapadas: ${r.keyboard.obscured.length}${r.keyboard.obscured.length ? " (" + r.keyboard.obscured.slice(0, 3).join("; ") + ")" : ""}${r.keyboard.trap ? "; **trampa de teclado**" : ""}`,
+      );
+    if (r.reducedMotion)
+      L.push(
+        `- Movimiento reducido: ${r.reducedMotion.running ?? "—"} animaciones en marcha, ${r.reducedMotion.offenderCount} infinitas o largas${r.reducedMotion.offenders?.length ? " (" + r.reducedMotion.offenders.map((o) => `${o.el} ${o.name}`).join("; ") + ")" : ""}`,
       );
     if (r.headings)
       L.push(

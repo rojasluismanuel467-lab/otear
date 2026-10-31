@@ -28,7 +28,9 @@
     "overflowPx": 0,
     "smallTextMaxCount": 0,
     "inpProxyMs": { "desktop": 200, "mobile": 400 },
-    "scrollP95FrameMs": { "desktop": 50, "mobile": 50 }
+    "scrollP95FrameMs": { "desktop": 50, "mobile": 50 },
+    "keyboard": { "noIndicatorMax": 0, "obscuredMax": 0 },
+    "reducedMotionOffendersMax": 0
   },
   "regression": {
     "_nota": "Solo se usa con --compare <base>.json. Tolerancias frente a la medición base.",
