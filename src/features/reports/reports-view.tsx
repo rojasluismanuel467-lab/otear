@@ -250,8 +250,12 @@ function ReportsContent() {
                     </span>
                   </h2>
                   <p>
-                    {selected.duration} min · {number(selected.distance)} km ·{" "}
-                    {selected.photoCount} fotos · {selectedPoint?.findings ?? 0}{" "}
+                    {selected.duration} min ·{" "}
+                    {selected.distance > 0
+                      ? `${number(selected.distance)} km`
+                      : "km sin registrar"}{" "}
+                    · {selected.photoCount} fotos ·{" "}
+                    {selectedPoint?.findings ?? 0}{" "}
                     {selectedPoint?.findings === 1
                       ? findingWord.singular
                       : findingWord.plural}
@@ -301,7 +305,11 @@ function ReportsContent() {
                 </dl>
               ) : (
                 <p className={styles.muted}>
-                  Este vuelo no tiene bitácora. Regístrela desde Programación.
+                  {serviceRequests.some(
+                    (request) => request.flightId === selected.id,
+                  )
+                    ? "Este vuelo se entregó desde Servicios. La bitácora detallada (clima, baterías) es opcional y se registra desde Programación."
+                    : "Este vuelo no tiene bitácora. Regístrela desde Programación."}
                 </p>
               )}
             </section>
