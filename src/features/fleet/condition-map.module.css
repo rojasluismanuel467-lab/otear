@@ -186,7 +186,7 @@
 .error {
   margin: 0;
   font-size: 13px;
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .panel {
   display: grid;

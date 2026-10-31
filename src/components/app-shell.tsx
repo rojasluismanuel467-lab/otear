@@ -264,7 +264,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <button
               className="topbar-search"
-              aria-label="Buscar vuelos"
+              aria-label="Buscar un vuelo"
               onClick={() => setSearchOpen(true)}
             >
               <Search size={16} />

@@ -32,7 +32,7 @@
 .chip[data-state="over"],
 .chip[data-state="under"] {
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .chip[data-state="unknown"] {
   background: var(--warning-soft);
@@ -68,8 +68,10 @@
   font-size: 16px;
   font-weight: 650;
 }
-.numbers small {
+.numbers dd.hint {
   font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
   line-height: 1.4;
   color: var(--muted);
 }
@@ -83,7 +85,7 @@
 }
 .card[data-state="over"] .messages,
 .card[data-state="under"] .messages {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .note {
   margin: 0;
@@ -103,5 +105,5 @@
   line-height: 1.5;
 }
 .value[data-gap="true"] {
-  color: var(--danger);
+  color: var(--danger-text);
 }

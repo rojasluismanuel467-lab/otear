@@ -20,6 +20,8 @@
   --foreground: #222b32;
   --surface: #fff;
   --muted: #646c71;
+  /* Rojo para texto sobre blanco o sobre tintes claros (>= 5:1); --danger de HeroUI (#ff383c) solo sirve de relleno. */
+  --danger-text: #b42318;
   --border: #e1e5e8;
   --focus: #1c6f8d;
   /* "Good" is a neutral slate, not green: the palette is blue plus cool grays, with amber and red for alerts. */
@@ -950,7 +952,11 @@ textarea {
   gap: 8px;
 }
 .text-muted {
-  color: #6f787f;
+  color: #5b6368;
+}
+/* Piso de 12 px también para <small> sin clase (por defecto sería 0,8 em = 11,2 px). */
+:where(small) {
+  font-size: max(12px, 0.8em);
 }
 .table-wrap {
   overflow-x: auto;

@@ -25,7 +25,7 @@
 }
 .chip[data-tone="danger"] {
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .chip[data-tone="info"] {
   background: #e7f0f5;
@@ -117,7 +117,7 @@
   padding: 12px 14px;
   border-radius: 12px;
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -285,7 +285,7 @@
   padding: 12px 14px;
   border-radius: 12px;
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: 14px;
 }
 .footer {

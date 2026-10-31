@@ -467,7 +467,7 @@
   padding-top: 18px;
 }
 .error {
-  color: var(--danger);
+  color: var(--danger-text);
   background: var(--danger-soft);
   padding: 12px;
   border-radius: 8px;

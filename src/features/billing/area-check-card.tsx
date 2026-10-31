@@ -77,16 +77,18 @@ export function AreaCheckCard({
         <div>
           <dt>Pedido</dt>
           <dd>{ha(check.orderedHa)}</dd>
-          <small>Suma de las zonas del vuelo ({zoneWord.toLowerCase()})</small>
+          <dd className={styles.hint}>
+            Suma de las zonas del vuelo ({zoneWord.toLowerCase()})
+          </dd>
         </div>
         <div>
           <dt>Cubierto</dt>
           <dd>{ha(check.coveredHa)}</dd>
-          <small>
+          <dd className={styles.hint}>
             {coveredSource === "delivery"
               ? "Según la entrega del operador"
               : "Según el registro de vuelo del operador"}
-          </small>
+          </dd>
         </div>
         <div>
           <dt>Facturado (la factura dice)</dt>
@@ -114,9 +116,9 @@ export function AreaCheckCard({
               }}
             />
           </dd>
-          <small>
+          <dd className={styles.hint}>
             {error || "Puede corregirla si la factura dice otra cosa"}
-          </small>
+          </dd>
         </div>
       </dl>
       {value?.expectedTotal !== undefined && value.totalGap !== undefined && (

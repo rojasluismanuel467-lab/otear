@@ -303,7 +303,7 @@
   padding: 12px 14px;
   border-radius: 12px;
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: 14px;
 }
 @keyframes grow {
@@ -397,7 +397,7 @@
   color: var(--muted);
 }
 .operatorTable small[data-bad="true"] {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 /* Teléfono: un bloque por operador, con cada cifra bajo su rótulo; la tabla de cuatro
    columnas se cortaba justo donde está lo pedido, lo cubierto y lo facturado. */

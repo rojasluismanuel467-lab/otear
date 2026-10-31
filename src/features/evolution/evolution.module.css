@@ -402,7 +402,7 @@
 .comparison li[data-tone="danger"],
 .reading li[data-tone="danger"] {
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .comparison li[data-tone="info"],
 .reading li[data-tone="info"] {
@@ -450,7 +450,7 @@
 }
 .toneChip[data-tone="danger"] {
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .toneChip[data-tone="warning"] {
   background: var(--warning-soft);

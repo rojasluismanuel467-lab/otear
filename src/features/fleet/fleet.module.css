@@ -44,7 +44,7 @@
 }
 .tile[data-tone="danger"] {
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .rowBody {
   display: grid;
@@ -282,7 +282,7 @@
 }
 .chip[data-state="overdue"] {
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .meter {
   display: block;
@@ -409,7 +409,7 @@
   color: var(--muted);
 }
 .facts small[data-bad="true"] {
-  color: var(--danger);
+  color: var(--danger-text);
   font-weight: 650;
 }
 .history {
@@ -442,13 +442,13 @@
   color: var(--muted);
 }
 .history li[data-kind="incident"] strong {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .error {
   padding: 12px 14px;
   border-radius: 12px;
   background: var(--danger-soft);
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: 14px;
 }
 @keyframes stage-enter {
