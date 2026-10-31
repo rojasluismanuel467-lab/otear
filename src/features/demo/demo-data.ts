@@ -3,7 +3,7 @@ import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
 import { planMission } from "@/features/flights/mission-plan";
-import { dayText } from "@/features/flights/follow-up";
+import { dayText, FOLLOW_UP_TODAY } from "@/features/flights/follow-up";
 import {
   lineLengthKm,
   pointAlongLine,
@@ -34,7 +34,8 @@ import type {
   Zone,
 } from "./types";
 
-export const DEMO_DATE = "2026-10-25";
+/** The demo's only «today»: it is `FOLLOW_UP_TODAY`, so no screen can disagree. */
+export const DEMO_DATE = FOLLOW_UP_TODAY;
 /**
  * Outlines were traced by hand over satellite imagery so each zone sits on a real field, road
  * stretch, building plot or industrial block. The people, companies and works are still examples.
@@ -880,9 +881,10 @@ const seedClosures: Record<Sector, [string, string]> = {
 };
 
 /**
- * Corrective measures in the example, told from the demo's «today» (30 October 2026): one closed
- * with its note, one in correction and already late, one open and on time. Roads, where the
- * follow-up is the work itself, carry more, in every state. Keys are the finding id without the
+ * Corrective measures in the example, told from the demo's «today» (25 October 2026, `DEMO_DATE`; no
+ * closing date may be later): one closed with its note, one in correction and already late
+ * (due 16 Oct, 9 days), one in correction and on time, one open and on time. Roads, where the
+ * follow-up is the work itself, carry more, in every state, plus one open and already late. Keys are the finding id without the
  * «finding-<site>-» prefix, with «_» in place of «-».
  */
 function followUpSeeds(sector: Sector): Record<string, FollowUpSeed> {
@@ -903,8 +905,16 @@ function followUpSeeds(sector: Sector): Record<string, FollowUpSeed> {
       started: "2026-10-02",
       due: "2026-10-16",
     },
-    "1": { owner: a, opened: "2026-10-26", due: "2026-11-06" },
+    "1": { owner: a, opened: "2026-10-24", due: "2026-11-06" },
   };
+  if (sector !== "roads") {
+    seeds["2"] = {
+      owner: b,
+      opened: "2026-10-24",
+      started: "2026-10-25",
+      due: "2026-11-03",
+    };
+  }
   if (sector === "roads") {
     seeds.h4_2 = {
       owner: a,
@@ -914,7 +924,7 @@ function followUpSeeds(sector: Sector): Record<string, FollowUpSeed> {
       closedOn: "2026-09-08",
       closure: closedB,
     };
-    seeds.h6_1 = { owner: b, opened: "2026-10-12", due: "2026-10-27" };
+    seeds.h6_1 = { owner: b, opened: "2026-10-12", due: "2026-10-22" };
     seeds.h6_2 = {
       owner: a,
       opened: "2026-10-12",

@@ -7,8 +7,11 @@ import type { Finding, FindingFollowUp } from "../demo/types";
  * lives in the demo session.
  */
 
-/** The demo's «today»: the day the example data is told from, not the visitor's clock. */
-export const FOLLOW_UP_TODAY = "2026-10-30";
+/**
+ * The demo's one «today» (25 October 2026): the day the example data is told from, not the
+ * visitor's clock. `DEMO_DATE` in demo-data is this same value; nothing else may define a day.
+ */
+export const FOLLOW_UP_TODAY = "2026-10-25";
 
 export type FollowUpStatus = FindingFollowUp["status"];
 
@@ -357,6 +360,27 @@ export function summarizeFollowUps(
     if (isOverdue(followUp, today)) summary.overdue += 1;
   }
   return summary;
+}
+
+/**
+ * «3 medidas: 1 abierta, 1 en corrección, 1 cerrada · 1 vencida». The first number is the sum of
+ * the three states; «vencida» is a condition of the open or in-correction ones, so it comes after
+ * the dot and is never added to anything.
+ */
+export function measuresText(summary: FollowUpSummary): string {
+  const total = summary.open + summary.inProgress + summary.closed;
+  if (!total) return "Sin medidas";
+  const states = [
+    summary.open &&
+      `${summary.open} ${summary.open === 1 ? "abierta" : "abiertas"}`,
+    summary.inProgress && `${summary.inProgress} en corrección`,
+    summary.closed &&
+      `${summary.closed} ${summary.closed === 1 ? "cerrada" : "cerradas"}`,
+  ].filter(Boolean);
+  const late = summary.overdue
+    ? ` · ${summary.overdue} ${summary.overdue === 1 ? "vencida" : "vencidas"}`
+    : "";
+  return `${total} ${total === 1 ? "medida" : "medidas"}: ${states.join(", ")}${late}`;
 }
 
 export interface Measure {
