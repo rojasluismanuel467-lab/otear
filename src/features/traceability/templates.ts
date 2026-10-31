@@ -1,5 +1,5 @@
 import type { Flight, Sector, Site } from "../demo/types";
-import { DEMO_DAY_TEXT } from "./demo-clock.ts";
+import { DEMO_DAY_TEXT, dayWords } from "./demo-clock.ts";
 
 export type TemplateId =
   | "landowner-authorization"
@@ -40,6 +40,8 @@ export interface TemplateDef {
    * (the stored «Propietario o administrador» reads «Titular o administrador de la vía» on a road).
    */
   roleLabels?: Record<string, string>;
+  /** One line per stored role on who signs it, shown beside the signing form. */
+  roleHints?: Record<string, string>;
   /** Each role must be signed by a different person (see `signingConflict`). */
   separateRoles?: boolean;
   /** The content is taken from the flight's record, not typed in the dialog. */
@@ -257,11 +259,11 @@ function landownerAuthorization(sector: Sector): TemplateDef {
         `Yo, ${value(f, "ownerName")}, identificado(a) con ${value(f, "ownerId")}, en calidad de ${value(f, "ownerRole")} ${w.of} ${value(f, "propertyName")} (${value(f, "propertyRef", "sin referencia registrada")}), autorizo a ${value(f, "operatorName")} a operar un sistema aéreo no tripulado dentro ${w.of}.`,
         "",
         `Finalidad: ${value(f, "purpose")}`,
-        `Fecha del vuelo: ${value(f, "flightDate")}`,
+        `Fecha del vuelo: ${dayWords(value(f, "flightDate"))}`,
         `Punto de despegue y aterrizaje: ${value(f, "takeoffPoint")}`,
         `Altura máxima aproximada: ${value(f, "maxAltitude")} m`,
         `Sobrevuelo de viviendas o predios vecinos: ${value(f, "thirdParties")}`,
-        `Vigencia: hasta el ${value(f, "validUntil")}`,
+        `Vigencia: hasta el ${dayWords(value(f, "validUntil"))}`,
         "",
         "El operador se compromete a no captar imágenes de terceros sin su consentimiento y a responder por los daños que cause con su operación.",
         `Esta carta es prueba de consentimiento ${w.of}. No reemplaza la autorización de vuelo de la Aerocivil cuando esta se requiera.`,
@@ -271,6 +273,127 @@ function landownerAuthorization(sector: Sector): TemplateDef {
 
 const landownerVariants = Object.fromEntries(
   sectors.map((sector) => [sector, landownerAuthorization(sector)]),
+) as Record<Sector, TemplateDef>;
+
+/**
+ * How the stored role «Revisor o interventor» of the flight report reads in each sector: a farm has
+ * no interventor, a road or a works site does. The stored role does not change, only how it reads.
+ */
+const reviewerRoleLabels: Record<Sector, string> = {
+  agriculture: "Revisor (quien recibe el informe)",
+  roads: "Revisor o interventor",
+  construction: "Revisor o interventor",
+  security: "Revisor (quien recibe el informe)",
+  mining: "Revisor o interventor",
+};
+
+/** The flight's signable report, with its two parts and its reviewer worded for the sector. */
+function flightReport(sector: Sector): TemplateDef {
+  const reviewer = reviewerRoleLabels[sector];
+  const hidden = (key: string, label: string, type: FieldDef["type"]) => ({
+    key,
+    label,
+    type,
+    hidden: true,
+  });
+  return {
+    id: "flight-report",
+    title: "Informe del vuelo",
+    summary:
+      "El resumen «En breve» y el registro del vuelo, para que lo firmen quien operó y quien revisa.",
+    note: "Borrador de demostración con datos de ejemplo. La firma de la demo no tiene valor legal. La huella es un código calculado con el texto de este informe: si cambia una letra, el código cambia y las firmas anteriores quedan sin validez. No prueba quién escribió el nombre, la hora exacta ni que las cifras o las fotos del vuelo sean ciertas.",
+    fromRecord: true,
+    separateRoles: true,
+    requestExample: "la persona que revisa o la interventoría",
+    roleLabels: { "Revisor o interventor": reviewer },
+    roleHints: {
+      Operador:
+        "Quien hizo el vuelo. Confirma solo la «parte del operador» del informe.",
+      "Revisor o interventor":
+        "Quien recibe y revisa el informe de parte de quien contrató el servicio. Confirma que leyó el informe completo.",
+    },
+    fields: [
+      hidden("sector", "Sector", "text"),
+      hidden("siteName", "Sitio", "text"),
+      hidden("sectorLabel", "Sector del sitio", "text"),
+      hidden("zoneLabel", "Nombre de las zonas", "text"),
+      hidden("flightTitle", "Vuelo", "text"),
+      hidden("flightDate", "Fecha del vuelo", "text"),
+      hidden("flightTime", "Hora del vuelo", "text"),
+      hidden("flightStatus", "Estado del vuelo", "text"),
+      hidden("objective", "Objetivo", "textarea"),
+      hidden("zones", "Zonas cubiertas", "textarea"),
+      hidden("summary", "En breve", "textarea"),
+      hidden("log", "Cómo fue el vuelo", "textarea"),
+      hidden("debrief", "Notas del operador al aterrizar", "textarea"),
+      hidden("findingsTitle", "Título de los puntos incluidos", "text"),
+      hidden("findings", "Puntos incluidos", "textarea"),
+      hidden("technical", "Detalle técnico", "textarea"),
+      hidden("clientSummary", "Medidas correctivas del sitio", "textarea"),
+      hidden("reviews", "Seguimiento de cada punto", "textarea"),
+      hidden("notes", "Notas de revisión", "textarea"),
+    ],
+    signers: [
+      { role: "Operador", required: true },
+      { role: "Revisor o interventor", required: true },
+    ],
+    render: (f) =>
+      [
+        "INFORME DEL VUELO (BORRADOR DE DEMOSTRACIÓN)",
+        "Datos de ejemplo. No es un informe técnico de una operación real.",
+        "",
+        `${value(f, "siteName")} · ${value(f, "sectorLabel")}`,
+        `Vuelo: ${value(f, "flightTitle")}`,
+        `Fecha: ${dayWords(value(f, "flightDate"))} · ${value(f, "flightTime")}`,
+        `Estado: ${value(f, "flightStatus")}`,
+        `Objetivo: ${value(f, "objective")}`,
+        `${value(f, "zoneLabel", "Zonas")}: ${value(f, "zones", "sin zonas seleccionadas")}`,
+        "",
+        "EN BREVE",
+        value(f, "summary", "Sin otras líneas en el resumen."),
+        "",
+        "PARTE DEL OPERADOR (quien firma como Operador confirma esta parte)",
+        "",
+        "CÓMO FUE EL VUELO",
+        value(f, "log", "Sin registro."),
+        ...(f.debrief?.trim()
+          ? ["", "NOTAS DEL OPERADOR AL ATERRIZAR", f.debrief.trim()]
+          : []),
+        "",
+        `${value(f, "findingsTitle", "HALLAZGOS INCLUIDOS")} (lo que el operador marcó)`,
+        value(f, "findings", "Ninguno incluido."),
+        "",
+        "DETALLE TÉCNICO",
+        value(f, "technical", "Sin detalle técnico."),
+        "",
+        "PARTE DE QUIEN CONTRATA Y REVISA (el operador no la certifica)",
+        "",
+        `MEDIDAS CORRECTIVAS DEL SITIO (a ${DEMO_DAY_TEXT}, fecha de corte de la demostración)`,
+        value(
+          f,
+          "clientSummary",
+          "Sin medidas correctivas vencidas en el sitio.",
+        ),
+        "",
+        "SEGUIMIENTO DE CADA PUNTO INCLUIDO",
+        value(f, "reviews", "Ninguno incluido."),
+        "",
+        "NOTAS DE REVISIÓN",
+        value(f, "notes", "Sin notas adicionales."),
+        "",
+        "QUÉ ES ESTA FIRMA Y QUÉ NO",
+        "La firma de esta demostración no tiene valor legal: ensaya el mecanismo con datos de ejemplo.",
+        "Firma como Operador: confirma la «parte del operador» (la bitácora, las cifras que declaró y los puntos que marcó). No confirma las medidas correctivas, sus responsables y plazos ni las notas de revisión: eso lo decide quien contrata.",
+        `Firma como ${reviewer.toLowerCase()}: confirma que leyó el informe completo, no que las cifras del operador sean ciertas.`,
+        "La huella digital es un código calculado con el título y el texto de este informe. Si alguien cambia una letra, el código cambia y las firmas anteriores quedan sin validez.",
+        `La huella no prueba quién escribió el nombre de quien firma, ni la hora exacta (la fecha de la firma es la del escenario de la demostración, ${DEMO_DAY_TEXT}, y la hora es la del dispositivo), ni que las cifras, el clima, la autorización o las fotografías del vuelo sean ciertos: eso lo declara el operador. Cubre este texto, no las fotografías ni los archivos entregados.`,
+        `Quien firma como operador y quien firma como ${reviewer.toLowerCase()} deben ser personas distintas.`,
+      ].join("\n"),
+  };
+}
+
+const flightReportVariants = Object.fromEntries(
+  sectors.map((sector) => [sector, flightReport(sector)]),
 ) as Record<Sector, TemplateDef>;
 
 export const templates: Record<TemplateId, TemplateDef> = {
@@ -528,6 +651,11 @@ export const templates: Record<TemplateId, TemplateDef> = {
     note: "Es la base para registrar el recibo del servicio antes de pagar. No sustituye los eventos de la factura electrónica ante la DIAN.",
     separateRoles: true,
     requestExample: "quien recibe el servicio",
+    roleHints: {
+      Operador: "Quien entrega el servicio.",
+      "Cliente o responsable":
+        "Quien recibe el servicio. Puede ser la misma persona que revisa el informe del vuelo, porque es otro documento.",
+    },
     fields: [
       {
         key: "deliverables",
@@ -557,141 +685,13 @@ export const templates: Record<TemplateId, TemplateDef> = {
       [
         "ACTA DE ENTREGA Y RECIBO A SATISFACCIÓN",
         "",
-        `Fecha: ${value(f, "date")}`,
+        `Fecha: ${dayWords(value(f, "date"))}`,
         `Entregables: ${value(f, "deliverables")}`,
         `Resultado: ${value(f, "result")}`,
         `Observaciones: ${value(f, "observations", "sin observaciones")}`,
       ].join("\n"),
   },
-  "flight-report": {
-    id: "flight-report",
-    title: "Informe del vuelo",
-    summary:
-      "El resumen «En breve» y el registro del vuelo, para que lo firmen quien operó y quien revisa.",
-    note: "Borrador de demostración con datos de ejemplo. La firma de la demo no tiene valor legal. La huella es un código calculado con el texto de este informe: si cambia una letra, el código cambia y las firmas anteriores quedan sin validez. No prueba quién escribió el nombre, la hora exacta ni que las cifras o las fotos del vuelo sean ciertas.",
-    fromRecord: true,
-    separateRoles: true,
-    requestExample: "la persona que revisa o la interventoría",
-    fields: [
-      { key: "sector", label: "Sector", type: "text", hidden: true },
-      { key: "siteName", label: "Sitio", type: "text", hidden: true },
-      {
-        key: "sectorLabel",
-        label: "Sector del sitio",
-        type: "text",
-        hidden: true,
-      },
-      {
-        key: "zoneLabel",
-        label: "Nombre de las zonas",
-        type: "text",
-        hidden: true,
-      },
-      { key: "flightTitle", label: "Vuelo", type: "text", hidden: true },
-      {
-        key: "flightDate",
-        label: "Fecha del vuelo",
-        type: "text",
-        hidden: true,
-      },
-      {
-        key: "flightTime",
-        label: "Hora del vuelo",
-        type: "text",
-        hidden: true,
-      },
-      {
-        key: "flightStatus",
-        label: "Estado del vuelo",
-        type: "text",
-        hidden: true,
-      },
-      { key: "objective", label: "Objetivo", type: "textarea", hidden: true },
-      {
-        key: "zones",
-        label: "Zonas cubiertas",
-        type: "textarea",
-        hidden: true,
-      },
-      { key: "summary", label: "En breve", type: "textarea", hidden: true },
-      {
-        key: "log",
-        label: "Cómo fue el vuelo",
-        type: "textarea",
-        hidden: true,
-      },
-      {
-        key: "debrief",
-        label: "Notas del operador al aterrizar",
-        type: "textarea",
-        hidden: true,
-      },
-      {
-        key: "findingsTitle",
-        label: "Título de los puntos incluidos",
-        type: "text",
-        hidden: true,
-      },
-      {
-        key: "findings",
-        label: "Puntos incluidos",
-        type: "textarea",
-        hidden: true,
-      },
-      {
-        key: "notes",
-        label: "Notas de revisión",
-        type: "textarea",
-        hidden: true,
-      },
-      {
-        key: "technical",
-        label: "Detalle técnico",
-        type: "textarea",
-        hidden: true,
-      },
-    ],
-    signers: [
-      { role: "Operador", required: true },
-      { role: "Revisor o interventor", required: true },
-    ],
-    render: (f) =>
-      [
-        "INFORME DEL VUELO (BORRADOR DE DEMOSTRACIÓN)",
-        "Datos de ejemplo. No es un informe técnico de una operación real.",
-        "",
-        `${value(f, "siteName")} · ${value(f, "sectorLabel")}`,
-        `Vuelo: ${value(f, "flightTitle")}`,
-        `Fecha: ${value(f, "flightDate")} · ${value(f, "flightTime")}`,
-        `Estado: ${value(f, "flightStatus")}`,
-        `Objetivo: ${value(f, "objective")}`,
-        `${value(f, "zoneLabel", "Zonas")}: ${value(f, "zones", "sin zonas seleccionadas")}`,
-        "",
-        "EN BREVE",
-        value(f, "summary", "Sin resumen."),
-        "",
-        "CÓMO FUE EL VUELO",
-        value(f, "log", "Sin registro."),
-        ...(f.debrief?.trim()
-          ? ["", "NOTAS DEL OPERADOR AL ATERRIZAR", f.debrief.trim()]
-          : []),
-        "",
-        value(f, "findingsTitle", "HALLAZGOS INCLUIDOS"),
-        value(f, "findings", "Ninguno incluido."),
-        "",
-        "NOTAS DE REVISIÓN",
-        value(f, "notes", "Sin notas adicionales."),
-        "",
-        "DETALLE TÉCNICO",
-        value(f, "technical", "Sin detalle técnico."),
-        "",
-        "QUÉ ES ESTA FIRMA Y QUÉ NO",
-        "La firma de esta demostración no tiene valor legal: ensaya el mecanismo con datos de ejemplo.",
-        "La huella digital es un código calculado con el título y el texto de este informe. Si alguien cambia una letra, el código cambia y las firmas anteriores quedan sin validez.",
-        `La huella no prueba quién escribió el nombre de quien firma, ni la hora exacta (la fecha de la firma es la del escenario de la demostración, ${DEMO_DAY_TEXT}, y la hora es la del dispositivo), ni que las cifras, el clima, la autorización o las fotografías del vuelo sean ciertos: eso lo declara el operador. Cubre este texto, no las fotografías ni los archivos entregados.`,
-        "Quien firma como operador y quien firma como revisor o interventor deben ser personas distintas.",
-      ].join("\n"),
-  },
+  "flight-report": flightReportVariants.agriculture,
 };
 
 export const templateList = Object.values(templates);
@@ -701,9 +701,13 @@ export function templateFor(
   templateId: TemplateId,
   sector: Sector | undefined,
 ): TemplateDef {
-  return templateId === "landowner-authorization"
-    ? landownerVariants[sector ?? "agriculture"]
-    : templates[templateId];
+  if (templateId === "landowner-authorization") {
+    return landownerVariants[sector ?? "agriculture"];
+  }
+  if (templateId === "flight-report") {
+    return flightReportVariants[sector ?? "agriculture"];
+  }
+  return templates[templateId];
 }
 
 /** How a signer's stored role reads in this template (and sector). */

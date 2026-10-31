@@ -26,7 +26,7 @@ import {
   sameName,
   signerProblem,
 } from "./signers.ts";
-import { autofill, templates } from "./templates.ts";
+import { autofill, templateFor, templates } from "./templates.ts";
 
 const NOW = "2026-10-30T10:00:00.000Z";
 
@@ -60,6 +60,8 @@ const flight = {
 
 const input: FlightReportInput = {
   brief: ["Tramo sur: 3 por verificar en campo."],
+  clientBrief: [],
+  reviews: ["Drenaje obstruido\n   Estado: Pendiente de revisión"],
   logRows: [["Piloto", "Camilo Torres"]],
   findingsTitle: "No conformidades incluidas",
   findings: ["Drenaje obstruido"],
@@ -275,7 +277,7 @@ test("a downloaded copy is checked against the saved fingerprint", () => {
 test("the text of the «Documento» box on screen is also accepted, and a failure says why", () => {
   let evidence = withSignature(report(), operator, NOW);
   evidence = withSignature(evidence, reviewer, NOW);
-  const template = templates["flight-report"];
+  const template = templateFor("flight-report", "roads");
   // What the box shows: the body, with no title and no «Estado:» lines.
   const screen = template.render(evidence.fields);
   const fromScreen = checkDownload(evidence, screen);

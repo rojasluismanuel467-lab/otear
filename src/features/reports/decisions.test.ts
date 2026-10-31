@@ -387,3 +387,28 @@ test("a delivery without hectares (a service priced per flight) says only that i
   assert.ok(text.includes("AeroUno entregó el"));
   assert.ok(!text.includes("cubiertas"));
 });
+
+test("a dispute note that already ends in a full stop does not get a second one", () => {
+  const text = serviceDecisionLines({
+    site,
+    requests: [
+      {
+        ...request,
+        verification: {
+          result: "disputed" as const,
+          note: "Pido facturar solo lo cubierto.",
+          on: "2026-10-25",
+          by: "m",
+        },
+      } as ServiceRequest,
+    ],
+    parties,
+    invoices: [],
+    flights,
+    zoneMeasure: { z1: 10 },
+    operators: [],
+    period,
+  }).join("\n");
+  assert.ok(text.includes("Pido facturar solo lo cubierto."));
+  assert.ok(!text.includes(".."));
+});

@@ -16,6 +16,7 @@ import { textToHtml, printHtml } from "@/features/traceability/document-export";
 import {
   flightReportFields,
   reportPhrases,
+  splitBrief,
 } from "@/features/traceability/flight-report-document";
 import { FlightReportSigning } from "@/features/traceability/flight-report-signing";
 import {
@@ -182,17 +183,48 @@ export function FlightReport({
       kind === "line" ? chainageLabel(finding.position, site.zones) : undefined;
     return pk ? `${pk} (${raw})` : raw;
   };
-  const findingBlocks = included.map(
-    (finding) =>
-      `${finding.title}\n   ${site.zoneLabel.replace(/s$/, "")}: ${zoneName(finding)} · prioridad ${priorityLabels[finding.priority]}\n   ${finding.description}\n   Fuente: ${sourceLabel(finding, words)}\n   Estado: ${statusLabel(finding.status, words)}\n   Frente a vuelos anteriores: ${trendLabel(trend(finding))}\n   Siguiente paso: ${nextStepLabels[finding.status]}\n   Medida correctiva: ${followUpLine(finding)}\n   Coordenadas de ejemplo: ${coordinates(finding)}\n   Referencia de muestra: ${finding.id}`,
+  // A finding has three kinds of lines: what the operator marked, what whoever contracts decided
+  // about it (status, trend, next step, corrective measure) and the example coordinates. The
+  // signable report keeps the first and the second apart; the draft text lists them together.
+  const markedLines = (finding: Finding) => [
+    `   ${site.zoneLabel.replace(/s$/, "")}: ${zoneName(finding)} · prioridad ${priorityLabels[finding.priority]}`,
+    `   ${finding.description}`,
+    `   Fuente: ${sourceLabel(finding, words)}`,
+  ];
+  const decidedLines = (finding: Finding) => [
+    `   Estado: ${statusLabel(finding.status, words)}`,
+    `   Frente a vuelos anteriores: ${trendLabel(trend(finding))}`,
+    `   Siguiente paso: ${nextStepLabels[finding.status]}`,
+    `   Medida correctiva: ${followUpLine(finding)}`,
+  ];
+  const coordinateLine = (finding: Finding) =>
+    `   Coordenadas de ejemplo: ${coordinates(finding)}`;
+  const findingBlocks = included.map((finding) =>
+    [
+      finding.title,
+      ...markedLines(finding),
+      ...decidedLines(finding),
+      coordinateLine(finding),
+    ].join("\n"),
   );
+  const operatorBlocks = included.map((finding) =>
+    [finding.title, ...markedLines(finding), coordinateLine(finding)].join(
+      "\n",
+    ),
+  );
+  const reviewBlocks = included.map((finding) =>
+    [finding.title, ...decidedLines(finding)].join("\n"),
+  );
+  const split = splitBrief(brief);
   // What the person signs is exactly what the report shows now.
   const signablePrefill = flightReportFields({
-    brief,
+    brief: split.operator,
+    clientBrief: split.client,
     logRows,
     debrief: flight.log?.debrief,
     findingsTitle: phrases.heading,
-    findings: findingBlocks,
+    findings: operatorBlocks,
+    reviews: reviewBlocks,
     notes,
     technical,
   });

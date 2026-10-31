@@ -5,6 +5,7 @@ import { documentText } from "./document-export.ts";
 import {
   flightReportChanges,
   flightReportFields,
+  splitBrief,
   type FlightReportInput,
 } from "./flight-report-document.ts";
 import {
@@ -51,6 +52,8 @@ const flight = {
 
 const input: FlightReportInput = {
   brief: ["Tramo sur: 3 por verificar en campo."],
+  clientBrief: [],
+  reviews: ["Drenaje obstruido\n   Estado: Pendiente de revisión"],
   logRows: [
     ["Piloto", "Camilo Torres"],
     ["Duración", "42 min"],
@@ -340,5 +343,98 @@ test("a document from before the sector was stored still reads as a farm documen
     missingFields("landowner-authorization", { sector: "roads" }).includes(
       "Vía o tramo",
     ),
+  );
+});
+
+test("the signable report keeps what the operator declares apart from what the client decides", () => {
+  const split = splitBrief([
+    "El operador declaró 26,4 de 27,9 ha pedidas.",
+    "Hay 2 medidas correctivas vencidas en el sitio: su plazo ya pasó y no está cerrada.",
+    "3 hallazgos por verificar en campo.",
+  ]);
+  assert.equal(split.operator.length, 2);
+  assert.equal(split.client.length, 1);
+  const evidence = newEvidence(
+    {
+      siteId: site.id,
+      flightId: flight.id,
+      kind: "drafted",
+      templateId: "flight-report",
+      title: templates["flight-report"].title,
+      fields: {
+        ...autofill("flight-report", { site, flight }),
+        ...flightReportFields({
+          ...input,
+          brief: split.operator,
+          clientBrief: split.client,
+          reviews: [
+            "Drenaje obstruido\n   Medida correctiva: Abierta · responsable Jefe de campo",
+          ],
+        }),
+      },
+    },
+    NOW,
+  );
+  const text = documentText(evidence);
+  const operatorAt = text.indexOf("PARTE DEL OPERADOR");
+  const clientAt = text.indexOf("PARTE DE QUIEN CONTRATA Y REVISA");
+  const measureAt = text.indexOf("Hay 2 medidas correctivas vencidas");
+  const ownMeasureAt = text.indexOf("Medida correctiva: Abierta");
+  const reviewNotesAt = text.indexOf("NOTAS DE REVISIÓN");
+  assert.ok(operatorAt > 0 && clientAt > operatorAt);
+  // The measures (the line in «En breve» and each point's own) and the review notes are in the
+  // client's part, after the operator's.
+  assert.ok(measureAt > clientAt);
+  assert.ok(ownMeasureAt > clientAt);
+  assert.ok(reviewNotesAt > clientAt);
+  // What the operator logged and marked is in the operator's part.
+  assert.ok(text.indexOf("Duración: 42 min") < clientAt);
+  assert.ok(text.indexOf("Drenaje obstruido") < clientAt);
+  // The cut-off date of the measures is the demo's, in words.
+  assert.match(text, /MEDIDAS CORRECTIVAS DEL SITIO \(a 25 de oct\.? de 2026/);
+  // The operator's signature says which part it confirms.
+  assert.match(text, /Firma como Operador: confirma la «parte del operador»/);
+  // The date is in words, not ISO.
+  assert.match(text, /Fecha: 24 de oct\.? de 2026 · /);
+  assert.ok(!/Fecha: 2026-10-24/.test(text));
+});
+
+test("the reviewer role reads in the sector's words, and the stored role does not change", () => {
+  const farm = templateFor("flight-report", "agriculture");
+  const road = templateFor("flight-report", "roads");
+  assert.equal(
+    farm.roleLabels?.["Revisor o interventor"],
+    "Revisor (quien recibe el informe)",
+  );
+  assert.equal(
+    road.roleLabels?.["Revisor o interventor"],
+    "Revisor o interventor",
+  );
+  assert.ok(!/interventor/.test(farm.render({ sector: "agriculture" })));
+  // The signers are still stored under the same role in every sector.
+  for (const sector of ["agriculture", "security", "mining"] as const) {
+    assert.deepEqual(
+      templateFor("flight-report", sector).signers.map((s) => s.role),
+      ["Operador", "Revisor o interventor"],
+    );
+  }
+  const signed = withSignature(
+    newEvidence(
+      {
+        siteId: "s",
+        flightId: "f",
+        kind: "drafted",
+        templateId: "flight-report",
+        title: farm.title,
+        fields: { sector: "agriculture" },
+      },
+      NOW,
+    ),
+    reviewer,
+    NOW,
+  );
+  assert.equal(
+    roleLabelOf(signed, "Revisor o interventor"),
+    "Revisor (quien recibe el informe)",
   );
 });

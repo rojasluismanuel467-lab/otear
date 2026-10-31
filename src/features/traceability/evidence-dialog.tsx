@@ -590,6 +590,9 @@ function EvidenceBody({
                         ? `${signature.name} · ${time(signature.signedAt)}${valid ? "" : " · sin validez"}`
                         : "Pendiente"}
                     </small>
+                    {template.roleHints?.[item.role] && (
+                      <small>{template.roleHints[item.role]}</small>
+                    )}
                   </span>
                   <Button
                     variant={signature && valid ? "ghost" : "secondary"}

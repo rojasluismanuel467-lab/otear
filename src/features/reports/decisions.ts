@@ -209,7 +209,7 @@ export function serviceDecisionLines(input: DecisionInput): string[] {
         `  Verificación: ${request.verification.result === "accepted" ? "aceptada" : "en disputa"} el ${date(request.verification.on)} por ${who(request.verification.by)}` +
           (request.verification.result === "disputed" &&
           request.verification.note
-            ? `: ${request.verification.note}.`
+            ? `: ${endSentence(request.verification.note)}`
             : "."),
       );
     }
@@ -254,7 +254,7 @@ export function serviceDecisionLines(input: DecisionInput): string[] {
       lines.push(
         `- ${row.operator}: ${row.orderedHa ? number(row.orderedHa) : "—"} / ${row.coveredHa ? number(row.coveredHa) : "—"} / ${row.billedHa ? number(row.billedHa) : "—"} ha` +
           (row.invoices
-            ? ` · ${row.invoicesWithArea} de ${row.invoices} facturas traen área`
+            ? ` · ${row.invoicesWithArea} de ${row.invoices} ${row.invoices === 1 ? "factura trae" : "facturas traen"} área`
             : "") +
           (row.orderedHa > 0 && over > 0.05
             ? ` · declaró ${number(over)} ha más de las que miden las zonas pedidas`
