@@ -622,7 +622,9 @@ function ReportsContent() {
                                       : ""}
                                   </small>
                                 </th>
-                                <td>
+                                <td
+                                  data-label={`Vuelos y ${findingWord.plural}`}
+                                >
                                   {row.flights}{" "}
                                   {row.flights === 1 ? "vuelo" : "vuelos"} ·{" "}
                                   {row.findings}{" "}
@@ -637,7 +639,7 @@ function ReportsContent() {
                                       : ""}
                                   </small>
                                 </td>
-                                <td>
+                                <td data-label="Cobro">
                                   {formatMoney(row.billed)}
                                   <small>
                                     {row.invoices}{" "}
@@ -652,7 +654,7 @@ function ReportsContent() {
                                       : `${formatMoney(row.perHa)} por ha, de ${row.invoicesWithArea} de ${row.invoices} ${row.invoices === 1 ? "factura" : "facturas"} con área`}
                                   </small>
                                 </td>
-                                <td>
+                                <td data-label="Hectáreas pedidas / cubiertas / facturadas">
                                   {row.billedHa || row.coveredHa
                                     ? `${hectaresText(row.orderedHa)} / ${hectaresText(row.coveredHa)} / ${hectaresText(row.billedHa)} ha`
                                     : "—"}

@@ -347,6 +347,53 @@
 .best {
   font-weight: 700;
 }
+/* Teléfono: cada cotización es una tarjeta (operador, precio, total, desde, estado y
+   «Asignar» debajo) en vez de una tabla que se corta y esconde el botón. Los encabezados
+   quedan solo para lectores de pantalla. */
+@media (max-width: 640px) {
+  .quotes thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .quotes,
+  .quotes tbody {
+    display: block;
+  }
+  .quotes tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  .quotes td {
+    display: block;
+    padding: 0;
+    border-top: 0;
+  }
+  .quotes td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .quotes td:first-child {
+    grid-column: 1 / -1;
+    font-weight: 650;
+  }
+  .quotes td:first-child small {
+    font-weight: 400;
+  }
+  .quotes td:last-child:not([data-label]) {
+    grid-column: 1 / -1;
+  }
+  .quotes td:empty {
+    display: none;
+  }
+}
 .delivery {
   display: grid;
   gap: 12px;

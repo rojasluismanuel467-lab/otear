@@ -399,6 +399,40 @@
 .operatorTable small[data-bad="true"] {
   color: var(--danger);
 }
+/* Teléfono: un bloque por operador, con cada cifra bajo su rótulo; la tabla de cuatro
+   columnas se cortaba justo donde está lo pedido, lo cubierto y lo facturado. */
+@media (max-width: 640px) {
+  .operatorTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .operatorTable,
+  .operatorTable tbody {
+    display: block;
+  }
+  .operatorTable tr {
+    display: grid;
+    gap: 10px;
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  .operatorTable tbody th,
+  .operatorTable td {
+    display: block;
+    padding: 0;
+    border-top: 0;
+  }
+  .operatorTable td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+}
 
 /* La fecha del título no se parte; el separador va pegado al título (espacio duro) y queda al final de la línea, no al inicio de la siguiente. */
 .keepTogether {
