@@ -41,6 +41,22 @@
   color: #d6e8f1;
   pointer-events: none;
 }
+.messageBody {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: 44ch;
+}
+.messageBody svg {
+  color: #81bfdb;
+}
+.messageBody strong {
+  font-size: 16px;
+  color: #fff;
+}
+.messageBody p {
+  margin: 0;
+}
 .tools {
   position: absolute;
   right: 12px;

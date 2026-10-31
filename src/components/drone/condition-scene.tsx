@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Home, ZoomIn, ZoomOut } from "lucide-react";
+import { Box, Home, ZoomIn, ZoomOut } from "lucide-react";
 import {
   ACESFilmicToneMapping,
   Box3,
@@ -911,11 +911,21 @@ export function ConditionScene({
         <p className={styles.message}>Preparando el modelo…</p>
       )}
       {status === "error" && (
-        <p className={styles.message}>
-          {source.kind === "scan"
-            ? "No se pudo leer el escaneo. Expórtelo como .glb e inténtelo de nuevo."
-            : "No se pudo cargar el modelo de ejemplo de esta aeronave (el archivo no está disponible aquí). Puede cargar su escaneo (.glb) o marcar las partes desde la lista."}
-        </p>
+        <div className={styles.message} role="status">
+          <div className={styles.messageBody}>
+            <Box size={28} aria-hidden="true" />
+            <strong>
+              {source.kind === "scan"
+                ? "No se pudo leer el escaneo"
+                : "El modelo 3D de ejemplo no está en esta versión"}
+            </strong>
+            <p>
+              {source.kind === "scan"
+                ? "Expórtelo como .glb e inténtelo de nuevo."
+                : "Los modelos de ejemplo no se publican todavía (su licencia está por resolver). Marque el estado de cada pieza desde la lista de la derecha, o cargue el escaneo de su aeronave (.glb)."}
+            </p>
+          </div>
+        </div>
       )}
       {status === "unavailable" && (
         <p className={styles.message}>
