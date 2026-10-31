@@ -535,6 +535,34 @@
     padding-right: 8px;
   }
 }
+/* Teléfono: después del escenario va la gráfica («cuál lote va peor») y solo después el
+   detalle y las listas, que son largos. El escenario y su cajón son hijos del primer
+   div de .body (StageDrawer): se aplanan con display: contents para poder ordenarlos
+   junto a la gráfica sin duplicar nada en el DOM. */
+@media (max-width: 640px) {
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .body > div:first-child,
+  .body > div:first-child > div {
+    display: contents;
+  }
+  .body > div:first-child > div > div:first-child {
+    order: 0;
+    min-width: 0;
+  }
+  .body > .block {
+    order: 1;
+  }
+  .body > div:first-child > div > aside {
+    order: 2;
+  }
+  .body > .note {
+    order: 3;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .surface,
   .sheet {
