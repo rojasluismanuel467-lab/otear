@@ -597,9 +597,25 @@ async function keyboardCheck(page) {
         .trim()
         .replace(/\s+/g, " ")
         .slice(0, 40);
-      const outline =
-        cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) >= 1;
+      const hasOutline = (node) => {
+        const c = getComputedStyle(node);
+        return c.outlineStyle !== "none" && parseFloat(c.outlineWidth) >= 1;
+      };
+      // El anillo puede estar en el propio elemento o, con :focus-within, en un contenedor cercano (un campo de búsqueda con icono).
+      let ringed = hasOutline(el);
+      for (
+        let p = el.parentElement, n = 0;
+        !ringed && p && n < 3;
+        p = p.parentElement, n++
+      )
+        ringed = hasOutline(p);
       const shadow = cs.boxShadow && cs.boxShadow !== "none";
+      // Los campos de fecha y hora resaltan su segmento activo por dentro (shadow DOM): el
+      // propio <input> no recibe :focus-visible al pasar de un segmento a otro, y no es un fallo.
+      const nativeSegments =
+        el.tagName === "INPUT" &&
+        ["date", "time", "datetime-local", "month", "week"].includes(el.type);
+      const outline = ringed || nativeSegments;
       const cx = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2));
       const cy = Math.min(innerHeight - 1, Math.max(0, r.top + r.height / 2));
       const top = document.elementFromPoint(cx, cy);
@@ -608,13 +624,19 @@ async function keyboardCheck(page) {
         r.height > 0 &&
         cs.visibility !== "hidden" &&
         cs.opacity !== "0";
+      window.__auditUid = window.__auditUid || new WeakMap();
+      if (!window.__auditUid.has(el))
+        window.__auditUid.set(el, window.__auditUid.size + 1);
       return {
+        uid: window.__auditUid.get(el),
         tag: el.tagName.toLowerCase() + (el.id ? "#" + el.id : ""),
         name,
         indicator: outline || shadow,
         visible,
+        // Dentro de un mapa de Leaflet los marcadores y controles se superponen por diseño (se mide aparte con axe).
         obscured:
           visible &&
+          !el.closest(".leaflet-container") &&
           !!top &&
           top !== el &&
           !el.contains(top) &&
@@ -629,10 +651,7 @@ async function keyboardCheck(page) {
     });
     if (!info) break; // salió de la página (vuelve al navegador): se terminó el ciclo
     stops.push(info);
-    if (
-      stops.length > 3 &&
-      stops.slice(-4).every((x) => x.tag === info.tag && x.name === info.name)
-    ) {
+    if (stops.length > 3 && stops.slice(-4).every((x) => x.uid === info.uid)) {
       return {
         stops: stops.length,
         trap: true,
@@ -817,7 +836,6 @@ async function auditPage(browser, base, route, vpName, vp) {
         result.screenshotFull = `${label}/capturas/${full}`;
       }
     }
-    result.keyboard = await keyboardCheck(page);
     // La sonda va al final: un clic puede abrir un diálogo que falsearía axe y la captura.
     // Sonda de interacción (sustituto de INP): clic real en pestañas, resúmenes y botones desplegables.
     const targets = page.locator(
@@ -858,8 +876,33 @@ async function auditPage(browser, base, route, vpName, vp) {
   result.consoleErrors = [...new Set(consoleErrors)].slice(0, 5);
   result.failedRequests = [...new Set(failedRequests)].slice(0, 5);
   await context.close();
-  if (!flag("no-keyboard"))
+  if (!flag("no-keyboard")) {
+    // En su propia página: los foco/desplazamientos de Tab no deben contaminar la sonda de interacción.
+    const kctx = await browser.newContext({
+      viewport: { width: vp.width, height: vp.height },
+      isMobile: vp.mobile,
+      hasTouch: vp.mobile,
+    });
+    try {
+      const kpage = await kctx.newPage();
+      await kpage.goto(url, { waitUntil: "load", timeout: 45000 });
+      await kpage.waitForTimeout(route === "/" ? 4500 : 1500);
+      result.keyboard = await keyboardCheck(kpage);
+    } catch (e) {
+      result.keyboard = {
+        error: String(e).slice(0, 200),
+        stops: 0,
+        trap: false,
+        noIndicator: [],
+        hidden: [],
+        obscured: [],
+        positiveTabindex: 0,
+      };
+    } finally {
+      await kctx.close();
+    }
     result.reducedMotion = await reducedMotionCheck(browser, url, vp, route);
+  }
   if (doLighthouse) {
     try {
       result.lighthouse = await runLighthouse(url, vpName, vp);
@@ -1444,7 +1487,10 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(2);
-});
+main()
+  // Salida explícita: Lighthouse o Chromium pueden dejar manejadores abiertos y colgar el proceso.
+  .then(() => process.exit(process.exitCode ?? 0))
+  .catch((e) => {
+    console.error(e);
+    process.exit(2);
+  });
