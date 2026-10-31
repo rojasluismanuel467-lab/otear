@@ -221,7 +221,8 @@ function ReportsContent() {
             <header className="master-rail-header">
               <h2>Historial</h2>
               <p>
-                {insights.totals.flights} vuelos ·{" "}
+                {insights.totals.flights}{" "}
+                {insights.totals.flights === 1 ? "vuelo" : "vuelos"} ·{" "}
                 {number(insights.totals.hours)} h · {number(insights.totals.km)}{" "}
                 km
               </p>
@@ -421,7 +422,7 @@ function ReportsContent() {
                         {kind === "line" ? "un mismo tramo" : "una misma zona"}{" "}
                         merece buscar la causa.
                         {insights.totals.suggestionsPending > 0 &&
-                          ` Se excluyen ${insights.totals.suggestionsPending} ${insights.totals.suggestionsPending === 1 ? "sugerencia" : "sugerencias"} de IA que nadie ha revisado todavía.`}
+                          ` ${insights.totals.suggestionsPending === 1 ? "Se excluye" : "Se excluyen"} ${insights.totals.suggestionsPending} ${insights.totals.suggestionsPending === 1 ? "sugerencia automática" : "sugerencias automáticas"} que nadie ha revisado todavía.`}
                       </p>
                       <ul className={styles.bars}>
                         {insights.byZone.map((zone) => (

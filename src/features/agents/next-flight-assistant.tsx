@@ -7,6 +7,7 @@ import { AiBadge } from "@/components/ui/ai-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SiteMap } from "@/components/maps/site-map";
 import { useDemo } from "@/features/demo/demo-context";
+import { agree } from "@/features/flights/finding-words";
 import { useFindingWords } from "@/features/flights/use-finding-words";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import type { Flight } from "@/features/demo/types";
@@ -354,7 +355,8 @@ export function NextFlightAssistant({
                       <summary>Ver los puntos de cada regla</summary>
                       <p>
                         Baja sostenida del vigor (40) o avance detenido (35), la
-                        zona nunca volada (30), {words.plural} confirmados sin
+                        zona nunca volada (30), {words.plural}{" "}
+                        {agree(words, "confirmados", "confirmadas")} sin
                         verificar (hasta 25), un punto que se repite (15) y los
                         días sin volarla (15 a 30). Desde {PROPOSE_MIN_SCORE}{" "}
                         puntos se propone; desde {HIGH_MIN_SCORE}, con prioridad

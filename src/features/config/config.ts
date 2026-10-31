@@ -70,7 +70,7 @@ export const moduleDefs: ModuleDef[] = [
     id: "pagos",
     href: "/pagos",
     label: "Pagos y costos",
-    title: "Pagos y facturas",
+    title: "Pagos y costos",
   },
   {
     id: "documentos",

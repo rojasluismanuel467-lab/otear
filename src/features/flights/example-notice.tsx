@@ -2,6 +2,7 @@
 
 import { Info } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
+import { zoneGrammar } from "./finding-words";
 import styles from "./example-notice.module.css";
 
 /**
@@ -11,13 +12,13 @@ import styles from "./example-notice.module.css";
  */
 export function ExampleNotice() {
   const { site } = useDemo();
+  const zones = zoneGrammar(site.zoneLabel);
   return (
     <p className={styles.notice} role="note">
       <Info size={18} aria-hidden="true" />
       <span>
-        <strong>Ejemplo, no real.</strong> Los nombres, las fotos, las cifras y
-        los {site.zoneLabel.toLowerCase()} dibujados son inventados. Solo el
-        mapa de fondo es una imagen real del lugar.
+        <strong>Ejemplo, no real.</strong>{" "}
+        {`Los nombres, las fotos, las cifras y ${zones.thePlural} ${site.zoneLabel.toLowerCase()} ${zones.feminine ? "dibujadas" : "dibujados"} son inventados. Solo el mapa de fondo es una imagen real del lugar.`}
       </span>
     </p>
   );

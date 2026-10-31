@@ -26,6 +26,11 @@ import {
 } from "./evolution";
 import { summarizeFollowUps, measuresText } from "@/features/flights/follow-up";
 import { countPoints, pointsText } from "@/features/flights/finding-count";
+import {
+  agree,
+  zoneGrammar,
+  type FindingWords,
+} from "@/features/flights/finding-words";
 import { useFindingWords } from "@/features/flights/use-finding-words";
 import { issuesFor, type Issue } from "./issues";
 import { IssueSheet } from "./issue-sheet";
@@ -283,7 +288,7 @@ function EvolutionContent({
 
   const target = site.schedule?.targetLevels ?? 8;
   const sheetSeries = selected
-    ? seriesOf(site, captures.slice(0, index + 1), selected)
+    ? seriesOf(site, captures.slice(0, index + 1), selected, findingWord)
     : null;
 
   return (
@@ -371,7 +376,7 @@ function EvolutionContent({
                 issue={selected}
                 series={sheetSeries.points}
                 seriesLabel={sheetSeries.label}
-                listLabel={`Todos los ${findingWord.plural}`}
+                listLabel={`${agree(findingWord, "Todos los", "Todas las")} ${findingWord.plural}`}
                 seriesNote={sheetSeries.note}
                 format={sheetSeries.format}
                 yDomain={sheetSeries.yDomain}
@@ -521,12 +526,17 @@ function ReadingLine({ line }: { line: Line }) {
 }
 
 /** Values of the zone an issue belongs to (or of the whole site) up to the capture shown. */
-function seriesOf(site: Site, upTo: CapturePoint[], issue: Issue) {
+function seriesOf(
+  site: Site,
+  upTo: CapturePoint[],
+  issue: Issue,
+  findingWord: FindingWords,
+) {
   if (issue.zoneId) {
     // The curve of a finding's zone is the zone's own value (progress, vigor), not the finding.
     const note =
       issue.kind === "finding" && site.sector !== "security"
-        ? "Es el valor de la zona; no mide este hallazgo."
+        ? `Es el valor de la zona; no mide ${findingWord.this} ${findingWord.singular}.`
         : undefined;
     const id = issue.zoneId;
     const points = upTo.flatMap((point) =>
@@ -665,12 +675,6 @@ function MapStage({
   );
 }
 
-/** «Lotes» → «lote». */
-function singularLower(label: string) {
-  const lower = label.toLowerCase();
-  return lower.endsWith("ores") ? lower.slice(0, -2) : lower.replace(/s$/, "");
-}
-
 function Legend({ site }: { site: Site }) {
   if (site.sector === "roads") {
     return (
@@ -686,7 +690,7 @@ function Legend({ site }: { site: Site }) {
   }
   const text =
     site.sector === "agriculture"
-      ? `Color del ${singularLower(site.zoneLabel)}: vigor, de rojizo (bajo) a azul (alto). El vigor va de 0 (poco verdor) a 1 (mucho) y es una medida de ejemplo de qué tan sano se ve el cultivo desde arriba.`
+      ? `Color ${zoneGrammar(site.zoneLabel).ofThe} ${zoneGrammar(site.zoneLabel).singular}: vigor, de rojizo (bajo) a azul (alto). El vigor va de 0 (poco verdor) a 1 (mucho) y es una medida de ejemplo de qué tan sano se ve el cultivo desde arriba.`
       : site.sector === "security"
         ? "Color de la zona: más oscuro, más novedades."
         : site.sector === "mining"

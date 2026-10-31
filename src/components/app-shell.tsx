@@ -37,6 +37,7 @@ import { can } from "@/features/config/licence";
 import { ThemeApplier } from "@/features/config/theme-applier";
 import { useConfig } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
+import { useFindingWords } from "@/features/flights/use-finding-words";
 import { formatDate } from "@/lib/format";
 import { DEMO_PROFILE } from "@/features/traceability/demo-profile";
 import { SiteSwitcher } from "./site-switcher";
@@ -96,6 +97,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [mobileOpen]);
+  const findingWord = useFindingWords();
+  const pendingFindings = findings.filter(
+    (finding) => finding.status === "pending",
+  ).length;
   const pending = documents.filter(
     (document) => document.status !== "reviewed",
   ).length;
@@ -282,12 +287,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             </div>
             <p>
-              {pending} documentos requieren atención y{" "}
-              {
-                findings.filter((finding) => finding.status === "pending")
-                  .length
-              }{" "}
-              hallazgos están por verificar.
+              {pending}{" "}
+              {pending === 1 ? "documento requiere" : "documentos requieren"}{" "}
+              atención y {pendingFindings}{" "}
+              {pendingFindings === 1
+                ? findingWord.singular
+                : findingWord.plural}{" "}
+              {pendingFindings === 1 ? "está" : "están"} por verificar.
             </p>
             <Link
               href="/documentos"

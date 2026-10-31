@@ -1,6 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { agree, countOf, findingWords, isFeminine } from "./finding-words.ts";
+import {
+  agree,
+  countOf,
+  findingWords,
+  isFeminine,
+  zoneGrammar,
+} from "./finding-words.ts";
+
+test("plural articles follow the term, never the sentence", () => {
+  const notice = findingWords("Novedad de campo", "Novedades de campo");
+  assert.equal(
+    `${notice.thePlural} ${notice.plural}`,
+    "las novedades de campo",
+  );
+  assert.equal(notice.allPlural, "todas");
+  assert.equal(notice.ofThe, "de la");
+  const finding = findingWords("Hallazgo", "Hallazgos");
+  assert.equal(`${finding.thePlural} ${finding.plural}`, "los hallazgos");
+  assert.equal(`${finding.this} ${finding.singular}`, "este hallazgo");
+});
+
+test("the word a site uses for its zones brings its own gender", () => {
+  assert.equal(zoneGrammar("Suertes").thePlural, "las");
+  assert.equal(zoneGrammar("Suertes").singular, "suerte");
+  assert.equal(zoneGrammar("Lotes").ofThe, "del");
+  assert.equal(zoneGrammar("Sectores").singular, "sector");
+  assert.equal(zoneGrammar("Niveles").singular, "nivel");
+  assert.equal(zoneGrammar("Zonas").a, "una");
+});
 
 test("gender follows the noun that heads the term", () => {
   assert.equal(isFeminine("Hallazgo"), false);

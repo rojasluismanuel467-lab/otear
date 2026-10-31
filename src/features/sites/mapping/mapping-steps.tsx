@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import type { Position, Site } from "@/features/demo/types";
 import type { ZoneInsight } from "@/features/reports/insights";
+import { zoneGrammar } from "@/features/flights/finding-words";
 import { parseLasHeader } from "@/lib/geo";
 import { AutoProposal } from "./auto-proposal";
 import { chainageRanges, rangeText } from "./chainage";
@@ -75,7 +76,7 @@ export function OverviewStep({
         <p>
           {site.zones.length
             ? `${site.zones.length} ${noun} · ${formatMeasure(kind, total)} en total`
-            : `Todavía no hay ${noun} definidos.`}
+            : `Todavía no hay ${noun} ${zoneGrammar(site.zoneLabel).feminine ? "definidas" : "definidos"}.`}
         </p>
       </header>
       {site.zones.length ? (
@@ -128,8 +129,8 @@ export function OverviewStep({
       <div className={styles.callout}>
         <MapIcon size={20} aria-hidden="true" />
         <p>
-          Aquí se dibujan y miden los {noun}. Para ver cuál va peor y desde
-          cuándo, vaya a{" "}
+          Aquí se dibujan y miden {zoneGrammar(site.zoneLabel).thePlural} {noun}
+          . Para ver cuál va peor y desde cuándo, vaya a{" "}
           <Link href="/evolucion" className={styles.inlineLink}>
             {evolutionTitle}
           </Link>
@@ -414,12 +415,12 @@ export function SourceStep({
                         </Button>
                       </div>
                       <p className={styles.hint}>
-                        Cada polígono pasa a ser una{" "}
-                        {singularOf(site.zoneLabel).toLowerCase()} con el nombre
-                        del archivo (campo «nombre», «suerte» o «lote» en
-                        GeoJSON; &lt;name&gt; en KML). Se lee en su navegador.
-                        Shapefile aún no se admite: expórtelo a GeoJSON o KML
-                        desde su GIS.
+                        Cada polígono pasa a ser {zoneGrammar(site.zoneLabel).a}{" "}
+                        {zoneGrammar(site.zoneLabel).singular} con el nombre del
+                        archivo (campo «nombre», «suerte» o «lote» en GeoJSON;
+                        &lt;name&gt; en KML). Se lee en su navegador. Shapefile
+                        aún no se admite: expórtelo a GeoJSON o KML desde su
+                        GIS.
                       </p>
                     </>
                   )}
@@ -705,7 +706,7 @@ export function DistributeStep({
         <p>
           {kind === "line"
             ? "Divida el eje en tramos. Cada uno lleva su abscisa."
-            : `Dígame cuántos ${noun} tiene y cómo se reparten; luego ajusta nombres y usos.`}
+            : `Dígame ${zoneGrammar(site.zoneLabel).feminine ? "cuántas" : "cuántos"} ${noun} tiene y cómo se reparten; luego ajusta nombres y usos.`}
         </p>
       </header>
       <AutoProposal
@@ -724,7 +725,9 @@ export function DistributeStep({
       <div className={styles.assistant}>
         <label className="form-field">
           <span className="field-label">
-            O repártalo en partes iguales: ¿cuántos {noun} tiene?
+            O repártalo en partes iguales: ¿
+            {zoneGrammar(site.zoneLabel).feminine ? "cuántas" : "cuántos"}{" "}
+            {noun} tiene?
           </span>
           <input
             className="field-input"
@@ -810,7 +813,7 @@ export function DistributeStep({
               <input
                 className="field-input"
                 value={zone.name}
-                aria-label={`Nombre del ${singularOf(site.zoneLabel).toLowerCase()} ${index + 1}`}
+                aria-label={`Nombre ${zoneGrammar(site.zoneLabel).ofThe} ${zoneGrammar(site.zoneLabel).singular} ${index + 1}`}
                 maxLength={40}
                 onFocus={() => onSelect(zone.id)}
                 onChange={(event) => onRename(zone.id, event.target.value)}
@@ -834,7 +837,7 @@ export function DistributeStep({
       </ol>
       <p className={styles.hint}>
         {linkedFlights > 0
-          ? `Al aplicar, los ${linkedFlights} vuelos y sus hallazgos se vuelven a asociar según su ubicación.`
+          ? `Al aplicar, ${linkedFlights === 1 ? "el vuelo" : `los ${linkedFlights} vuelos`} y lo que se encontró en ${linkedFlights === 1 ? "él" : "ellos"} se vuelve a asociar según su ubicación.`
           : "Al aplicar, los vuelos se asocian según su ubicación."}
       </p>
       <div className={styles.footerActions}>
