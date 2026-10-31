@@ -24,7 +24,7 @@ export const sectorChoices: SectorChoice[] = [
     demoLabel: "una finca",
     preset: "agricultura",
     words: { zones: "Lotes", finding: "Hallazgo de campo", report: "Informe" },
-    example: { zone: "Lote 3", finding: "Falla de germinación" },
+    example: { zone: "Lote 4", finding: "Cobertura irregular" },
   },
   {
     id: "roads",
@@ -32,7 +32,7 @@ export const sectorChoices: SectorChoice[] = [
     demoLabel: "una vía",
     preset: "carreteras",
     words: { zones: "Tramos", finding: "No conformidad", report: "Informe" },
-    example: { zone: "Tramo PK 12+400", finding: "Drenaje obstruido" },
+    example: { zone: "PK 12+000 – 12+400", finding: "Deterioro superficial" },
   },
   {
     id: "construction",
@@ -44,7 +44,7 @@ export const sectorChoices: SectorChoice[] = [
       finding: "Observación",
       report: "Informe de avance",
     },
-    example: { zone: "Torre A, nivel 4", finding: "Acero sin cubrir" },
+    example: { zone: "Frente norte", finding: "Material por retirar" },
   },
   {
     id: "security",
@@ -52,7 +52,7 @@ export const sectorChoices: SectorChoice[] = [
     demoLabel: "un predio",
     preset: "vigilancia",
     words: { zones: "Sectores", finding: "Novedad", report: "Informe" },
-    example: { zone: "Sector norte", finding: "Cerramiento caído" },
+    example: { zone: "Sector occidental", finding: "Cerramiento por revisar" },
   },
   {
     id: "mining",
@@ -64,7 +64,7 @@ export const sectorChoices: SectorChoice[] = [
       finding: "Novedad de talud",
       report: "Informe de avance",
     },
-    example: { zone: "Banco 2", finding: "Grieta en la cresta del talud" },
+    example: { zone: "Banco norte", finding: "Grieta en la cresta del talud" },
   },
   {
     id: "other",
