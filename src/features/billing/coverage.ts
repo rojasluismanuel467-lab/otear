@@ -56,6 +56,12 @@ export function orderedKm(
     .reduce((sum, zone) => sum + lineLengthKm(zone.outline), 0);
 }
 
+/**
+ * Hectares as the screens show them (one decimal). Two figures that read the same on screen must
+ * compare as equal: an order that calculates 20,79 ha and shows «20,8» is matched by 20,8.
+ */
+export const shownHa = (value: number) => Math.round(value * 10) / 10;
+
 const ha = (value: number) =>
   new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(value);
 const pct = (value: number) =>
@@ -69,6 +75,8 @@ export function checkArea(input: {
   coveredHa?: number;
   billedHa?: number;
   tolerancePct?: number;
+  /** The operator wrote a note with the invoice: the warning points to it instead of asking for one. */
+  operatorNote?: boolean;
 }): AreaCheck {
   const tolerancePct = input.tolerancePct ?? DEFAULT_TOLERANCE_PCT;
   const { orderedHa: ordered, coveredHa, billedHa } = input;
@@ -111,7 +119,11 @@ export function checkArea(input: {
         : "match";
   if (state === "over") {
     messages.push(
-      `Facturó ${ha(billedHa - coveredHa)} ha más de las cubiertas (${pct(billedVsCoveredPct)} %). Pida la justificación antes de pagar.`,
+      `Facturó ${ha(billedHa - coveredHa)} ha más de las cubiertas (${pct(billedVsCoveredPct)} %). ${
+        input.operatorNote
+          ? "El operador dejó una nota: léala antes de pagar."
+          : "Pida la justificación antes de pagar."
+      }`,
     );
   } else if (state === "under") {
     messages.push(

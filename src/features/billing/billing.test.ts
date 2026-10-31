@@ -161,6 +161,7 @@ import {
   areaHeadline,
   areaValue,
   checkArea,
+  shownHa,
   orderedHa,
   orderedKm,
 } from "./coverage.ts";
@@ -235,6 +236,29 @@ test("area check compares billed with covered and says what is missing", () => {
   const partial = checkArea({ orderedHa: 240, coveredHa: 180, billedHa: 180 });
   assert.equal(partial.state, "match");
   assert.ok(partial.messages.some((text) => text.includes("75")));
+});
+
+test("with a note from the operator the warning keeps the difference and points to the note", () => {
+  const input = { orderedHa: 28, coveredHa: 26.4, billedHa: 27.9 };
+  const plain = checkArea(input);
+  assert.ok(
+    plain.messages.some((text) => text.includes("Pida la justificación")),
+  );
+  const noted = checkArea({ ...input, operatorNote: true });
+  assert.equal(noted.state, "over");
+  assert.ok(
+    noted.messages.some((text) => text.startsWith("Facturó 1,5 ha más")),
+  );
+  assert.ok(noted.messages.some((text) => text.includes("dejó una nota")));
+  assert.ok(
+    !noted.messages.some((text) => text.includes("Pida la justificación")),
+  );
+});
+
+test("hectares compare as the screen shows them: 20,79 and 20,8 are the same figure", () => {
+  assert.equal(shownHa(20.79), 20.8);
+  assert.ok(!(shownHa(20.8) > shownHa(20.79)));
+  assert.ok(shownHa(20.9) > shownHa(20.79));
 });
 
 test("the area check says it first and puts the difference in pesos with the quoted price", () => {
