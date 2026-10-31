@@ -324,6 +324,37 @@
   line-height: 1.45;
   color: var(--muted);
 }
+.issueText .issueMeasure {
+  font-weight: 650;
+}
+.issueText .issueKind {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.issueMeasure[data-tone="danger"] {
+  color: var(--alert-danger-text);
+}
+.issueMeasure[data-tone="warning"] {
+  color: var(--alert-warning-ink);
+}
+.issueMeasure[data-tone="success"] {
+  color: var(--success);
+}
+.measureLine {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.measureLine [data-late="true"] {
+  color: var(--alert-danger-ink);
+  font-weight: 700;
+}
 .allGood {
   display: flex;
   gap: 10px;

@@ -3,6 +3,7 @@ import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
 import { planMission } from "@/features/flights/mission-plan";
+import { dayText, FOLLOW_UP_TODAY } from "@/features/flights/follow-up";
 import {
   lineLengthKm,
   pointAlongLine,
@@ -19,6 +20,7 @@ import type {
   PartMark,
   Sector,
   Finding,
+  FindingFollowUp,
   FindingSuggestion,
   Flight,
   FlightDocument,
@@ -32,7 +34,8 @@ import type {
   Zone,
 } from "./types";
 
-export const DEMO_DATE = "2026-10-25";
+/** The demo's only «today»: it is `FOLLOW_UP_TODAY`, so no screen can disagree. */
+export const DEMO_DATE = FOLLOW_UP_TODAY;
 /**
  * Outlines were traced by hand over satellite imagery so each zone sits on a real field, road
  * stretch, building plot or industrial block. The people, companies and works are still examples.
@@ -762,6 +765,208 @@ const findingNames = {
   ],
 };
 
+/** The company's word for a finding in each sector's own vocabulary; the screens may swap it for the one set in Configuración. */
+const operatorSourceWord: Record<Sector, string> = {
+  agriculture: "Hallazgo",
+  roads: "No conformidad",
+  construction: "Observación",
+  security: "Novedad",
+  mining: "Novedad de talud",
+};
+
+/**
+ * What each sector's seeded findings say, in that sector's own terms: what to check and where. The
+ * titles are in `findingNames`; the three texts of `current` follow them in the same order.
+ */
+const findingTexts: Record<
+  Sector,
+  { current: [string, string, string]; past: string }
+> = {
+  agriculture: {
+    current: [
+      "El operador marcó un tramo del lote con la cobertura menos pareja que la del resto. Revise la foto y recorra el lote para ver si hay fallas de siembra antes de decidir.",
+      "El operador marcó una zona con un color distinto al del cultivo vecino. Revise la foto y verifíquela en el lote antes de decidir.",
+      "Punto de seguimiento de la resiembra anterior. Compárelo con el vuelo previo y confirme en el lote si las plantas prendieron.",
+    ],
+    past: "Punto de un vuelo anterior, ya revisado por el responsable en el escenario de ejemplo.",
+  },
+  roads: {
+    current: [
+      "El operador marcó un punto de la calzada con deterioro (grietas o material suelto). Revise la foto, verifique en la vía y decida si exige la reparación al contratista.",
+      "El operador marcó una obra de drenaje (cuneta o alcantarilla) con posible obstrucción. Verifique en la vía si hay sedimento o agua represada antes de pedir su limpieza.",
+      "Punto de seguimiento de un talud. Compárelo con el recorrido anterior y verifique en la vía si hay cambios o material caído.",
+    ],
+    past: "Punto de un recorrido anterior, ya revisado por la interventoría en el escenario de ejemplo.",
+  },
+  construction: {
+    current: [
+      "El operador marcó material acopiado en el frente. Verifique en la obra si debe retirarse y quién responde por hacerlo.",
+      "El operador marcó un frente con un avance distinto al previsto (losa, estructura o acabado). Compárelo con el programa y verifíquelo en la obra.",
+      "Punto de seguimiento del avance de un frente. Compárelo con el vuelo anterior y confirme en la obra el estado del acabado.",
+    ],
+    past: "Punto de un vuelo anterior, ya revisado por la residencia de obra en el escenario de ejemplo.",
+  },
+  security: {
+    current: [
+      "El operador marcó un tramo del cerramiento con posible daño o abertura. Verifique en el perímetro y decida si se repara.",
+      "El operador marcó un acceso con algo fuera de lo normal (puerta abierta u obstáculo). Verifíquelo con el personal de la ronda.",
+      "Punto de seguimiento del perímetro. Compárelo con la ronda anterior y verifique en el sitio si hubo cambios.",
+    ],
+    past: "Punto de una ronda anterior, ya revisado por el supervisor en el escenario de ejemplo.",
+  },
+  mining: {
+    current: [
+      "El operador marcó una línea que podría ser una grieta junto a la cresta del talud. Verifíquela en el banco con el equipo geotécnico antes de operar cerca.",
+      "El operador marcó agua empozada en el piso del banco. Verifique en el banco el drenaje y el estado del piso.",
+      "Punto de seguimiento de la rampa de acceso. Compárelo con el vuelo anterior y verifique su estado en el sitio.",
+    ],
+    past: "Punto de un levantamiento anterior, ya revisado por el equipo geotécnico en el escenario de ejemplo.",
+  },
+};
+
+interface FollowUpSeed {
+  owner: string;
+  /** Day the measure was opened, and the deadline. */
+  opened: string;
+  due: string;
+  /** Day it went into correction; empty while it is only open. */
+  started?: string;
+  closedOn?: string;
+  closure?: string;
+}
+
+/** The people in charge of corrections in each sector's example (all invented). */
+const seedOwners: Record<Sector, [string, string]> = {
+  agriculture: [
+    "Jefe de campo (ejemplo)",
+    "Administrador de la hacienda (ejemplo)",
+  ],
+  roads: [
+    "Contratista de mantenimiento vial (ejemplo)",
+    "Residente de obra del concesionario (ejemplo)",
+  ],
+  construction: [
+    "Residente de obra (ejemplo)",
+    "Contratista de estructura (ejemplo)",
+  ],
+  security: [
+    "Supervisor de seguridad (ejemplo)",
+    "Jefe de mantenimiento del parque (ejemplo)",
+  ],
+  mining: ["Jefe de geotecnia (ejemplo)", "Superintendente de mina (ejemplo)"],
+};
+
+/** How the second kind of finding (drainage, access, front...) was closed, per sector. */
+const seedClosures: Record<Sector, [string, string]> = {
+  agriculture: [
+    "Se visitó la zona con el jefe de campo y se corrigió; verificada con foto del 11 de agosto (ejemplo).",
+    "Se corrigió la zona y se comprobó en el lote con foto del 8 de septiembre (ejemplo).",
+  ],
+  roads: [
+    "Se limpió la alcantarilla y se retiró el sedimento; la interventoría lo verificó en sitio con foto del 11 de agosto (ejemplo).",
+    "Se reparó la cuneta y se verificó en sitio con foto del 8 de septiembre (ejemplo).",
+  ],
+  construction: [
+    "El residente ajustó el frente al programa; la interventoría lo verificó con foto del 11 de agosto (ejemplo).",
+    "Se corrigió el frente y se comprobó en la obra con foto del 8 de septiembre (ejemplo).",
+  ],
+  security: [
+    "Se corrigió el acceso y el supervisor lo verificó en la ronda del 11 de agosto (ejemplo).",
+    "Se aseguró el acceso y se comprobó en la ronda del 8 de septiembre (ejemplo).",
+  ],
+  mining: [
+    "Se habilitó el drenaje del banco y geotecnia lo verificó con foto del 11 de agosto (ejemplo).",
+    "Se drenó el banco y geotecnia lo comprobó con foto del 8 de septiembre (ejemplo).",
+  ],
+};
+
+/**
+ * Corrective measures in the example, told from the demo's «today» (25 October 2026, `DEMO_DATE`; no
+ * closing date may be later): one closed with its note, one in correction and already late
+ * (due 16 Oct, 9 days), one in correction and on time, one open and on time. Roads, where the
+ * follow-up is the work itself, carry more, in every state, plus one open and already late. Keys are the finding id without the
+ * «finding-<site>-» prefix, with «_» in place of «-».
+ */
+function followUpSeeds(sector: Sector): Record<string, FollowUpSeed> {
+  const [a, b] = seedOwners[sector];
+  const [closedA, closedB] = seedClosures[sector];
+  const seeds: Record<string, FollowUpSeed> = {
+    h3_2: {
+      owner: a,
+      opened: "2026-07-20",
+      started: "2026-07-29",
+      due: "2026-08-14",
+      closedOn: "2026-08-11",
+      closure: closedA,
+    },
+    h5_2: {
+      owner: b,
+      opened: "2026-09-21",
+      started: "2026-10-02",
+      due: "2026-10-16",
+    },
+    "1": { owner: a, opened: "2026-10-24", due: "2026-11-06" },
+  };
+  if (sector !== "roads") {
+    seeds["2"] = {
+      owner: b,
+      opened: "2026-10-24",
+      started: "2026-10-25",
+      due: "2026-11-03",
+    };
+  }
+  if (sector === "roads") {
+    seeds.h4_2 = {
+      owner: a,
+      opened: "2026-08-24",
+      started: "2026-08-31",
+      due: "2026-09-12",
+      closedOn: "2026-09-08",
+      closure: closedB,
+    };
+    seeds.h6_1 = { owner: b, opened: "2026-10-12", due: "2026-10-22" };
+    seeds.h6_2 = {
+      owner: a,
+      opened: "2026-10-12",
+      started: "2026-10-20",
+      due: "2026-11-06",
+    };
+  }
+  return seeds;
+}
+
+function followUpFrom(seed: FollowUpSeed): FindingFollowUp {
+  const history = [
+    {
+      at: seed.opened,
+      text: `Se abrió la medida: responsable ${seed.owner}, plazo ${dayText(seed.due)}.`,
+    },
+  ];
+  if (seed.started) {
+    history.push({ at: seed.started, text: "Pasó a «en corrección»." });
+  }
+  if (seed.closedOn && seed.closure) {
+    history.push({ at: seed.closedOn, text: `Cerrada. ${seed.closure}` });
+  }
+  return {
+    owner: seed.owner,
+    dueDate: seed.due,
+    status: seed.closedOn ? "closed" : seed.started ? "inProgress" : "open",
+    ...(seed.closedOn && seed.closure
+      ? { closedOn: seed.closedOn, closure: seed.closure }
+      : {}),
+    history,
+  };
+}
+
+/** The follow-up the example gives a finding, and the flag that goes with it. */
+function seededFollowUp(site: Site, key: string) {
+  const seed = followUpSeeds(site.sector)[key];
+  return seed
+    ? { followUp: followUpFrom(seed), taskAssigned: true }
+    : { taskAssigned: false };
+}
+
 const currentFindings: Finding[] = sites.flatMap((site) =>
   [0, 1, 2].map((index) => {
     const zone = site.zones[index % site.zones.length];
@@ -774,7 +979,7 @@ const currentFindings: Finding[] = sites.flatMap((site) =>
       title: findingNames[site.sector][index],
       description: describeAt(
         location,
-        "El operador señaló este punto en su entrega. Revisar la evidencia y confirmar la observación en sitio antes de tomar una decisión.",
+        findingTexts[site.sector].current[index],
       ),
       priority: (["high", "medium", "low"] as const)[index],
       status: "pending" as const,
@@ -786,8 +991,11 @@ const currentFindings: Finding[] = sites.flatMap((site) =>
       ),
       ...location,
       imageUrl: site.imageUrl,
-      source: exampleSource(site, "Observación del operador · ejemplo"),
-      taskAssigned: false,
+      source: exampleSource(
+        site,
+        `${operatorSourceWord[site.sector]} del operador · ejemplo`,
+      ),
+      ...seededFollowUp(site, String(index + 1)),
     };
   }),
 );
@@ -809,10 +1017,7 @@ const historyFindings: Finding[] = sites.flatMap((site) =>
           // The first zone repeats on purpose: recurrence is what the insights surface.
           zoneId: zone.id,
           title: findingNames[site.sector][index],
-          description: describeAt(
-            location,
-            "Observación de un vuelo anterior, ya revisada por el responsable en el escenario de ejemplo.",
-          ),
+          description: describeAt(location, findingTexts[site.sector].past),
           priority: (["high", "medium", "low"] as const)[
             (index + flightIndex) % 3
           ],
@@ -827,8 +1032,11 @@ const historyFindings: Finding[] = sites.flatMap((site) =>
           ),
           ...location,
           imageUrl: site.imageUrl,
-          source: exampleSource(site, "Observación del operador · ejemplo"),
-          taskAssigned: index === 0,
+          source: exampleSource(
+            site,
+            `${operatorSourceWord[site.sector]} del operador · ejemplo`,
+          ),
+          ...seededFollowUp(site, `h${item.n}_${index + 1}`),
         };
       }),
   ),
@@ -1757,8 +1965,8 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
           on: "2026-10-14",
         },
       ],
+      assignReason: "La cotización más baja de las dos.",
       delivery: {
-        coveredHa: 0,
         deliveredOn: "2026-10-24",
         note: "Cobertura completa.",
         deliverables: ["Ortomosaico (GeoTIFF)", "Fotografías originales (JPG)"],
@@ -1800,7 +2008,7 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
           manager,
           "manager",
           "assigned",
-          `${siteParties[site.id][0]} asignó el servicio a AeroVisión del Valle.`,
+          `${siteParties[site.id][0]} asignó el servicio a AeroVisión del Valle. Motivo: La cotización más baja de las dos.`,
         ),
         ev(
           5,
@@ -2009,7 +2217,6 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
         },
       ],
       delivery: {
-        coveredHa: 0,
         deliveredOn: "2026-10-24",
         note: "Quedó una franja sin cubrir por viento.",
         deliverables: [
@@ -2078,15 +2285,129 @@ export const initialServiceRequests: ServiceRequest[] = sites.flatMap(
               .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0) * 10,
           ) / 10;
     // The delivery says what the flight record says, so Servicios and Pagos show the same hectares.
-    const orderedFirst = polygonHa(first.zoneIds);
-    const coveredFirst = flight1?.log?.coveredHa;
-    first.delivery!.coveredHa =
-      coveredFirst ?? (Math.round(orderedFirst * 0.94 * 10) / 10 || 1);
-    if (coveredFirst !== undefined && orderedFirst - coveredFirst >= 0.5) {
-      first.delivery!.note = `Quedaron ${formatHa(orderedFirst - coveredFirst)} ha sin cubrir; está en el registro del vuelo.`;
+    // Only services priced by hectare declare any: a road has length and a fence is flown as a loop.
+    if (unit === "ha") {
+      const orderedFirst = polygonHa(first.zoneIds);
+      const coveredFirst = flight1?.log?.coveredHa;
+      first.delivery!.coveredHa =
+        coveredFirst ?? (Math.round(orderedFirst * 0.94 * 10) / 10 || 1);
+      if (coveredFirst !== undefined && orderedFirst - coveredFirst >= 0.5) {
+        first.delivery!.note = `Quedaron ${formatHa(orderedFirst - coveredFirst)} ha sin cubrir; está en el registro del vuelo.`;
+      }
+      fourth.delivery!.coveredHa =
+        Math.round(polygonHa(fourth.zoneIds) * 0.88 * 10) / 10 || 1;
     }
-    fourth.delivery!.coveredHa =
-      Math.round(polygonHa(fourth.zoneIds) * 0.88 * 10) / 10 || 1;
-    return [first, second, third, fourth];
+    // A delivery the buyer returned, so the operator's answer can be tried: it declared almost
+    // everything, the buyer counts less. Hectares are the zone's own; the tariff is the example one.
+    if (site.sector !== "agriculture") return [first, second, third, fourth];
+    const disputedZone = site.zones[1] ?? site.zones[site.zones.length - 1];
+    const disputedOrdered = polygonHa([disputedZone.id]);
+    const declaredHa = Math.round(disputedOrdered * 0.98 * 10) / 10;
+    const countedHa = Math.round(disputedOrdered * 0.9 * 10) / 10;
+    const fifth: ServiceRequest = {
+      ...base,
+      id: `service-${site.id}-5`,
+      kind: "monitoring",
+      title: `Seguimiento del ${disputedZone.name}`,
+      description: `Recorrido de control de ${disputedZone.name} antes del seguimiento del mes.`,
+      zoneIds: [disputedZone.id],
+      requestedBy: manager,
+      windowStart: "2026-10-14",
+      windowEnd: "2026-10-21",
+      maxPrice: price(4500),
+      status: "disputed",
+      operatorId: OPERATOR_B,
+      createdOn: "2026-10-08",
+      assignReason: "La cotización más baja de las dos.",
+      quotes: [
+        {
+          operatorId: OPERATOR_B,
+          price: price(3500),
+          startDate: "2026-10-16",
+          note: "",
+          state: "chosen",
+          on: "2026-10-09",
+        },
+        {
+          operatorId: OPERATOR_A,
+          price: price(3700),
+          startDate: "2026-10-15",
+          note: "",
+          state: "declined",
+          on: "2026-10-09",
+        },
+      ],
+      delivery: {
+        coveredHa: declaredHa,
+        deliveredOn: "2026-10-21",
+        note: "Recorrido completo según el registro de vuelo.",
+        deliverables: ["Ortomosaico (GeoTIFF)", "Registro de vuelo (CSV)"],
+      },
+      verification: {
+        result: "disputed",
+        note: `En la ortofoto la franja del costado norte no aparece volada: cuento unas ${formatHa(declaredHa - countedHa)} ha menos de las declaradas. Pido facturar solo lo cubierto.`,
+        on: "2026-10-22",
+        by: manager,
+      },
+      events: [
+        ev(
+          41,
+          "2026-10-08",
+          manager,
+          "manager",
+          "requested",
+          `${siteParties[site.id][0]} pidió el servicio e invitó a AeroVisión del Valle y Drones del Pacífico (ejemplo).`,
+        ),
+        ev(
+          42,
+          "2026-10-09",
+          OPERATOR_B,
+          "operator",
+          "quoted",
+          `Drones del Pacífico (ejemplo) cotizó ${money(3500)}, desde el 2026-10-16.`,
+        ),
+        ev(
+          43,
+          "2026-10-09",
+          OPERATOR_A,
+          "operator",
+          "quoted",
+          `AeroVisión del Valle cotizó ${money(3700)}, desde el 2026-10-15.`,
+        ),
+        ev(
+          44,
+          "2026-10-10",
+          manager,
+          "manager",
+          "assigned",
+          `${siteParties[site.id][0]} asignó el servicio a Drones del Pacífico (ejemplo). Motivo: La cotización más baja de las dos.`,
+        ),
+        ev(
+          45,
+          "2026-10-10",
+          OPERATOR_B,
+          "operator",
+          "scheduled",
+          "Drones del Pacífico (ejemplo) programó el vuelo para el 2026-10-20.",
+        ),
+        ev(
+          46,
+          "2026-10-21",
+          OPERATOR_B,
+          "operator",
+          "delivered",
+          `Drones del Pacífico (ejemplo) entregó: dice haber cubierto ${formatHa(declaredHa)} ha y entregó Ortomosaico (GeoTIFF), Registro de vuelo (CSV).`,
+        ),
+        ev(
+          47,
+          "2026-10-22",
+          manager,
+          "manager",
+          "disputed",
+          `${siteParties[site.id][0]} pidió ajustar la entrega: En la ortofoto la franja del costado norte no aparece volada: cuento unas ${formatHa(declaredHa - countedHa)} ha menos de las declaradas. Pido facturar solo lo cubierto.`,
+        ),
+      ],
+    };
+    return [first, second, third, fourth, fifth];
   },
 );

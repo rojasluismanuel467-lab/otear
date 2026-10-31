@@ -3,6 +3,8 @@
   /* La pista automática se ensanchaba con el contenido y la página se desbordaba en móvil. */
   grid-template-columns: minmax(0, 1fr);
   gap: 24px;
+  /* Room under the last control for the fixed notice, so it never covers the form's buttons. */
+  padding-bottom: 96px;
 }
 .viewAs {
   display: grid;
@@ -362,6 +364,28 @@
 .deliveryNote {
   font-size: 13px;
   line-height: 1.55;
+}
+/* La respuesta del operador a un reclamo queda junto a él, con el mismo peso visual. */
+.reply {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  background: var(--accent-soft);
+}
+.reply h4 {
+  margin: 0;
+  font-size: var(--heading-group, 14px);
+  font-weight: 700;
+}
+.reply p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.reply ul {
+  margin: 0;
 }
 .bar {
   height: 8px;

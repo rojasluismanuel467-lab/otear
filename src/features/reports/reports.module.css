@@ -32,6 +32,21 @@
   line-height: 1.55;
   color: var(--muted);
 }
+.measureCounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+.measureCounts strong {
+  font-size: 18px;
+}
+.measureCounts [data-late="true"] strong {
+  color: var(--alert-danger-text);
+}
 .selectedHeader {
   display: flex;
   gap: 20px;

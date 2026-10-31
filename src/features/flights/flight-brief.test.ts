@@ -126,6 +126,39 @@ test("the brief opens with the trend, the uncovered area and what waits for a de
   assert.match(lines[3], /1 sugerencia automática sin revisar/);
 });
 
+test("the brief warns about corrective measures past their deadline, wherever the finding was seen", () => {
+  const late = finding("late", {
+    flightId: "f1",
+    status: "confirmed",
+    followUp: {
+      owner: "Contratista",
+      dueDate: "2026-10-16",
+      status: "inProgress",
+      history: [],
+    },
+  });
+  const lines = flightBrief({
+    site,
+    flight: flights[2],
+    flights,
+    findings: [late],
+    orderedHa: 0,
+    words,
+    today: "2026-10-30",
+  });
+  assert.ok(lines.some((line) => /1 medida correctiva vencida/.test(line)));
+  const onTime = flightBrief({
+    site,
+    flight: flights[2],
+    flights,
+    findings: [late],
+    orderedHa: 0,
+    words,
+    today: "2026-10-10",
+  });
+  assert.ok(!onTime.some((line) => /vencida/.test(line)));
+});
+
 test("the trend is read only up to the flight being reported", () => {
   const lines = flightBrief({
     site,

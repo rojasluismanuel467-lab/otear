@@ -17,7 +17,6 @@ import {
   Layers,
 } from "lucide-react";
 import Link from "next/link";
-import { zonePalette } from "@/components/maps/zone-palette";
 import type { Position, Site } from "@/features/demo/types";
 import type { ZoneInsight } from "@/features/reports/insights";
 import { parseLasHeader } from "@/lib/geo";
@@ -96,12 +95,7 @@ export function OverviewStep({
                   aria-pressed={zone.id === selectedZoneId}
                   onClick={() => onSelect(zone.id)}
                 >
-                  <i
-                    style={{
-                      background: zonePalette[index % zonePalette.length],
-                    }}
-                    aria-hidden="true"
-                  />
+                  <i aria-hidden="true">{index + 1}</i>
                   <span>
                     <strong>{zone.name}</strong>
                     {detail && <small>{detail}</small>}
@@ -807,10 +801,11 @@ export function DistributeStep({
             <button
               type="button"
               className={styles.swatch}
-              style={{ background: zonePalette[index % zonePalette.length] }}
               aria-label={`Resaltar ${zone.name} en el mapa`}
               onClick={() => onSelect(zone.id)}
-            />
+            >
+              {index + 1}
+            </button>
             <div className={styles.editFields}>
               <input
                 className="field-input"

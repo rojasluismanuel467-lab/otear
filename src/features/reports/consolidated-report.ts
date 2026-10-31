@@ -1,5 +1,14 @@
 import type { Party, ServiceRequest } from "../demo/types";
-import { serviceDecisionLines } from "./decisions.ts";
+import { isFeminine } from "../flights/finding-words.ts";
+import {
+  FOLLOW_UP_TODAY,
+  dayText,
+  followUpLine,
+  measureList,
+  measuresText,
+  summarizeFollowUps,
+} from "../flights/follow-up.ts";
+import { requestInPeriod, serviceDecisionLines } from "./decisions.ts";
 import { computeInsights, ownFindings, type InsightInput } from "./insights.ts";
 import { operatorSummaries } from "./operators.ts";
 
@@ -12,6 +21,8 @@ export interface ReportSections {
   costs: boolean;
   /** Service requests, quote chosen, delivery, check and invoice; off when missing. */
   services?: boolean;
+  /** Corrective measures on the findings: who answers, by when, what is late, what was closed. */
+  followUp?: boolean;
 }
 
 /** What the consolidated report reads: the insights' input plus the contracting records. */
@@ -56,8 +67,16 @@ export function buildConsolidatedReport(
   // Unreviewed suggestions of the image assistant are not counted; the report says how many.
   const findings = ownFindings(allFindings);
   const suggested = allFindings.length - findings.length;
-  const invoices = input.invoices.filter((invoice) =>
-    ids.has(invoice.flightId),
+  // The invoices of the period's flights, and those of services invoiced without a flight whose
+  // request is in the period: the same ones the cost figures of Informes count.
+  const requestsInPeriod = (input.serviceRequests ?? []).filter((request) =>
+    requestInPeriod(request, period),
+  );
+  const invoices = input.invoices.filter(
+    (invoice) =>
+      ids.has(invoice.flightId) ||
+      (!input.flights.some((flight) => flight.id === invoice.flightId) &&
+        requestsInPeriod.some((request) => request.invoiceId === invoice.id)),
   );
   const insights = computeInsights({
     ...input,
@@ -67,6 +86,8 @@ export function buildConsolidatedReport(
   });
   const fw = input.findingWord ?? { singular: "hallazgo", plural: "hallazgos" };
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  const confirmed = (count: number) =>
+    `confirmad${isFeminine(fw.singular) ? "a" : "o"}${count === 1 ? "" : "s"}`;
   const unit = insights.cost.unit;
   const lines: string[] = [
     "OTEAR — INFORME CONSOLIDADO · BORRADOR DE DEMOSTRACIÓN",
@@ -117,6 +138,40 @@ export function buildConsolidatedReport(
     }
     lines.push("");
   }
+  if (sections.followUp) {
+    const today = input.today ?? FOLLOW_UP_TODAY;
+    // Every site measure still pending, whenever it was opened, and the ones closed in the period.
+    const siteFindings = ownFindings(input.findings);
+    const shown = measureList(siteFindings, today).filter(
+      (measure) =>
+        measure.followUp.status !== "closed" ||
+        ((measure.followUp.closedOn ?? "") >= period.from &&
+          (measure.followUp.closedOn ?? "") <= period.to),
+    );
+    const m = summarizeFollowUps(siteFindings, today);
+    lines.push(
+      `SEGUIMIENTO DE MEDIDAS CORRECTIVAS (a ${dayText(today)}, día de la demostración)`,
+      `${measuresText(m)}` +
+        (m.withoutMeasure
+          ? ` · ${m.withoutMeasure} ${m.withoutMeasure === 1 ? fw.singular : fw.plural} ${confirmed(m.withoutMeasure)} sin responsable`
+          : ""),
+    );
+    for (const { finding, followUp } of shown) {
+      const place =
+        finding.locationLabel ??
+        input.site.zones.find((zone) => zone.id === finding.zoneId)?.name ??
+        "";
+      lines.push(
+        `- ${finding.title}${place ? ` (${place})` : ""}: ${followUpLine(finding, today)}`,
+      );
+      if (followUp.closure) lines.push(`  Cierre: ${followUp.closure}`);
+    }
+    if (!shown.length) lines.push("- Sin medidas en seguimiento.");
+    lines.push(
+      "Las medidas y su historial son un registro de esta demostración: no se notificó a nadie.",
+      "",
+    );
+  }
   if (sections.operation) {
     const o = insights.operation;
     lines.push(
@@ -130,7 +185,7 @@ export function buildConsolidatedReport(
       lines.push(`  · ${date(flight.date)}: ${flight.log?.incidents}`);
     }
     lines.push(
-      `Uso de baterías: ${o.batteries.map((b) => `${b.id} (${b.flights} vuelos)`).join(", ") || "sin registro"}`,
+      `Uso de baterías: ${o.batteries.map((b) => `${b.id} (${b.flights} ${b.flights === 1 ? "vuelo" : "vuelos"})`).join(", ") || "sin registro"}`,
       "",
     );
   }
@@ -169,6 +224,8 @@ export function buildConsolidatedReport(
           findings: input.findings,
           invoices: input.invoices,
           requests: input.serviceRequests,
+          zones: input.site.zones,
+          sector: input.site.sector,
         }),
         period,
       }),

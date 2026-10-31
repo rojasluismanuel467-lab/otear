@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { pointsText } from "@/features/flights/finding-count";
+import { useFindingWords } from "@/features/flights/use-finding-words";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
@@ -9,8 +11,12 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { SectionTabs } from "@/components/ui/section-tabs";
 import { useDemo } from "@/features/demo/demo-context";
+import { DEMO_DATE } from "@/features/demo/demo-data";
 import { useModuleTitle, useTerm } from "@/features/config/use-config";
 import { FlightTimeline } from "@/features/flights/flight-timeline";
+import { FOLLOW_UP_TODAY } from "@/features/flights/follow-up";
+import { reportTabs } from "@/features/flights/tab-param";
+import { useTabParam } from "@/features/flights/use-tab-param";
 import { preparationTotal } from "@/features/flights/planning/preparation-items";
 import { chainageRanges, rangeText } from "@/features/sites/mapping/chainage";
 import {
@@ -23,6 +29,11 @@ import {
   buildConsolidatedReport,
   type ReportSections,
 } from "./consolidated-report";
+import {
+  defaultReportPeriod,
+  latestMovement,
+  requestsAfter,
+} from "./decisions";
 import { computeInsights } from "./insights";
 import { operatorSummaries } from "./operators";
 import styles from "./reports.module.css";
@@ -36,7 +47,19 @@ function number(value: number, digits = 1) {
   }).format(value);
 }
 
+const hectaresText = (value: number) => number(value);
+
 export function ReportsView() {
+  // The tab comes from the address, which needs a Suspense boundary above it.
+  return (
+    <Suspense fallback={null}>
+      <ReportsContent />
+    </Suspense>
+  );
+}
+
+function ReportsContent() {
+  const findingWords = useFindingWords();
   const moduleTitle = useModuleTitle("informes");
   const {
     site,
@@ -63,6 +86,7 @@ export function ReportsView() {
     attention: "Pendientes y alertas",
     costs: "Costos",
     services: "Servicios contratados y decisiones",
+    followUp: "Seguimiento de medidas correctivas",
   };
   const router = useRouter();
   const kind = outlineKindFor(site.sector);
@@ -83,7 +107,8 @@ export function ReportsView() {
   const insights = computeInsights(input);
   const dates = insights.completed.map((flight) => flight.date);
   const [selectedId, setSelectedId] = useState<string>();
-  const [tab, setTab] = useState("attention");
+  // `?tab=informe` opens the consolidated report straight away (from a flight or from the guide).
+  const [tab, setTab] = useTabParam(reportTabs, "attention");
   const [showAllAttention, setShowAllAttention] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -95,11 +120,20 @@ export function ReportsView() {
     attention: true,
     costs: true,
     services: true,
+    followUp: true,
+  });
+  // Open on everything that happened up to the demo's «today», decisions included, not only up
+  // to the last flight.
+  const defaults = defaultReportPeriod({
+    flightDates: dates,
+    requests: serviceRequests,
+    today: DEMO_DATE,
   });
   const period = {
-    from: from || dates[0] || "2026-01-01",
-    to: to || dates[dates.length - 1] || "2026-12-31",
+    from: from || defaults.from,
+    to: to || defaults.to,
   };
+  const afterPeriod = requestsAfter(serviceRequests, period.to);
   const history = [...insights.completed].sort((a, b) =>
     b.date.localeCompare(a.date),
   );
@@ -150,6 +184,8 @@ export function ReportsView() {
     findings,
     invoices,
     requests: serviceRequests,
+    zones: site.zones,
+    sector: site.sector,
   });
 
   if (!history.length) {
@@ -319,6 +355,51 @@ export function ReportsView() {
 
                     <section
                       className={styles.block}
+                      aria-labelledby="measures-title"
+                    >
+                      <h2 id="measures-title">Medidas correctivas</h2>
+                      <p className={styles.muted}>
+                        Cada {findingWord.singular} puede tener un responsable,
+                        un plazo y una nota de cierre. A{" "}
+                        {formatDate(FOLLOW_UP_TODAY)}, día de la demostración:
+                      </p>
+                      <ul className={styles.measureCounts}>
+                        <li>
+                          <strong>{insights.measures.open}</strong>{" "}
+                          {insights.measures.open === 1
+                            ? "abierta"
+                            : "abiertas"}
+                        </li>
+                        <li>
+                          <strong>{insights.measures.inProgress}</strong> en
+                          corrección
+                        </li>
+                        <li>
+                          <strong>{insights.measures.closed}</strong>{" "}
+                          {insights.measures.closed === 1
+                            ? "cerrada"
+                            : "cerradas"}
+                        </li>
+                        <li data-late={insights.measures.overdue > 0}>
+                          <strong>{insights.measures.overdue}</strong>{" "}
+                          {insights.measures.overdue === 1
+                            ? "vencida"
+                            : "vencidas"}
+                        </li>
+                      </ul>
+                      <p className={styles.muted}>
+                        Las vencidas son parte de las abiertas o en corrección
+                        cuyo plazo ya pasó.
+                        {insights.measures.withoutMeasure > 0 &&
+                          ` Hay ${insights.measures.withoutMeasure} sin responsable entre los que usted confirmó.`}{" "}
+                        <Link href="/vuelos?tab=hallazgos">
+                          Ver las medidas en Vuelos
+                        </Link>
+                      </p>
+                    </section>
+
+                    <section
+                      className={styles.block}
                       aria-labelledby="zones-title"
                     >
                       <h2 id="zones-title">
@@ -408,6 +489,8 @@ export function ReportsView() {
                             </span>
                             <span
                               className={styles.single}
+                              title={pointsText(point.count, findingWords)}
+                              aria-label={pointsText(point.count, findingWords)}
                               data-selected={point.flightId === selected?.id}
                               style={
                                 {
@@ -510,7 +593,7 @@ export function ReportsView() {
                               <th scope="col">Vuelos y {findingWord.plural}</th>
                               <th scope="col">Cobro</th>
                               <th scope="col">
-                                Hectáreas facturadas / cubiertas
+                                Hectáreas pedidas / cubiertas / facturadas
                               </th>
                             </tr>
                           </thead>
@@ -561,8 +644,28 @@ export function ReportsView() {
                                 </td>
                                 <td>
                                   {row.billedHa || row.coveredHa
-                                    ? `${row.billedHa.toLocaleString("es-CO", { maximumFractionDigits: 1 })} / ${row.coveredHa.toLocaleString("es-CO", { maximumFractionDigits: 1 })} ha`
+                                    ? `${hectaresText(row.orderedHa)} / ${hectaresText(row.coveredHa)} / ${hectaresText(row.billedHa)} ha`
                                     : "—"}
+                                  {row.invoicesWithoutCovered > 0 && (
+                                    <small data-bad="true">
+                                      {row.invoicesWithoutCovered}{" "}
+                                      {row.invoicesWithoutCovered === 1
+                                        ? "factura sin"
+                                        : "facturas sin"}{" "}
+                                      hectáreas cubiertas declaradas
+                                    </small>
+                                  )}
+                                  {row.orderedHa > 0 &&
+                                    row.coveredHa - row.orderedHa > 0.05 && (
+                                      <small>
+                                        Declaró{" "}
+                                        {hectaresText(
+                                          row.coveredHa - row.orderedHa,
+                                        )}{" "}
+                                        ha más de las que miden las zonas
+                                        pedidas.
+                                      </small>
+                                    )}
                                   {row.invoicesWithArea > 0 && (
                                     <small>
                                       De {row.invoicesWithArea} de{" "}
@@ -627,6 +730,23 @@ export function ReportsView() {
                           />
                         </label>
                       </div>
+                      {afterPeriod.length > 0 && !invalidPeriod && (
+                        <p className={styles.muted} role="status">
+                          Hay {afterPeriod.length}{" "}
+                          {afterPeriod.length === 1
+                            ? "solicitud con movimientos"
+                            : "solicitudes con movimientos"}{" "}
+                          después del {formatDate(period.to)}, que este informe
+                          deja fuera.{" "}
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onPress={() => setTo(latestMovement(afterPeriod))}
+                          >
+                            Incluirlas
+                          </Button>
+                        </p>
+                      )}
                       <fieldset className={styles.sections}>
                         <legend className="field-label">Incluir</legend>
                         {(Object.keys(sectionLabels) as SectionKey[]).map(

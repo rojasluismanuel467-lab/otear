@@ -42,6 +42,29 @@ function acceptance(evidences: Evidence[], flightId: string) {
   );
 }
 
+function flightReport(evidences: Evidence[], flightId: string) {
+  return evidences.find(
+    (entry) =>
+      entry.flightId === flightId && entry.templateId === "flight-report",
+  );
+}
+
+/** «Informe del vuelo: firmado», «Acta: falta Cliente o responsable»… for one signable document. */
+export function signingLine(
+  label: string,
+  evidence: Evidence | undefined,
+  missing: string,
+): string {
+  if (!evidence) return `${label}: ${missing}`;
+  const state = evidenceState(evidence);
+  if (state.status === "signed") return `${label}: firmado`;
+  if (state.status === "altered") return `${label}: modificado tras firmar`;
+  if (state.missingRoleLabels.length) {
+    return `${label}: falta ${state.missingRoleLabels.join(", ")}`;
+  }
+  return `${label}: sin firmar`;
+}
+
 /** The seven stages of an operation, each derived from what the session actually holds. */
 export function buildItinerary(input: ItineraryInput): Stage[] {
   const { flight, documents, evidences, checklistTotal } = input;
@@ -70,6 +93,8 @@ export function buildItinerary(input: ItineraryInput): Stage[] {
   ).length;
   const act = acceptance(evidences, flight.id);
   const actState = act ? evidenceState(act) : undefined;
+  const report = flightReport(evidences, flight.id);
+  const reportState = report ? evidenceState(report) : undefined;
   const total = invoices.reduce((sum, item) => sum + item.total, 0);
   const paid = invoices.reduce((sum, item) => sum + item.paid, 0);
 
@@ -137,13 +162,22 @@ export function buildItinerary(input: ItineraryInput): Stage[] {
     {
       id: "delivery",
       title: "Entrega firmada",
-      state: actState?.status === "signed" ? "done" : act ? "partial" : "todo",
-      detail: act
-        ? actState?.status === "signed"
-          ? "Acta de entrega firmada por ambas partes"
-          : `Acta: falta ${actState?.missingRoles.join(", ")}`
-        : "Sin acta de entrega",
-      href: "/programacion",
+      // The report counts once someone has started it: a signed record with an unsigned report is not finished.
+      state:
+        actState?.status === "signed" &&
+        (!reportState || reportState.status === "signed")
+          ? "done"
+          : act || report
+            ? "partial"
+            : "todo",
+      detail:
+        act || report
+          ? [
+              signingLine("Informe del vuelo", report, "sin redactar"),
+              signingLine("Acta de entrega", act, "sin hacer"),
+            ].join(" · ")
+          : "Sin informe firmado ni acta de entrega",
+      href: "/vuelos?tab=informe",
     },
     {
       id: "payment",

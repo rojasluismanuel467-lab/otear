@@ -32,7 +32,7 @@ export function ServicesView() {
   const moduleTitle = useModuleTitle("servicios");
   const t = useTerm();
   const { actor, parties, requests, nameOf } = useServices();
-  const { setActingAs } = useDemo();
+  const { setActingAs, setNotice } = useDemo();
   const [filter, setFilter] = useState<Filter>("turn");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const roleWord: Record<PartyRole, string> = {
@@ -86,6 +86,8 @@ export function ServicesView() {
                 className="field-select"
                 value={actor.id}
                 onChange={(event) => {
+                  // The notice of the other role's step must not follow the person to this one.
+                  setNotice("");
                   setActingAs(event.target.value);
                 }}
               >
@@ -233,7 +235,7 @@ export function ServicesView() {
         </aside>
         {selected ? (
           <RequestDetail
-            key={selected.id}
+            key={`${selected.id}-${actor.id}`}
             request={selected}
             onActed={() => setSelectedId(selected.id)}
           />

@@ -38,8 +38,11 @@ import { ThemeApplier } from "@/features/config/theme-applier";
 import { useConfig } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
 import { formatDate } from "@/lib/format";
+import { DEMO_PROFILE } from "@/features/traceability/demo-profile";
 import { SiteSwitcher } from "./site-switcher";
 import { useSidebarCollapsed } from "./use-sidebar-collapsed";
+
+const NOTICE_MS = 10000;
 
 const moduleIcons: Record<ModuleId, LucideIcon> = {
   programacion: CalendarDays,
@@ -72,6 +75,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // Un aviso informa y se va solo: no se queda tapando los botones de la pantalla.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [notice, setNotice]);
   // Con el cajón móvil abierto la página de atrás no debe moverse, y Escape lo cierra.
   useEffect(() => {
     if (!mobileOpen) return;
@@ -196,8 +205,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="profile-row">
             <span className="profile-avatar">LR</span>
             <div>
-              <strong>Luis Rojas</strong>
-              <span>Administrador · ejemplo</span>
+              <strong>{DEMO_PROFILE.name}</strong>
+              <span>{DEMO_PROFILE.role}</span>
             </div>
           </div>
         </div>
@@ -398,7 +407,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                       facturado.
                     </li>
                     <li>
-                      <Link href="/informes" onClick={() => setHelpOpen(false)}>
+                      <Link
+                        href="/informes?tab=informe"
+                        onClick={() => setHelpOpen(false)}
+                      >
                         Informes
                       </Link>
                       : lo visto y lo decidido, en un resumen para la junta o la

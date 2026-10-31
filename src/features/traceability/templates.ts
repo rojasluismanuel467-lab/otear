@@ -1,4 +1,4 @@
-import type { Flight, Site } from "../demo/types";
+import type { Flight, Sector, Site } from "../demo/types";
 
 export type TemplateId =
   | "landowner-authorization"
@@ -6,7 +6,8 @@ export type TemplateId =
   | "site-survey"
   | "briefing"
   | "aircraft-inspection"
-  | "delivery-acceptance";
+  | "delivery-acceptance"
+  | "flight-report";
 
 export interface FieldDef {
   key: string;
@@ -15,6 +16,8 @@ export interface FieldDef {
   options?: string[];
   required?: boolean;
   placeholder?: string;
+  /** Part of the document but not typed by a person (the sector, or text taken from the flight's record). */
+  hidden?: boolean;
 }
 
 export interface SignerDef {
@@ -31,6 +34,123 @@ export interface TemplateDef {
   fields: FieldDef[];
   signers: SignerDef[];
   render: (fields: Record<string, string>) => string;
+  /**
+   * Signatures keep the role they were made with; this says how that role reads in this sector
+   * (the stored «Propietario o administrador» reads «Titular o administrador de la vía» on a road).
+   */
+  roleLabels?: Record<string, string>;
+  /** Each role must be signed by a different person (see `signingConflict`). */
+  separateRoles?: boolean;
+  /** The content is taken from the flight's record, not typed in the dialog. */
+  fromRecord?: boolean;
+  /** Who a person could ask to review or sign, for the «Pedir a otra persona» hint. */
+  requestExample?: string;
+}
+
+const sectors: Sector[] = [
+  "agriculture",
+  "roads",
+  "construction",
+  "security",
+  "mining",
+];
+
+/** The sector a document was made for; documents from before the sector was stored read as farm documents. */
+export function sectorOf(fields: Record<string, string>): Sector {
+  return sectors.find((sector) => sector === fields.sector) ?? "agriculture";
+}
+
+/** The place the authorization is about, in each sector's own words. */
+interface PlaceWords {
+  /** «el predio», «la vía». */
+  the: string;
+  /** «del predio», «de la vía». */
+  of: string;
+  /** Who can allow the flight there, lower case. */
+  holder: string;
+  /** How the stored role «Propietario o administrador» reads in this sector. */
+  holderRole: string;
+  nameLabel: string;
+  refLabel: string;
+  neighboursLabel: string;
+  /** Options for «En calidad de»; the example data uses the first ones. */
+  roleOptions: string[];
+}
+
+const placeWords: Record<Sector, PlaceWords> = {
+  agriculture: {
+    the: "el predio",
+    of: "del predio",
+    holder: "propietario o administrador",
+    holderRole: "Propietario o administrador",
+    nameLabel: "Predio",
+    refLabel: "Matrícula inmobiliaria o referencia catastral",
+    neighboursLabel: "¿Se sobrevolarán viviendas o predios vecinos?",
+    roleOptions: ["Propietario", "Administrador", "Arrendatario"],
+  },
+  roads: {
+    the: "la vía",
+    of: "de la vía",
+    holder: "titular o administrador",
+    holderRole: "Titular o administrador de la vía",
+    nameLabel: "Vía o tramo",
+    refLabel: "Contrato de concesión o referencia del tramo",
+    neighboursLabel:
+      "¿Se sobrevolarán viviendas, predios vecinos o la calzada?",
+    roleOptions: [
+      "Representante del titular del contrato de concesión",
+      "Administrador de la vía",
+      "Otro representante autorizado",
+    ],
+  },
+  construction: {
+    the: "la obra",
+    of: "de la obra",
+    holder: "titular o administrador",
+    holderRole: "Titular o administrador de la obra",
+    nameLabel: "Obra",
+    refLabel: "Referencia de la obra o del lote",
+    neighboursLabel: "¿Se sobrevolarán viviendas o predios vecinos a la obra?",
+    roleOptions: [
+      "Propietario del lote",
+      "Constructor o administrador de la obra",
+      "Otro representante autorizado",
+    ],
+  },
+  security: {
+    the: "el parque",
+    of: "del parque",
+    holder: "propietario o administrador",
+    holderRole: "Propietario o administrador del parque",
+    nameLabel: "Parque",
+    refLabel: "Matrícula inmobiliaria o referencia del parque",
+    neighboursLabel: "¿Se sobrevolarán viviendas o predios vecinos al parque?",
+    roleOptions: [
+      "Administrador de la copropiedad",
+      "Propietario",
+      "Otro representante autorizado",
+    ],
+  },
+  mining: {
+    the: "la mina",
+    of: "de la mina",
+    holder: "titular o administrador",
+    holderRole: "Titular o administrador de la mina",
+    nameLabel: "Mina o frente",
+    refLabel: "Título minero o referencia del área",
+    neighboursLabel: "¿Se sobrevolarán viviendas o predios vecinos a la mina?",
+    roleOptions: [
+      "Representante del titular minero",
+      "Administrador de la mina",
+      "Otro representante autorizado",
+    ],
+  },
+};
+
+/** Words for «the place» in a sector, so other screens need not say «predio» everywhere. */
+export function placeWordsFor(sector: Sector) {
+  const { the, of, holder, holderRole } = placeWords[sector];
+  return { the, of, holder, holderRole };
 }
 
 const value = (fields: Record<string, string>, key: string, fallback = "—") =>
@@ -39,17 +159,26 @@ const value = (fields: Record<string, string>, key: string, fallback = "—") =>
 const yesNo = ["Sí", "No"];
 const okOptions = ["Conforme", "Con observación", "No conforme"];
 
-export const templates: Record<TemplateId, TemplateDef> = {
-  "landowner-authorization": {
+/** The authorization of whoever can allow the flight, worded for the sector's own kind of place. */
+function landownerAuthorization(sector: Sector): TemplateDef {
+  const w = placeWords[sector];
+  return {
     id: "landowner-authorization",
-    title: "Autorización del propietario o administrador del predio",
-    summary:
-      "Consentimiento escrito para despegar, aterrizar y volar sobre el predio.",
-    note: "En Colombia no encontré una norma que exija esta carta para un predio privado; es la mejor prueba de consentimiento. No reemplaza la autorización de vuelo de la Aerocivil cuando esta se requiere.",
+    title: `Autorización del ${w.holder} ${w.of}`,
+    summary: `Consentimiento escrito para despegar, aterrizar y volar sobre ${w.the}.`,
+    note: `Esta carta deja constancia de que usted cuenta con el consentimiento de quien administra ${w.the}. El equipo de Otear no verificó que una norma la exija para ${w.the}: confírmelo con su asesoría jurídica antes de depender de ella. No reemplaza la autorización de vuelo de la Aerocivil cuando esta se requiere.`,
+    roleLabels: { "Propietario o administrador": w.holderRole },
+    requestExample: `el ${w.holder} ${w.of}`,
     fields: [
       {
+        key: "sector",
+        label: "Sector",
+        type: "text",
+        hidden: true,
+      },
+      {
         key: "ownerName",
-        label: "Nombre del propietario o administrador",
+        label: `Nombre del ${w.holder}`,
         type: "text",
         required: true,
       },
@@ -58,13 +187,18 @@ export const templates: Record<TemplateId, TemplateDef> = {
         key: "ownerRole",
         label: "En calidad de",
         type: "select",
-        options: ["Propietario", "Administrador", "Arrendatario"],
+        options: w.roleOptions,
         required: true,
       },
-      { key: "propertyName", label: "Predio", type: "text", required: true },
+      {
+        key: "propertyName",
+        label: w.nameLabel,
+        type: "text",
+        required: true,
+      },
       {
         key: "propertyRef",
-        label: "Matrícula inmobiliaria o referencia catastral",
+        label: w.refLabel,
         type: "text",
       },
       {
@@ -99,7 +233,7 @@ export const templates: Record<TemplateId, TemplateDef> = {
       },
       {
         key: "thirdParties",
-        label: "¿Se sobrevolarán viviendas o predios vecinos?",
+        label: w.neighboursLabel,
         type: "select",
         options: yesNo,
         required: true,
@@ -119,7 +253,7 @@ export const templates: Record<TemplateId, TemplateDef> = {
       [
         "AUTORIZACIÓN PARA OPERAR UN SISTEMA AÉREO NO TRIPULADO",
         "",
-        `Yo, ${value(f, "ownerName")}, identificado(a) con ${value(f, "ownerId")}, en calidad de ${value(f, "ownerRole")} del predio ${value(f, "propertyName")} (${value(f, "propertyRef", "sin referencia registrada")}), autorizo a ${value(f, "operatorName")} a operar un sistema aéreo no tripulado dentro del predio.`,
+        `Yo, ${value(f, "ownerName")}, identificado(a) con ${value(f, "ownerId")}, en calidad de ${value(f, "ownerRole")} ${w.of} ${value(f, "propertyName")} (${value(f, "propertyRef", "sin referencia registrada")}), autorizo a ${value(f, "operatorName")} a operar un sistema aéreo no tripulado dentro ${w.of}.`,
         "",
         `Finalidad: ${value(f, "purpose")}`,
         `Fecha del vuelo: ${value(f, "flightDate")}`,
@@ -129,9 +263,17 @@ export const templates: Record<TemplateId, TemplateDef> = {
         `Vigencia: hasta el ${value(f, "validUntil")}`,
         "",
         "El operador se compromete a no captar imágenes de terceros sin su consentimiento y a responder por los daños que cause con su operación.",
-        "Esta carta es prueba de consentimiento del predio. No reemplaza la autorización de vuelo de la Aerocivil cuando esta se requiera.",
+        `Esta carta es prueba de consentimiento ${w.of}. No reemplaza la autorización de vuelo de la Aerocivil cuando esta se requiera.`,
       ].join("\n"),
-  },
+  };
+}
+
+const landownerVariants = Object.fromEntries(
+  sectors.map((sector) => [sector, landownerAuthorization(sector)]),
+) as Record<Sector, TemplateDef>;
+
+export const templates: Record<TemplateId, TemplateDef> = {
+  "landowner-authorization": landownerVariants.agriculture,
   "risk-assessment": {
     id: "risk-assessment",
     title: "Análisis de riesgos del vuelo",
@@ -383,6 +525,8 @@ export const templates: Record<TemplateId, TemplateDef> = {
     summary:
       "Constancia de que el entregable llegó completo y quién lo recibió.",
     note: "Es la base para registrar el recibo del servicio antes de pagar. No sustituye los eventos de la factura electrónica ante la DIAN.",
+    separateRoles: true,
+    requestExample: "quien recibe el servicio",
     fields: [
       {
         key: "deliverables",
@@ -418,9 +562,178 @@ export const templates: Record<TemplateId, TemplateDef> = {
         `Observaciones: ${value(f, "observations", "sin observaciones")}`,
       ].join("\n"),
   },
+  "flight-report": {
+    id: "flight-report",
+    title: "Informe del vuelo",
+    summary:
+      "El resumen «En breve» y el registro del vuelo, para que lo firmen quien operó y quien revisa.",
+    note: "Borrador de demostración con datos de ejemplo. La firma de la demo no tiene valor legal. La huella es un código calculado con el texto de este informe: si cambia una letra, el código cambia y las firmas anteriores quedan sin validez. No prueba quién escribió el nombre, la hora exacta ni que las cifras o las fotos del vuelo sean ciertas.",
+    fromRecord: true,
+    separateRoles: true,
+    requestExample: "la persona que revisa o la interventoría",
+    fields: [
+      { key: "sector", label: "Sector", type: "text", hidden: true },
+      { key: "siteName", label: "Sitio", type: "text", hidden: true },
+      {
+        key: "sectorLabel",
+        label: "Sector del sitio",
+        type: "text",
+        hidden: true,
+      },
+      {
+        key: "zoneLabel",
+        label: "Nombre de las zonas",
+        type: "text",
+        hidden: true,
+      },
+      { key: "flightTitle", label: "Vuelo", type: "text", hidden: true },
+      {
+        key: "flightDate",
+        label: "Fecha del vuelo",
+        type: "text",
+        hidden: true,
+      },
+      {
+        key: "flightTime",
+        label: "Hora del vuelo",
+        type: "text",
+        hidden: true,
+      },
+      {
+        key: "flightStatus",
+        label: "Estado del vuelo",
+        type: "text",
+        hidden: true,
+      },
+      { key: "objective", label: "Objetivo", type: "textarea", hidden: true },
+      {
+        key: "zones",
+        label: "Zonas cubiertas",
+        type: "textarea",
+        hidden: true,
+      },
+      { key: "summary", label: "En breve", type: "textarea", hidden: true },
+      {
+        key: "log",
+        label: "Cómo fue el vuelo",
+        type: "textarea",
+        hidden: true,
+      },
+      {
+        key: "debrief",
+        label: "Notas del operador al aterrizar",
+        type: "textarea",
+        hidden: true,
+      },
+      {
+        key: "findingsTitle",
+        label: "Título de los puntos incluidos",
+        type: "text",
+        hidden: true,
+      },
+      {
+        key: "findings",
+        label: "Puntos incluidos",
+        type: "textarea",
+        hidden: true,
+      },
+      {
+        key: "notes",
+        label: "Notas de revisión",
+        type: "textarea",
+        hidden: true,
+      },
+      {
+        key: "technical",
+        label: "Detalle técnico",
+        type: "textarea",
+        hidden: true,
+      },
+    ],
+    signers: [
+      { role: "Operador", required: true },
+      { role: "Revisor o interventor", required: true },
+    ],
+    render: (f) =>
+      [
+        "INFORME DEL VUELO (BORRADOR DE DEMOSTRACIÓN)",
+        "Datos de ejemplo. No es un informe técnico de una operación real.",
+        "",
+        `${value(f, "siteName")} · ${value(f, "sectorLabel")}`,
+        `Vuelo: ${value(f, "flightTitle")}`,
+        `Fecha: ${value(f, "flightDate")} · ${value(f, "flightTime")}`,
+        `Estado: ${value(f, "flightStatus")}`,
+        `Objetivo: ${value(f, "objective")}`,
+        `${value(f, "zoneLabel", "Zonas")}: ${value(f, "zones", "sin zonas seleccionadas")}`,
+        "",
+        "EN BREVE",
+        value(f, "summary", "Sin resumen."),
+        "",
+        "CÓMO FUE EL VUELO",
+        value(f, "log", "Sin registro."),
+        ...(f.debrief?.trim()
+          ? ["", "NOTAS DEL OPERADOR AL ATERRIZAR", f.debrief.trim()]
+          : []),
+        "",
+        value(f, "findingsTitle", "HALLAZGOS INCLUIDOS"),
+        value(f, "findings", "Ninguno incluido."),
+        "",
+        "NOTAS DE REVISIÓN",
+        value(f, "notes", "Sin notas adicionales."),
+        "",
+        "DETALLE TÉCNICO",
+        value(f, "technical", "Sin detalle técnico."),
+        "",
+        "QUÉ ES ESTA FIRMA Y QUÉ NO",
+        "La firma de esta demostración no tiene valor legal: ensaya el mecanismo con datos de ejemplo.",
+        "La huella digital es un código calculado con el título y el texto de este informe. Si alguien cambia una letra, el código cambia y las firmas anteriores quedan sin validez.",
+        "La huella no prueba quién escribió el nombre de quien firma, ni la hora exacta (es la del dispositivo), ni que las cifras, el clima, la autorización o las fotografías del vuelo sean ciertos: eso lo declara el operador. Cubre este texto, no las fotografías ni los archivos entregados.",
+        "Quien firma como operador y quien firma como revisor o interventor deben ser personas distintas.",
+      ].join("\n"),
+  },
 };
 
 export const templateList = Object.values(templates);
+
+/** A document's template as it reads in the sector the document was made for. */
+export function templateFor(
+  templateId: TemplateId,
+  sector: Sector | undefined,
+): TemplateDef {
+  return templateId === "landowner-authorization"
+    ? landownerVariants[sector ?? "agriculture"]
+    : templates[templateId];
+}
+
+/** How a signer's stored role reads in this template (and sector). */
+export function roleLabel(template: TemplateDef, role: string): string {
+  return template.roleLabels?.[role] ?? role;
+}
+
+export function flightStatusText(status: Flight["status"]): string {
+  if (status === "completed") return "Completado en el escenario de ejemplo";
+  if (status === "scheduled") return "Programado; sin entrega documentada";
+  return "Cancelado en el escenario de ejemplo";
+}
+
+/**
+ * Who to suggest in the signing form. The reviewer is left empty on purpose: it is somebody other
+ * than the operator, and the app does not know who.
+ */
+export function suggestedSigner(
+  role: string,
+  fields: Record<string, string>,
+  flight: Pick<Flight, "pilot" | "manager">,
+): { name: string; documentId: string } {
+  if (role.startsWith("Propietario")) {
+    return { name: fields.ownerName ?? "", documentId: fields.ownerId ?? "" };
+  }
+  if (role === "Piloto" || role === "Operador") {
+    return { name: flight.pilot, documentId: "" };
+  }
+  if (role === "Revisor o interventor") return { name: "", documentId: "" };
+  return { name: flight.manager, documentId: "" };
+}
 
 /** Fills what the app already knows so the user only completes the rest. */
 export function autofill(
@@ -435,6 +748,7 @@ export function autofill(
   switch (templateId) {
     case "landowner-authorization":
       return {
+        sector: site.sector,
         propertyName: site.name,
         operatorName: flight.operator,
         purpose: flight.objective,
@@ -463,6 +777,22 @@ export function autofill(
           flight.log?.deliverables?.join("\n") ??
           `${flight.photoCount} fotografías del vuelo`,
       };
+    case "flight-report":
+      return {
+        sector: site.sector,
+        siteName: site.name,
+        sectorLabel: site.sectorLabel,
+        zoneLabel: site.zoneLabel,
+        flightTitle: flight.title,
+        flightDate: flight.date,
+        flightTime: flight.time,
+        flightStatus: flightStatusText(flight.status),
+        objective: flight.objective,
+        zones: site.zones
+          .filter((zone) => flight.zoneIds.includes(zone.id))
+          .map((zone) => zone.name)
+          .join(", "),
+      };
     default:
       return {};
   }
@@ -472,7 +802,7 @@ export function missingFields(
   templateId: TemplateId,
   fields: Record<string, string>,
 ): string[] {
-  return templates[templateId].fields
-    .filter((field) => field.required && !fields[field.key]?.trim())
+  return templateFor(templateId, sectorOf(fields))
+    .fields.filter((field) => field.required && !fields[field.key]?.trim())
     .map((field) => field.label);
 }

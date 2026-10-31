@@ -25,15 +25,22 @@ export const confidenceLabels = {
 } as const;
 
 /**
+ * The seeded operator line starts with the sector's default word for a finding (roads: «No
+ * conformidad del operador · ejemplo»); this is that start, so the company's word can replace it.
+ */
+const SEEDED_SOURCE =
+  /^(?:Hallazgo|No conformidad|Observación|Novedad de talud|Novedad de campo|Novedad) del operador/;
+
+/**
  * The source line of a finding, which follows the suggestion through its review. The seeded
  * operator line starts with a fixed word; when the company has its own word for a finding, that
  * first word is replaced so the same thing is not called two names on one screen.
  */
 export function sourceLabel(finding: Finding, words?: FindingWords): string {
   if (!isSuggested(finding)) {
-    const seeded = "Observación del operador";
-    return words && finding.source.startsWith(seeded)
-      ? `${words.Singular} del operador${finding.source.slice(seeded.length)}`
+    const seeded = SEEDED_SOURCE.exec(finding.source);
+    return words && seeded
+      ? `${words.Singular} del operador${finding.source.slice(seeded[0].length)}`
       : finding.source;
   }
   if (finding.status === "confirmed") {

@@ -157,7 +157,13 @@ test("payReadiness needs the signed delivery note, acknowledgement and acceptanc
   assert.equal(partial.items.find((item) => item.id === "accepted")?.ok, false);
 });
 
-import { areaHeadline, areaValue, checkArea, orderedHa } from "./coverage.ts";
+import {
+  areaHeadline,
+  areaValue,
+  checkArea,
+  orderedHa,
+  orderedKm,
+} from "./coverage.ts";
 
 test("ordered area adds up the polygons of the flight's zones and ignores lines", () => {
   const square: [number, number][] = [
@@ -181,6 +187,33 @@ test("ordered area adds up the polygons of the flight's zones and ignores lines"
   assert.ok(one > 100 && one < 130);
   assert.ok(Math.abs(orderedHa(zones, ["a", "b"]) - 2 * one) < 1e-6);
   assert.equal(orderedHa(zones, ["road"]), 0);
+});
+
+test("a road is measured in kilometres: a line with five points is not a polygon", () => {
+  const line: [number, number][] = [
+    [3.0, -76.0],
+    [3.01, -76.0],
+    [3.02, -76.005],
+    [3.03, -76.005],
+    [3.04, -76.01],
+  ];
+  const zones = [
+    { id: "t1", outline: line },
+    { id: "t2", outline: line },
+  ];
+  // Without the sector the shape fools it (five points look like a surface)...
+  assert.ok(orderedHa(zones, ["t1"]) > 0);
+  // ...with the sector a road has no hectares, only length.
+  assert.equal(orderedHa(zones, ["t1"], "roads"), 0);
+  const km = orderedKm(zones, ["t1"]);
+  assert.ok(km > 4 && km < 6);
+  assert.ok(Math.abs(orderedKm(zones, ["t1", "t2"]) - 2 * km) < 1e-9);
+  assert.equal(orderedKm(zones, []), 0);
+  // Agriculture keeps measuring surfaces.
+  assert.equal(
+    orderedHa(zones, ["t1"], "agriculture"),
+    orderedHa(zones, ["t1"]),
+  );
 });
 
 test("area check compares billed with covered and says what is missing", () => {

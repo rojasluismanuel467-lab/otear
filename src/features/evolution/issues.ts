@@ -1,6 +1,14 @@
 import type { Finding, Position, Site } from "../demo/types";
 import { chainageRanges, rangeText } from "../sites/mapping/chainage.ts";
 import {
+  FOLLOW_UP_TODAY,
+  canHaveFollowUp,
+  followUpBadge,
+  followUpLine,
+  isOverdue,
+  type FollowUpBadge,
+} from "../flights/follow-up.ts";
+import {
   fallingSince,
   paceOf,
   phaseOf,
@@ -24,6 +32,8 @@ export interface Issue {
   advice?: string;
   /** Dates of the flights that reported this same finding (a finding only). */
   seenOn?: string[];
+  /** State of the corrective measure, when the finding has one (a finding only). */
+  measure?: FollowUpBadge;
 }
 
 const number = (value: number, digits = 1) =>
@@ -75,8 +85,11 @@ export function issuesFor(input: {
   referenceIndex: number;
   findings: Finding[];
   zoneNames: Record<string, string>;
+  /** The day measures are read against; the demo's day by default. */
+  today?: string;
 }): Issue[] {
   const { site, captures, index, referenceIndex, findings, zoneNames } = input;
+  const today = input.today ?? FOLLOW_UP_TODAY;
   const current = captures[index];
   if (!current) return [];
   const reference = captures[referenceIndex];
@@ -364,15 +377,31 @@ export function issuesFor(input: {
               : "Pendiente de revisar",
         },
         {
-          label: "Tarea",
-          value: finding.taskAssigned ? "Asignada" : "Sin asignar",
+          label: "Medida correctiva",
+          value: finding.followUp
+            ? followUpLine(finding, today)
+            : finding.suggestion && finding.status === "pending"
+              ? "Se asigna cuando una persona confirme la sugerencia"
+              : "Sin responsable ni plazo",
         },
       ],
-      advice: finding.taskAssigned
-        ? undefined
-        : "Asigne una tarea para que no se pierda.",
+      ...(finding.followUp
+        ? { measure: followUpBadge(finding.followUp, today) }
+        : {}),
+      advice: !finding.followUp
+        ? canHaveFollowUp(finding)
+          ? "Asigne un responsable y un plazo en Vuelos para que no se pierda."
+          : undefined
+        : isOverdue(finding.followUp, today)
+          ? "La medida está vencida: pida cuentas al responsable o acuerde un nuevo plazo en Vuelos."
+          : undefined,
     });
   }
+  // What Otear calculates (falling vigor, delay, stalled progress) comes first: it answers «what is
+  // going wrong» before the findings the operator marked; each group by urgency.
   const order = { danger: 0, warning: 1, info: 2 } as const;
-  return issues.sort((a, b) => order[a.tone] - order[b.tone]);
+  const group = (issue: Issue) => (issue.kind === "finding" ? 1 : 0);
+  return issues.sort(
+    (a, b) => group(a) - group(b) || order[a.tone] - order[b.tone],
+  );
 }

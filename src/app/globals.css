@@ -1396,6 +1396,20 @@ textarea {
   border: 1px dashed #607d91;
   margin-left: 7px;
 }
+/* Líneas que el operador declara sin volar: trazo discontinuo en el color del mapa (no solo color). */
+.map-legend {
+  flex-wrap: wrap;
+  max-width: calc(100% - 140px);
+  row-gap: 5px;
+}
+.map-legend-unflown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-basis: 100%;
+  color: #a3153d;
+  font-weight: 650;
+}
 .map-example-label {
   position: absolute;
   right: 12px;
@@ -1715,17 +1729,36 @@ textarea {
   .topbar-location strong {
     display: none;
   }
+  /* «Menú» (icono y palabra) nunca se recorta: la barra reparte lo que falta entre los sectores,
+     que son solo iconos, y no entre el botón y sus vecinos. Comprobado a 390 y 360 px. */
+  .app-topbar {
+    padding-inline: 6px;
+    gap: 6px;
+  }
+  .topbar-location {
+    flex-shrink: 0;
+    gap: 0;
+  }
+  .mobile-menu-button {
+    padding: 0 8px 0 6px;
+    gap: 4px;
+  }
   .topbar-actions {
-    gap: 7px;
+    gap: 4px;
   }
   .demo-pill {
     display: none;
   }
+  .case-switcher {
+    min-width: 0;
+    gap: 0;
+  }
   .case-switcher-option[aria-pressed="true"] span {
     display: none;
   }
-  .case-switcher-option {
-    padding: 0 9px;
+  .case-switcher-option,
+  .case-switcher-option[aria-pressed="false"] {
+    padding: 0 7px;
   }
   .page-heading {
     flex-direction: column;

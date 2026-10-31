@@ -7,7 +7,9 @@ import {
   FileUp,
   Fingerprint,
   Printer,
+  RefreshCw,
   Send,
+  SearchCheck,
   ShieldCheck,
   Trash2,
   TriangleAlert,
@@ -16,11 +18,23 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useDemo } from "@/features/demo/demo-context";
 import type { Evidence, Flight, Site } from "@/features/demo/types";
 import { downloadText } from "@/lib/format";
-import { documentHtml, documentText, printHtml } from "./document-export";
 import {
+  checkDownload,
+  documentHtml,
+  documentText,
+  printHtml,
+  type DownloadCheck,
+} from "./document-export";
+import { DEMO_PROFILE_LABEL } from "./demo-profile";
+import { flightReportChanges } from "./flight-report-document";
+import {
+  eventAuthor,
+  eventOf,
   evidenceState,
   isComplete,
   newEvidence,
+  NO_IDENTITY_CHECK,
+  signingConflict,
   statusLabels,
   withFields,
   withSignature,
@@ -28,10 +42,13 @@ import {
 } from "./integrity";
 import { sha256Hex } from "./sha256";
 import { SignaturePad } from "./signature-pad";
+import { signerProblem } from "./signers";
 import {
   autofill,
   missingFields,
-  templates,
+  roleLabel,
+  suggestedSigner,
+  templateFor,
   type TemplateId,
 } from "./templates";
 import styles from "./traceability.module.css";
@@ -63,6 +80,7 @@ export function EvidenceDialog({
   site,
   flight,
   templateId,
+  prefill,
   onComplete,
 }: {
   isOpen: boolean;
@@ -70,6 +88,8 @@ export function EvidenceDialog({
   site: Site;
   flight: Flight;
   templateId: TemplateId;
+  /** Content the opening screen already has (the flight report's text), applied over the autofill. */
+  prefill?: Record<string, string>;
   /** Called when the document becomes complete (all signatures, or a file attached). */
   onComplete: (templateId: TemplateId) => void;
 }) {
@@ -79,7 +99,9 @@ export function EvidenceDialog({
         <Modal.Container size="lg" scroll="inside">
           <Modal.Dialog>
             <Modal.Header>
-              <Modal.Heading>{templates[templateId].title}</Modal.Heading>
+              <Modal.Heading>
+                {templateFor(templateId, site.sector).title}
+              </Modal.Heading>
               <Modal.CloseTrigger aria-label="Cerrar documento" />
             </Modal.Header>
             <Modal.Body>
@@ -87,6 +109,7 @@ export function EvidenceDialog({
                 site={site}
                 flight={flight}
                 templateId={templateId}
+                prefill={prefill}
                 onComplete={onComplete}
                 onClose={() => onOpenChange(false)}
               />
@@ -102,21 +125,23 @@ function EvidenceBody({
   site,
   flight,
   templateId,
+  prefill,
   onComplete,
   onClose,
 }: {
   site: Site;
   flight: Flight;
   templateId: TemplateId;
+  prefill?: Record<string, string>;
   onComplete: (templateId: TemplateId) => void;
   onClose: () => void;
 }) {
   const { evidences, saveEvidence, removeEvidence, setNotice } = useDemo();
-  const template = templates[templateId];
+  const template = templateFor(templateId, site.sector);
   const stored = evidences.find(
     (item) => item.flightId === flight.id && item.templateId === templateId,
   );
-  const auto = autofill(templateId, { site, flight });
+  const auto = { ...autofill(templateId, { site, flight }), ...prefill };
   const [fields, setFields] = useState<Record<string, string>>(() => ({
     ...auto,
     ...(stored?.fields ?? {}),
@@ -135,7 +160,12 @@ function EvidenceBody({
   });
   const [requestTo, setRequestTo] = useState("");
   const [error, setError] = useState("");
+  const [downloaded, setDownloaded] = useState("");
+  const [downloadCheck, setDownloadCheck] = useState<DownloadCheck | null>(
+    null,
+  );
   const fileInput = useRef<HTMLInputElement>(null);
+  const downloadInput = useRef<HTMLInputElement>(null);
 
   const base: Evidence =
     stored ??
@@ -149,6 +179,7 @@ function EvidenceBody({
         fields,
       },
       new Date().toISOString(),
+      DEMO_PROFILE_LABEL,
     );
   const working: Evidence =
     base.kind === "drafted" ? { ...base, fields } : base;
@@ -156,14 +187,27 @@ function EvidenceBody({
   const dirty =
     Boolean(stored) &&
     stored?.kind === "drafted" &&
-    JSON.stringify(stored.fields) !== JSON.stringify(fields);
+    Object.keys({ ...stored.fields, ...fields }).some(
+      (key) => (stored.fields[key] ?? "") !== (fields[key] ?? ""),
+    );
   const missing = missingFields(templateId, fields);
+  // A report taken from the flight's record can fall behind it: say which parts changed.
+  const outdated =
+    template.fromRecord && prefill && stored
+      ? flightReportChanges(stored, prefill)
+      : [];
+  const outdatedAfterEdit =
+    stored && prefill
+      ? flightReportChanges({ ...stored, fields }, prefill)
+      : [];
+  const editable = template.fields.filter((field) => !field.hidden);
+  const labelOf = (role: string) => roleLabel(template, role);
 
   function persistFields(): Evidence {
     const now = new Date().toISOString();
     const saved =
       stored && stored.kind === "drafted"
-        ? withFields(stored, fields, now)
+        ? withFields(stored, fields, now, DEMO_PROFILE_LABEL)
         : newEvidence(
             {
               ...(stored ? { id: stored.id } : {}),
@@ -175,29 +219,21 @@ function EvidenceBody({
               fields,
             },
             now,
+            DEMO_PROFILE_LABEL,
           );
     saveEvidence(saved);
     return saved;
   }
 
-  function defaultSigner(role: string) {
-    if (role.startsWith("Propietario")) {
-      return { name: fields.ownerName ?? "", documentId: fields.ownerId ?? "" };
-    }
-    if (role === "Piloto") return { name: flight.pilot, documentId: "" };
-    if (role === "Operador") return { name: flight.pilot, documentId: "" };
-    return { name: flight.manager, documentId: "" };
-  }
-
   function startSigning(role: string) {
     if (missing.length) {
-      setError(`Antes de firmar completa: ${missing.join(", ")}.`);
+      setError(`Antes de firmar complete: ${missing.join(", ")}.`);
       return;
     }
     setError("");
     setSigning(role);
     setSigner({
-      ...defaultSigner(role),
+      ...suggestedSigner(role, fields, flight),
       method: "drawn",
       image: "",
       consent: false,
@@ -206,18 +242,22 @@ function EvidenceBody({
 
   function confirmSigning() {
     if (!signing) return;
-    if (signer.name.trim().length < 3 || signer.documentId.trim().length < 3) {
-      setError(
-        "Escribe el nombre completo y el número de documento de quien firma.",
-      );
+    const problem = signerProblem(signer);
+    if (problem) {
+      setError(problem);
       return;
     }
     if (signer.method === "drawn" && !signer.image) {
-      setError("Dibuja la firma o cambia a firma escrita.");
+      setError("Dibuje la firma o cambie a firma escrita.");
       return;
     }
     if (!signer.consent) {
-      setError("Confirma que aceptas firmar electrónicamente.");
+      setError("Confirme que acepta firmar electrónicamente.");
+      return;
+    }
+    const conflict = signingConflict(working, signing, signer);
+    if (conflict) {
+      setError(conflict);
       return;
     }
     const now = new Date().toISOString();
@@ -232,6 +272,7 @@ function EvidenceBody({
         image: signer.method === "drawn" ? signer.image : undefined,
       },
       now,
+      DEMO_PROFILE_LABEL,
     );
     saveEvidence(signed);
     setSigning(null);
@@ -261,15 +302,17 @@ function EvidenceBody({
         attachment: { name: file.name, size: file.size, hash },
       },
       now,
+      DEMO_PROFILE_LABEL,
     );
     saveEvidence({
       ...attachment,
       events: [
         ...(stored?.events ?? []),
-        {
-          at: now,
-          text: `Se adjuntó «${file.name}». Huella SHA-256 del archivo: ${hash.slice(0, 12)}.`,
-        },
+        eventOf(
+          now,
+          `Se adjuntó «${file.name}». Huella SHA-256 del archivo: ${hash.slice(0, 12)}.`,
+          DEMO_PROFILE_LABEL,
+        ),
       ],
     });
     setError("");
@@ -281,7 +324,7 @@ function EvidenceBody({
 
   function request() {
     if (requestTo.trim().length < 3) {
-      setError("Escribe a quién se le pide el documento.");
+      setError("Escriba a quién se le pide el documento.");
       return;
     }
     const now = new Date().toISOString();
@@ -290,11 +333,26 @@ function EvidenceBody({
     saveEvidence({
       ...current,
       requestedFrom: requestTo.trim(),
-      events: [...current.events, { at: now, text }],
+      events: [...current.events, eventOf(now, text, DEMO_PROFILE_LABEL)],
     });
     setRequestTo("");
     setError("");
     setNotice("Solicitud registrada. En la demo no se envía ningún mensaje.");
+  }
+
+  async function loadDownload(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setDownloadCheck({
+        result: "unreadable",
+        message:
+          "El archivo supera 2 MB; un documento de texto es mucho menor.",
+      });
+      return;
+    }
+    const text = await file.text();
+    setDownloaded(text);
+    setDownloadCheck(stored ? checkDownload(stored, text) : null);
   }
 
   const roleSignature = (role: string) =>
@@ -313,26 +371,28 @@ function EvidenceBody({
       </div>
       <p className={styles.note}>{template.note}</p>
 
-      <div
-        className="segmented-control"
-        role="group"
-        aria-label="Cómo respaldar este ítem"
-      >
-        <button
-          type="button"
-          aria-pressed={mode === "draft"}
-          onClick={() => setMode("draft")}
+      {!template.fromRecord && (
+        <div
+          className="segmented-control"
+          role="group"
+          aria-label="Cómo respaldar este ítem"
         >
-          Redactar y firmar aquí
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === "attach"}
-          onClick={() => setMode("attach")}
-        >
-          Adjuntar un archivo
-        </button>
-      </div>
+          <button
+            type="button"
+            aria-pressed={mode === "draft"}
+            onClick={() => setMode("draft")}
+          >
+            Redactar y firmar aquí
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === "attach"}
+            onClick={() => setMode("attach")}
+          >
+            Adjuntar un archivo
+          </button>
+        </div>
+      )}
 
       {mode === "attach" ? (
         <section className={styles.section}>
@@ -371,7 +431,40 @@ function EvidenceBody({
         <div className={styles.columns}>
           <section className={styles.section} aria-label="Datos del documento">
             <h3>Datos</h3>
-            {template.fields.map((field) => {
+            {template.fromRecord && (
+              <>
+                <p className={styles.hint}>
+                  Este informe se arma con el registro del vuelo: usted lo lee
+                  en «Documento» y lo firma. Para cambiar su contenido, cambie
+                  el vuelo, los puntos incluidos o las notas en la pantalla del
+                  informe y vuelva a abrir este documento.
+                </p>
+                {outdated.length > 0 && (
+                  <div className={styles.alert} role="status">
+                    <TriangleAlert size={16} aria-hidden="true" />
+                    <span>
+                      El informe en pantalla ya no coincide con el guardado
+                      (cambió: {outdated.join(", ")}).{" "}
+                      {outdatedAfterEdit.length === 0
+                        ? "Ya cargó los datos actuales: pulse «Guardar cambios» para dejar el cambio en el historial; las firmas anteriores quedarán sin validez."
+                        : "Si lo actualiza, las firmas hechas sobre la versión anterior quedan sin validez."}
+                    </span>
+                  </div>
+                )}
+                {outdatedAfterEdit.length > 0 && (
+                  <Button
+                    variant="secondary"
+                    onPress={() =>
+                      setFields((current) => ({ ...current, ...prefill }))
+                    }
+                  >
+                    <RefreshCw size={16} aria-hidden="true" />
+                    Usar los datos actuales del vuelo
+                  </Button>
+                )}
+              </>
+            )}
+            {editable.map((field) => {
               const isAuto =
                 Boolean(auto[field.key]) &&
                 fields[field.key] === auto[field.key];
@@ -443,8 +536,10 @@ function EvidenceBody({
               <p className={styles.alert} role="alert">
                 <TriangleAlert size={16} aria-hidden="true" />
                 El contenido cambió después de firmar. Las firmas de{" "}
-                {state.staleSignatures.map((s) => s.role).join(", ")} ya no
-                valen: deben firmar de nuevo.
+                {state.staleSignatures
+                  .map((signature) => labelOf(signature.role))
+                  .join(", ")}{" "}
+                ya no valen: deben firmar de nuevo.
               </p>
             )}
           </section>
@@ -466,7 +561,7 @@ function EvidenceBody({
                   }
                 >
                   <span className={styles.signerName}>
-                    <strong>{item.role}</strong>
+                    <strong>{labelOf(item.role)}</strong>
                     <small>
                       {signature
                         ? `${signature.name} · ${time(signature.signedAt)}${valid ? "" : " · sin validez"}`
@@ -491,9 +586,9 @@ function EvidenceBody({
             <div
               className={styles.signPanel}
               role="group"
-              aria-label={`Firmar como ${signing}`}
+              aria-label={`Firmar como ${labelOf(signing)}`}
             >
-              <h4>Firmar como {signing}</h4>
+              <h4>Firmar como {labelOf(signing)}</h4>
               <div className={styles.signFields}>
                 <label className="form-field">
                   <span className="field-label">Nombre completo</span>
@@ -560,6 +655,12 @@ function EvidenceBody({
                 guarda con la hora de este dispositivo y la huella de su
                 contenido.
               </label>
+              {template.separateRoles && (
+                <p className={styles.hint}>
+                  En este documento cada rol lo firma una persona distinta.{" "}
+                  {NO_IDENTITY_CHECK}
+                </p>
+              )}
               <p className={styles.hint}>
                 Es una firma electrónica simple: sirve como prueba de
                 consentimiento (Ley 527 de 1999, Decreto 2364 de 2012) pero
@@ -595,9 +696,10 @@ function EvidenceBody({
           </p>
         ) : (
           <p className={styles.hint}>
-            Por ejemplo, el propietario del predio. En la versión conectada se
-            enviaría un enlace por correo o WhatsApp; en la demo solo queda el
-            registro.
+            Por ejemplo,{" "}
+            {template.requestExample ?? "quien debe revisar o firmar"}. En la
+            versión conectada se enviaría un enlace por correo o WhatsApp; en la
+            demo solo queda el registro.
           </p>
         )}
         <div className={styles.inline}>
@@ -615,6 +717,81 @@ function EvidenceBody({
         </div>
       </section>
 
+      {mode === "draft" && stored?.kind === "drafted" && (
+        <section
+          className={styles.section}
+          aria-label="Verificar un archivo descargado"
+        >
+          <h3>Verificar un archivo descargado</h3>
+          <p className={styles.hint}>
+            Pegue el texto del .txt que descargó de este documento (o cárguelo,
+            o escriba la huella de 64 caracteres) y se compara con la huella
+            guardada. Todo ocurre en su navegador; no se envía nada. Solo
+            comprueba que el texto es el mismo, no quién lo firmó ni cuándo.
+          </p>
+          <label className="form-field">
+            <span className="field-label">Texto del archivo o huella</span>
+            <textarea
+              className="field-input"
+              rows={3}
+              value={downloaded}
+              onChange={(event) => {
+                setDownloaded(event.target.value);
+                setDownloadCheck(null);
+              }}
+            />
+          </label>
+          <input
+            ref={downloadInput}
+            type="file"
+            accept=".txt,text/plain"
+            className={styles.hidden}
+            aria-label="Elegir el archivo .txt descargado"
+            onChange={(event) => {
+              void loadDownload(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+          <div className={styles.inline}>
+            <Button
+              variant="secondary"
+              onPress={() => downloadInput.current?.click()}
+            >
+              <FileUp size={16} aria-hidden="true" />
+              Cargar el archivo .txt
+            </Button>
+            <Button
+              variant="primary"
+              isDisabled={!downloaded.trim()}
+              onPress={() =>
+                setDownloadCheck(checkDownload(stored, downloaded))
+              }
+            >
+              <SearchCheck size={16} aria-hidden="true" />
+              Comprobar
+            </Button>
+          </div>
+          {downloadCheck && (
+            <p
+              className={
+                downloadCheck.result === "match"
+                  ? styles.fileLine
+                  : styles.alert
+              }
+              role="status"
+              data-result={downloadCheck.result}
+            >
+              {downloadCheck.result === "match" ? (
+                <ShieldCheck size={16} aria-hidden="true" />
+              ) : (
+                <TriangleAlert size={16} aria-hidden="true" />
+              )}
+              {downloadCheck.message}
+            </p>
+          )}
+        </section>
+      )}
+
       {working.events.length > 0 && (
         <section
           className={styles.section}
@@ -625,10 +802,22 @@ function EvidenceBody({
             {[...working.events].reverse().map((event, index) => (
               <li key={`${event.at}-${index}`}>
                 <time dateTime={event.at}>{time(event.at)}</time>
-                <span>{event.text}</span>
+                <span>
+                  {event.text}
+                  <small className={styles.eventAuthor}>
+                    {eventAuthor(event)
+                      ? `Perfil de la demostración: ${eventAuthor(event)}`
+                      : "Autor no registrado"}
+                  </small>
+                </span>
               </li>
             ))}
           </ol>
+          <p className={styles.hint}>
+            La demostración no tiene inicio de sesión: cada cambio queda a
+            nombre del perfil de la demostración ({DEMO_PROFILE_LABEL}), que no
+            es una identidad comprobada.
+          </p>
         </section>
       )}
 
@@ -680,13 +869,16 @@ function EvidenceBody({
           <div role="group" aria-label="Confirmar eliminación">
             <p>
               {evidenceState(stored).validRoles.length
-                ? `Este documento tiene firmas de ${evidenceState(stored).validRoles.join(", ")}. Al eliminarlo se pierden el documento, las firmas y su historial de esta demostración.`
+                ? `Este documento tiene firmas de ${evidenceState(stored).validRoleLabels.join(", ")}. Al eliminarlo se pierden el documento, las firmas y su historial de esta demostración.`
                 : "Se elimina el documento y su historial de esta demostración."}
             </p>
             <Button
               variant="danger"
               onPress={() => {
                 removeEvidence(stored.id);
+                setNotice(
+                  `«${template.title}» eliminado por el perfil de la demostración (${DEMO_PROFILE_LABEL}). Se perdieron el documento, sus firmas y su historial.`,
+                );
                 onClose();
               }}
             >

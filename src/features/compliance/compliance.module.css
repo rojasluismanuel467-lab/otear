@@ -478,3 +478,16 @@
 .explain p {
   margin-top: 10px;
 }
+
+.signedRecords {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.signedRecords h3 {
+  font-size: var(--heading-group);
+  font-weight: 700;
+  margin: 0;
+}

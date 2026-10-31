@@ -126,6 +126,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 12px 14px;
   border: 1px solid var(--border);
@@ -263,6 +264,12 @@
 .events time {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+.eventAuthor {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 .error {
   padding: 12px 14px;

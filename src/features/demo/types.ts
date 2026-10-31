@@ -99,9 +99,33 @@ export interface Finding {
   locationLabel?: string;
   imageUrl: string;
   source: string;
+  /**
+   * Whether a follow-up exists. Kept in step with `followUp` (it is true exactly when `followUp`
+   * is set); read `followUp` for the real state. Older code reads this flag.
+   */
   taskAssigned: boolean;
+  /** Corrective measure followed until it is closed; see features/flights/follow-up.ts. */
+  followUp?: FindingFollowUp;
   /** Set when an assistant, and not the operator, proposed this finding from the photos. */
   suggestion?: FindingSuggestion;
+}
+
+/**
+ * A corrective measure on a finding: who answers for it, by when, and how it ended. Nothing is
+ * notified to anyone in the demo; the record only lives in the session.
+ */
+export interface FindingFollowUp {
+  /** Person or company in charge of the correction (free text). */
+  owner: string;
+  /** Deadline, `YYYY-MM-DD`. Whether it is overdue is calculated against the demo's date. */
+  dueDate: string;
+  status: "open" | "inProgress" | "closed";
+  /** Date it was closed, `YYYY-MM-DD`. */
+  closedOn?: string;
+  /** What was done and with what evidence; required to close. */
+  closure?: string;
+  /** Every change, oldest first. */
+  history: { at: string; text: string; by?: string }[];
 }
 
 /** What the image assistant says about a candidate finding; a person still decides. */
@@ -174,6 +198,8 @@ export interface EvidenceSignature {
 export interface EvidenceEvent {
   at: string;
   text: string;
+  /** Who did it: in the demo, the demonstration profile (there is no sign-in). */
+  by?: string;
 }
 
 /** A document that supports a checklist item: drafted in the app and signed, or an attached file. */
@@ -342,6 +368,19 @@ export interface ServiceEvent {
   text: string;
 }
 
+export interface DisputeReply {
+  /** «adjusted»: accepts the adjustment (fewer hectares); «upheld»: stands by what it delivered. */
+  kind: "adjusted" | "upheld";
+  note: string;
+  /** File names noted as support, as in a delivery: nothing is uploaded in the demo. */
+  supportFiles: string[];
+  on: string;
+  by: string;
+  /** Only when adjusted: the hectares declared before and after the adjustment. */
+  previousHa?: number;
+  adjustedHa?: number;
+}
+
 export interface ServiceRequest {
   id: string;
   siteId: string;
@@ -362,8 +401,14 @@ export interface ServiceRequest {
   quotes: ServiceQuote[];
   operatorId?: string;
   flightId?: string;
+  /** Why the requester chose this operator, in a few words; optional, seen by whoever contracts. */
+  assignReason?: string;
   delivery?: {
-    coveredHa: number;
+    /**
+     * Hectares the operator says it covered. Only for services priced per hectare: a service priced
+     * per flight (a road has length, not area) leaves it empty and the screens do not show it.
+     */
+    coveredHa?: number;
     deliveredOn: string;
     note: string;
     deliverables: string[];
@@ -374,6 +419,8 @@ export interface ServiceRequest {
     on: string;
     by: string;
   };
+  /** The operator's answer to a dispute: it stays visible to whoever verifies the delivery again. */
+  disputeReply?: DisputeReply;
   invoiceId?: string;
   createdOn: string;
   events: ServiceEvent[];

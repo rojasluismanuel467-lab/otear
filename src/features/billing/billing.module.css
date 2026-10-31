@@ -256,12 +256,10 @@
   letter-spacing: -0.02em;
   color: var(--accent-soft-foreground);
 }
-/* La acción que cierra el proceso queda al alcance mientras se revisa la factura: el
-   detalle mide más de una pantalla y «Registrar pago» estaba a ~1 400 px del inicio. */
+/* La acción que cierra el proceso va al final del detalle, después de «Verificación del área» y
+   de «Antes de pagar». Solo en pantallas altas (más de 1 000 px) se queda pegada al borde
+   mientras se revisa: en una pantalla baja la barra flotante tapaba la tarjeta del área. */
 .detailActions {
-  position: sticky;
-  bottom: 14px;
-  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -273,6 +271,13 @@
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   box-shadow: var(--otear-shadow);
+}
+@media (min-height: 1001px) {
+  .detailActions {
+    position: sticky;
+    bottom: 14px;
+    z-index: 2;
+  }
 }
 .paidNote {
   display: inline-flex;

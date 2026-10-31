@@ -89,7 +89,7 @@ export function EvidenceControl({
           <span className={styles.chip} data-tone={toneOf[state.status]}>
             {statusLabels[state.status]}
             {state.status === "partial" &&
-              ` · falta ${state.missingRoles.join(", ")}`}
+              ` · falta ${state.missingRoleLabels.join(", ")}`}
           </span>
         ) : (
           <span

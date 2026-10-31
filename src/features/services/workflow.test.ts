@@ -2,16 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   assign,
+  checkQuotePrice,
   availableActions,
   cancel,
   createRequest,
   decline,
   deliver,
   invoice,
+  invoiceNote,
   invoicePlan,
+  MAX_REASON_LENGTH,
   quote,
   quoteStateLabel,
   rankedQuotes,
+  reply,
+  replyKinds,
   schedule,
   stepIndex,
   verify,
@@ -236,7 +241,7 @@ test("a disputed delivery must say why and goes back to the operator", () => {
   assert.equal(stepIndex("disputed"), 4);
   assert.deepEqual(
     availableActions(request, "operator", "o1").map((a) => a.id),
-    ["deliver"],
+    ["reply", "deliver"],
   );
   request = ok(
     deliver(
@@ -347,4 +352,279 @@ test("a quote that was not selected keeps its price and is not labelled as one t
   assert.equal(quoteStateLabel(request.quotes[0]), "Elegida");
   const withdrawn = ok(decline(base(), "Sin cupo", as("o1"))).request.quotes[0];
   assert.equal(quoteStateLabel(withdrawn), "No puede");
+});
+
+/** A request on its way to a dispute: assigned to o1, delivered with 100 ha, then returned. */
+function disputed(unit: "ha" | "flight" = "ha") {
+  let request: ServiceRequest = { ...base(), unit };
+  request = ok(
+    quote(
+      request,
+      { price: 9000, startDate: "2026-11-02", note: "" },
+      as("o1"),
+    ),
+  ).request;
+  request = ok(assign(request, "o1", as("m"))).request;
+  request = ok(
+    schedule(request, { date: "2026-11-03", flightId: "f" }, as("o1")),
+  ).request;
+  request = ok(
+    deliver(
+      request,
+      {
+        coveredHa: unit === "ha" ? 100 : undefined,
+        deliverables: ["Ortomosaico"],
+        note: "",
+      },
+      as("o1"),
+    ),
+  ).request;
+  return ok(
+    verify(
+      request,
+      { result: "disputed", note: "Cuento 8 ha menos de las declaradas" },
+      as("m"),
+    ),
+  ).request;
+}
+
+test("accepting the adjustment lowers the hectares and sends the request back to be verified", () => {
+  const request = disputed();
+  const result = ok(
+    reply(
+      request,
+      { kind: "adjusted", adjustedHa: 92, note: "", supportFiles: [] },
+      as("o1"),
+    ),
+  ).request;
+  assert.equal(result.status, "delivered");
+  assert.equal(result.delivery?.coveredHa, 92);
+  assert.equal(result.disputeReply?.kind, "adjusted");
+  assert.equal(result.disputeReply?.previousHa, 100);
+  assert.equal(result.disputeReply?.adjustedHa, 92);
+  // The claim stays beside the answer, and both are in the history.
+  assert.equal(result.verification?.result, "disputed");
+  const last = result.events[result.events.length - 1];
+  assert.equal(last.type, "replied");
+  assert.equal(last.role, "operator");
+  assert.ok(last.text.includes("100 ha a 92 ha"));
+  assert.deepEqual(
+    availableActions(result, "manager").map((a) => a.id),
+    ["verify"],
+  );
+  // What is billed by default follows the adjusted figure.
+  const verified = ok(
+    verify(result, { result: "accepted", note: "" }, as("m")),
+  ).request;
+  const plan = invoicePlan(verified, { orderedHa: 100 });
+  assert.equal(plan.ok && plan.billedHa, 92);
+  assert.equal(plan.ok && plan.total, 828000);
+});
+
+test("an adjustment must lower what was declared and be a real number of hectares", () => {
+  const request = disputed();
+  for (const adjustedHa of [0, -3, 100, 120, NaN]) {
+    const result = reply(
+      request,
+      { kind: "adjusted", adjustedHa, note: "", supportFiles: [] },
+      as("o1"),
+    );
+    assert.equal(result.ok, false, String(adjustedHa));
+  }
+});
+
+test("standing by the delivery needs a note and keeps the figures and the support files", () => {
+  const request = disputed();
+  assert.equal(
+    reply(request, { kind: "upheld", note: "  ", supportFiles: [] }, as("o1"))
+      .ok,
+    false,
+  );
+  const result = ok(
+    reply(
+      request,
+      {
+        kind: "upheld",
+        note: "El registro de vuelo muestra la franja norte cubierta.",
+        supportFiles: [
+          "Registro de vuelo (CSV)",
+          " ",
+          "Captura de la ruta (PNG)",
+        ],
+      },
+      as("o1"),
+    ),
+  ).request;
+  assert.equal(result.status, "delivered");
+  assert.equal(result.delivery?.coveredHa, 100);
+  assert.deepEqual(result.disputeReply?.supportFiles, [
+    "Registro de vuelo (CSV)",
+    "Captura de la ruta (PNG)",
+  ]);
+  const last = result.events[result.events.length - 1];
+  assert.ok(last.text.includes("sostiene lo entregado"));
+  assert.ok(last.text.includes("Captura de la ruta (PNG)"));
+});
+
+test("only the assigned operator answers, and only while the delivery is in dispute", () => {
+  const request = disputed();
+  const answer = {
+    kind: "upheld" as const,
+    note: "Está completa",
+    supportFiles: [],
+  };
+  assert.equal(reply(request, answer, as("o2")).ok, false);
+  assert.equal(reply(request, answer, as("m")).ok, false);
+  assert.equal(reply(request, answer, as("g")).ok, false);
+  assert.deepEqual(availableActions(request, "operator", "o2"), []);
+  assert.deepEqual(
+    availableActions(request, "manager").map((a) => a.id),
+    [],
+  );
+  const answered = ok(reply(request, answer, as("o1"))).request;
+  // Once answered it is no longer in dispute: a second answer is refused.
+  assert.equal(reply(answered, answer, as("o1")).ok, false);
+  const scheduled: ServiceRequest = { ...request, status: "scheduled" };
+  assert.equal(reply(scheduled, answer, as("o1")).ok, false);
+  assert.equal(
+    availableActions(scheduled, "operator", "o1").some((a) => a.id === "reply"),
+    false,
+  );
+});
+
+test("after an answer the requester can dispute again; the answer then leaves the request but not the history", () => {
+  const first = ok(
+    reply(
+      disputed(),
+      { kind: "upheld", note: "Está completa", supportFiles: [] },
+      as("o1"),
+    ),
+  ).request;
+  const again = ok(
+    verify(first, { result: "disputed", note: "Sigo sin verla" }, as("m")),
+  ).request;
+  assert.equal(again.status, "disputed");
+  assert.equal(again.disputeReply, undefined);
+  assert.ok(again.events.some((event) => event.type === "replied"));
+  // Delivering again also clears the previous answer.
+  const redelivered = ok(
+    deliver(
+      again,
+      { coveredHa: 105, deliverables: ["Ortomosaico"], note: "" },
+      as("o1"),
+    ),
+  ).request;
+  assert.equal(redelivered.disputeReply, undefined);
+});
+
+test("a service priced per flight has no hectares to adjust, but can still be answered", () => {
+  assert.deepEqual(replyKinds({ unit: "flight" }), ["upheld"]);
+  assert.deepEqual(replyKinds({ unit: "ha" }), ["adjusted", "upheld"]);
+  const request = disputed("flight");
+  assert.equal(request.delivery?.coveredHa, undefined);
+  assert.equal(
+    reply(
+      request,
+      { kind: "adjusted", adjustedHa: 5, note: "", supportFiles: [] },
+      as("o1"),
+    ).ok,
+    false,
+  );
+  assert.equal(
+    reply(
+      request,
+      { kind: "upheld", note: "Se voló todo el tramo", supportFiles: [] },
+      as("o1"),
+    ).ok,
+    true,
+  );
+  const delivered = ok(
+    deliver(
+      { ...request, status: "scheduled" },
+      { coveredHa: 12, deliverables: ["Informe (PDF)"], note: "" },
+      as("o1"),
+    ),
+  ).request;
+  // Hectares typed on a per-flight service are not kept.
+  assert.equal(delivered.delivery?.coveredHa, undefined);
+  assert.ok(
+    !delivered.events[delivered.events.length - 1].text.includes(" ha "),
+  );
+});
+
+test("the reason for the choice is optional, trimmed, kept on the request and in its history", () => {
+  const quoted = () =>
+    ok(
+      quote(
+        base(),
+        { price: 4000, startDate: "2026-11-02", note: "" },
+        as("o1"),
+      ),
+    ).request;
+  const without = ok(assign(quoted(), "o1", as("m"))).request;
+  assert.equal(without.assignReason, undefined);
+  assert.ok(!without.events[without.events.length - 1].text.includes("Motivo"));
+
+  const withReason = ok(
+    assign(quoted(), "o1", as("g"), "  La más barata y con mejor historial  "),
+  ).request;
+  assert.equal(withReason.assignReason, "La más barata y con mejor historial");
+  assert.ok(
+    withReason.events[withReason.events.length - 1].text.endsWith(
+      "Motivo: La más barata y con mejor historial",
+    ),
+  );
+  const blank = ok(assign(quoted(), "o1", as("m"), "   ")).request;
+  assert.equal(blank.assignReason, undefined);
+  const long = ok(assign(quoted(), "o1", as("m"), "x".repeat(400))).request;
+  assert.equal(long.assignReason?.length, MAX_REASON_LENGTH);
+  // The rules do not change with a reason: an operator still cannot assign.
+  assert.equal(assign(quoted(), "o1", as("o1"), "yo").ok, false);
+});
+
+test("a quoted price must be positive and not absurd next to the ceiling; above the ceiling it only warns", () => {
+  const request = base();
+  assert.equal(checkQuotePrice(request, 0).ok, false);
+  assert.equal(checkQuotePrice(request, Number.NaN).ok, false);
+  // 3.600.034.000 per hectare, the slip of typing over a prefilled price.
+  const slip = checkQuotePrice(request, 3_600_034_000);
+  assert.equal(slip.ok, false);
+  assert.ok(!slip.ok && slip.error.includes("error de digitación"));
+  assert.equal(
+    quote(
+      request,
+      { price: 3_600_034_000, startDate: "2026-11-02", note: "" },
+      as("o1"),
+    ).ok,
+    false,
+  );
+  // Over the ceiling (10.000) but plausible: allowed, with a warning.
+  const over = checkQuotePrice(request, 12000);
+  assert.ok(over.ok && over.overCeiling && over.warning);
+  const fine = checkQuotePrice(request, 9000);
+  assert.ok(fine.ok && !fine.overCeiling && !fine.warning);
+  // Without a ceiling a plausibility cap still stops a slip.
+  assert.equal(checkQuotePrice({ unit: "ha" }, 20_000_000).ok, false);
+  assert.equal(checkQuotePrice({ unit: "flight" }, 20_000_000).ok, true);
+});
+
+test("the note left when invoicing is kept in the history and can be read back", () => {
+  const verified: ServiceRequest = {
+    ...base(),
+    status: "verified",
+    operatorId: "o1",
+  };
+  const noted = ok(
+    invoice(
+      verified,
+      { invoiceId: "inv", billedHa: 7, note: "  Se voló un borde extra  " },
+      as("o1"),
+    ),
+  ).request;
+  assert.equal(invoiceNote(noted), "Se voló un borde extra");
+  assert.ok(noted.events.some((event) => event.type === "invoiced"));
+  const plain = ok(
+    invoice(verified, { invoiceId: "inv", billedHa: 7 }, as("o1")),
+  ).request;
+  assert.equal(invoiceNote(plain), undefined);
 });

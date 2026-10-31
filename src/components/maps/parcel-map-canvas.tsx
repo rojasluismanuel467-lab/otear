@@ -5,9 +5,16 @@ import L from "leaflet";
 import { MousePointerClick, Scissors } from "lucide-react";
 import type { Position } from "@/features/demo/types";
 import type { ParcelMapProps } from "./parcel-map";
-import { zonePalette } from "./zone-palette";
 import { BasemapSwitch, useBasemap } from "./basemap-switch";
-import { createBasemap } from "./basemaps";
+import { createBasemap, overlayStyle, type BasemapId } from "./basemaps";
+
+/**
+ * A zone with no colour of its own (the mapping screen) takes the map's neutral zone colour, as in
+ * the flight map. Colours that mean something (vigor, progress) come in through `zoneColors`, and the
+ * palette of the evolution chart is not used for a zone's identity here: the same hues would read
+ * as the same measure in two places.
+ */
+const neutralZone = (basemap: BasemapId) => overlayStyle(basemap).zone;
 
 function roundPosition(latlng: L.LatLng): Position {
   return [Number(latlng.lat.toFixed(6)), Number(latlng.lng.toFixed(6))];
@@ -174,10 +181,8 @@ export default function ParcelMapCanvas({
     );
     const drawn = shapes.current;
     drawn.clear();
-    zones.forEach((zone, index) => {
-      const color =
-        live.current.zoneColors?.[zone.id] ??
-        zonePalette[index % zonePalette.length];
+    zones.forEach((zone) => {
+      const color = live.current.zoneColors?.[zone.id] ?? neutralZone(basemap);
       const options = zoneStyle(
         color,
         zone.id === live.current.selectedZoneId,
@@ -300,18 +305,18 @@ export default function ParcelMapCanvas({
 
   // Colours and selection: restyle the shapes already on the map so the change fades.
   useEffect(() => {
-    zones.forEach((zone, index) => {
+    zones.forEach((zone) => {
       shapes.current
         .get(zone.id)
         ?.setStyle(
           zoneStyle(
-            zoneColors?.[zone.id] ?? zonePalette[index % zonePalette.length],
+            zoneColors?.[zone.id] ?? neutralZone(basemap),
             zone.id === selectedZoneId,
             outlineKind === "line",
           ),
         );
     });
-  }, [zones, outlineKind, zoneColors, selectedZoneId]);
+  }, [zones, outlineKind, zoneColors, selectedZoneId, basemap]);
 
   // Click handling per mode.
   useEffect(() => {

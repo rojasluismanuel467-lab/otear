@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { comparisonSummary, narrate } from "./narrative.ts";
 import type { CapturePoint } from "./evolution.ts";
-import type { Site } from "../demo/types";
+import type { Finding, Site } from "../demo/types";
 
 const point = (
   date: string,
@@ -130,5 +130,47 @@ test("comparison says better, worse or the same, and keeps a fall from hiding be
       findings: [],
     }),
     [],
+  );
+});
+
+test("the comparison of findings agrees with the company's word", () => {
+  const site = {
+    sector: "construction",
+    zones: [{ id: "a" }],
+  } as unknown as Site;
+  const captures = [
+    point("2026-01-01", { a: 10 }),
+    point("2026-02-01", { a: 20 }),
+  ];
+  const item = (flightId: string, title: string) =>
+    ({
+      flightId,
+      zoneId: "a",
+      title,
+      status: "confirmed",
+    }) as unknown as Finding;
+  const findings = [
+    item("2026-01-01", "Muro"),
+    item("2026-02-01", "Muro"),
+    item("2026-02-01", "Viga"),
+    item("2026-02-01", "Losa"),
+  ];
+  const text = (singular: string, plural: string) =>
+    comparisonSummary({
+      site,
+      captures,
+      index: 1,
+      referenceIndex: 0,
+      zoneNames: { a: "Frente A" },
+      findings,
+      findingWord: { singular, plural },
+    }).find((line) => line.text.startsWith("En "))?.text;
+  assert.equal(
+    text("observación", "observaciones"),
+    "En observaciones, frente a entonces: 2 nuevas, 0 ya no aparecen, 1 sigue abierta.",
+  );
+  assert.equal(
+    text("hallazgo", "hallazgos"),
+    "En hallazgos, frente a entonces: 2 nuevos, 0 ya no aparecen, 1 sigue abierto.",
   );
 });
