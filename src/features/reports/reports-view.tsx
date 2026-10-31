@@ -9,6 +9,7 @@ import { Button } from "@heroui/react";
 import { ArrowUpRight, Download, FileText, Printer } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
+import { OperatorScopeNote } from "@/components/ui/operator-scope-note";
 import { SectionTabs } from "@/components/ui/section-tabs";
 import { useDemo } from "@/features/demo/demo-context";
 import { DEMO_DATE } from "@/features/demo/demo-data";
@@ -210,6 +211,7 @@ function ReportsContent() {
         title={moduleTitle}
         description={`Todos los vuelos de ${site.name} en un solo lugar: qué pasó, qué se repite y qué falta. Los nombres, las cifras y las facturas son de ejemplo.`}
       />
+      <OperatorScopeNote subject="las cifras, los costos y las facturas" />
       <section className="surface master-detail">
         <aside
           className="rail-panel master-rail"

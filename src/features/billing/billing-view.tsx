@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
+import { OperatorScopeNote } from "@/components/ui/operator-scope-note";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useDemo } from "@/features/demo/demo-context";
 import { useModuleTitle } from "@/features/config/use-config";
@@ -43,6 +44,7 @@ export function BillingView() {
   const moduleTitle = useModuleTitle("pagos");
   const {
     site,
+    actor,
     invoices,
     flights,
     payments,
@@ -175,8 +177,13 @@ export function BillingView() {
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description={`Lo contratado, sus soportes y el saldo por pagar en ${site.name}.`}
+        description={
+          actor.role === "operator"
+            ? `Lo contratado, sus soportes y el saldo por pagar en el proyecto de ${site.name}. Las facturas son las que se cargan en este proyecto; aquí las ve también el cliente.`
+            : `Lo contratado, sus soportes y el saldo por pagar en ${site.name}.`
+        }
       />
+      <OperatorScopeNote subject="las facturas y los pagos" />
       <section className="surface master-detail">
         <aside
           className="rail-panel master-rail"

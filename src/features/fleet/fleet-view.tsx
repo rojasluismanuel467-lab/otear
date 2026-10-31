@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
+import { OperatorScopeNote } from "@/components/ui/operator-scope-note";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import { useDemo } from "@/features/demo/demo-context";
@@ -66,7 +67,7 @@ function number(value: number, digits = 1) {
 
 export function FleetView() {
   const moduleTitle = useModuleTitle("equipos");
-  const { site, flights, aircraft, batteries, maintenance, partMarks } =
+  const { site, flights, aircraft, batteries, maintenance, partMarks, actor } =
     useDemo();
   const [selectedId, setSelectedId] = useState<string>();
   const rows = aircraft.map((item) => {
@@ -89,9 +90,14 @@ export function FleetView() {
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description={`Las aeronaves de ${site.name}: su estado, su plan de mantenimiento y todo lo que les ha pasado. Las aeronaves, las horas y los estados son de ejemplo.`}
+        description={
+          actor.role === "operator"
+            ? `Las aeronaves registradas en el proyecto de ${site.name}: su estado, su plan de mantenimiento y todo lo que les ha pasado. Las aeronaves, las horas y los estados son de ejemplo.`
+            : `Las aeronaves de ${site.name}: su estado, su plan de mantenimiento y todo lo que les ha pasado. Las aeronaves, las horas y los estados son de ejemplo.`
+        }
         actions={<AircraftDialog />}
       />
+      <OperatorScopeNote subject="la flota, los costos y los pilotos" />
       {!rows.length ? (
         <EmptyState
           level={2}
