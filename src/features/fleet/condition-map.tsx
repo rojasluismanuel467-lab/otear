@@ -36,7 +36,7 @@ import { specKey } from "@/components/drone/drone-model";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import { useDemo } from "@/features/demo/demo-context";
 import type { Aircraft, PartCondition, PartMark } from "@/features/demo/types";
-import { droneOptionFor } from "@/features/drones/drone-catalog";
+import { droneOptionFor, standInFor } from "@/features/drones/drone-catalog";
 import { formatDate } from "@/lib/format";
 import {
   conditionInfo,
@@ -118,7 +118,13 @@ export function ConditionMap({
     batteries,
     maintenance,
   } = useDemo();
-  const option = droneOptionFor(`${aircraft.make} ${aircraft.model}`);
+  const realOption = droneOptionFor(`${aircraft.make} ${aircraft.model}`);
+  // The real model's file is not published (licence): after it fails to load, a generic
+  // aircraft drawn in code stands in, with its own generic part list.
+  const [missingModel, setMissingModel] = useState<string | null>(null);
+  const standIn =
+    missingModel === realOption.id ? standInFor(realOption) : null;
+  const option = standIn ?? realOption;
   const [scan, setScan] = useState(() => scans.get(aircraft.id) ?? null);
   const [mode, setMode] = useState<"model" | "scan">(scan ? "scan" : "model");
   const [status, setStatus] = useState<SceneStatus>("loading");
@@ -566,7 +572,15 @@ export function ConditionMap({
                   const mark = marks.find((item) => item.id === id);
                   if (mark) select(mark);
                 }}
-                onStatus={setStatus}
+                onStatus={(next) => {
+                  setStatus(next);
+                  if (
+                    next === "error" &&
+                    mode === "model" &&
+                    "glbUrl" in realOption.spec
+                  )
+                    setMissingModel(realOption.id);
+                }}
               />
               <div className={styles.stageTop}>
                 <div
@@ -645,6 +659,14 @@ export function ConditionMap({
                     </li>
                   ))}
                 </ul>
+              )}
+              {standIn && (
+                <p className={styles.hint}>
+                  El modelo exacto de esta aeronave no está publicado: se
+                  muestra una aeronave genérica de su misma categoría, dibujada
+                  en código. Las marcas hechas sobre el modelo exacto no se ven
+                  aquí.
+                </p>
               )}
               <p className={styles.hint}>
                 {status === "unavailable"

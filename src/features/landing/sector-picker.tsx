@@ -187,10 +187,13 @@ export function SectorPicker() {
             </div>
           ) : (
             <div className={`${styles.card} ${styles.cardEmpty}`}>
-              <span className={styles.emptyTitle}>Su sector aparece aquí</span>
-              <span className={styles.skeleton} aria-hidden />
-              <span className={styles.skeleton} aria-hidden />
-              <span className={styles.skeleton} aria-hidden />
+              <span className={styles.emptyTitle}>
+                Elija una opción para ver su caso
+              </span>
+              <span className={styles.emptyText}>
+                Aquí verá cómo se llamarían sus cosas (zonas, hallazgos,
+                informes) y qué pantalla abre primero la demo.
+              </span>
             </div>
           )}
         </div>

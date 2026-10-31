@@ -379,22 +379,89 @@
 /* The aircraft is wide, so the slot is square and bleeds into the empty gutter
  * on wide screens (up to 160px) instead of shrinking the model. */
 .droneWrap {
-  --bleed: clamp(0px, calc((100vw - 1240px) / 2 - 24px), 160px);
-  position: relative;
-  width: calc(100% + var(--bleed));
-  margin-left: calc(var(--bleed) * -1);
-  aspect-ratio: 4 / 3;
-  max-height: 44vh;
+  position: absolute;
+  inset: -12% -10%;
   pointer-events: none;
 }
 
-/* Columna del producto: la prueba (las cifras de «Antes de pagar») y, debajo, el espacio donde da
-   vueltas el avión. */
+/* Sin WebGL: un avión plano planea en círculo sobre el mismo lugar (no hace falta 3D para que se entienda). */
+.flatAircraft {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(110px, 16vw, 190px);
+  margin: -45px 0 0 -70px;
+  filter: drop-shadow(0 16px 14px #00000066);
+  animation: flatGlide 18s linear infinite;
+}
+
+.droneWrap[data-flat] .flatAircraft {
+  display: block;
+}
+
+@keyframes flatGlide {
+  from {
+    transform: rotate(0deg) translateX(34%) rotate(90deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(34%) rotate(90deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flatAircraft {
+    animation: none;
+    transform: translateX(34%) rotate(90deg);
+  }
+}
+
+/* Columna del producto: el computador y el celular con la demo; el avión da vueltas sobre ellos. */
 .heroVisual {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 20px;
   min-width: 0;
+}
+
+/* La prueba va en una franja bajo el titular y deja el espacio de la izquierda al avión. */
+.heroProofBand {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 56px auto 0;
+}
+
+.heroProofBand .heroProof {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-areas:
+    "head rows"
+    "verdict rows"
+    "note rows";
+  align-content: start;
+  align-items: start;
+  gap: 14px 48px;
+  padding: 24px 28px;
+}
+
+.heroProofBand .heroProofHead {
+  grid-area: head;
+  justify-content: flex-start;
+  gap: 8px 16px;
+}
+
+.heroProofBand .heroProofRows {
+  grid-area: rows;
+  align-self: center;
+}
+
+.heroProofBand .heroProofVerdict {
+  grid-area: verdict;
+}
+
+.heroProofBand .heroProofNote {
+  grid-area: note;
 }
 
 .heroProof {
@@ -496,10 +563,10 @@
 }
 
 .heroBehind {
-  margin-top: 20px;
-  font-size: 13px;
+  margin-top: 32px;
+  font-size: 14px;
   line-height: 1.55;
-  color: #b9cbd4;
+  color: #e3eef3;
   max-width: var(--measure-lead);
 }
 
@@ -507,9 +574,17 @@
   color: #fff;
 }
 
+/* El correo va en blanco y subrayado: el azul de marca se perdía sobre la carta azul. */
 .heroBehind a {
-  color: var(--sky);
+  color: #fff;
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
   text-underline-offset: 3px;
+}
+
+.heroBehind a:hover {
+  text-decoration-thickness: 2px;
 }
 
 .droneInner {
@@ -1730,6 +1805,10 @@ a.channel:focus-visible {
 /* --- responsive --- */
 
 @media (max-width: 1100px) {
+  .heroProofBand {
+    display: none;
+  }
+
   .heroProofSide {
     display: none;
   }
@@ -1784,9 +1863,7 @@ a.channel:focus-visible {
   }
 
   .droneWrap {
-    --bleed: 0px;
-    max-height: 56vh;
-    aspect-ratio: 5 / 4;
+    inset: -6% -4%;
   }
 
   .rolesRail {

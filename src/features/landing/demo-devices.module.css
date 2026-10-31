@@ -1,0 +1,133 @@
+/* Computador y celular con la demo. Todo el conjunto es un enlace a la demo. */
+.devices {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 20px;
+}
+
+.devices:focus-visible {
+  outline: 3px solid #a2d1e4;
+  outline-offset: 6px;
+}
+
+.stage {
+  position: relative;
+  display: block;
+  padding: 0 7% 0 0;
+  transition: transform 220ms cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+.devices:hover .stage {
+  transform: translateY(-4px);
+}
+
+.laptop {
+  display: block;
+}
+
+.laptopScreen {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 1100 / 688;
+  border: 9px solid #05121a;
+  border-bottom-width: 11px;
+  border-radius: 14px 14px 4px 4px;
+  background: #05121a;
+  box-shadow:
+    0 0 0 1px #ffffff2e,
+    0 30px 60px -24px #000000d9;
+}
+
+.laptopScreen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+}
+
+.laptopBase {
+  display: block;
+  width: 112%;
+  height: 13px;
+  margin: 0 -6%;
+  border-radius: 0 0 16px 16px;
+  background: linear-gradient(180deg, #9db0ba 0%, #5b6d77 60%, #3a4a53 100%);
+  box-shadow: 0 14px 26px -12px #000000cc;
+}
+
+.phone {
+  position: absolute;
+  right: 0;
+  bottom: -8%;
+  width: 25%;
+  display: block;
+  filter: drop-shadow(0 22px 28px #000000a6);
+}
+
+.phoneScreen {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 390 / 844;
+  border: 6px solid #05121a;
+  border-radius: 24px;
+  background: #05121a;
+  box-shadow: 0 0 0 1px #ffffff40;
+}
+
+.phoneScreen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.caption {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  padding-top: 12px;
+}
+
+.captionMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sky);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.devices:hover .captionMain {
+  text-decoration-thickness: 2px;
+}
+
+.captionNote {
+  font-size: 13px;
+  color: #c7d6de;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage {
+    transition: none;
+  }
+
+  .devices:hover .stage {
+    transform: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .devices {
+    max-width: 440px;
+  }
+}

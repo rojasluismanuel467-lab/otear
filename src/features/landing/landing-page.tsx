@@ -20,6 +20,8 @@ import { DroneCursor } from "./drone-cursor";
 import { DroneFlight } from "./drone-flight";
 import { behindOtear, example } from "./example-case";
 import { HeroProof } from "./hero-proof";
+import { DemoDevices } from "./demo-devices";
+import { LandingInvite } from "./landing-invite";
 import { LeadForm } from "./lead-form";
 import { SectorPicker } from "./sector-picker";
 import { VisitCounter, VisitCounterNotice } from "./visit-counter";
@@ -180,6 +182,7 @@ export function LandingPage() {
       </a>
       <DroneCursor />
       <DroneFlight />
+      <LandingInvite />
       <VisitCounter />
       <header className={styles.topbar} data-cursor-theme="dark">
         <div className={styles.topbarInner}>
@@ -242,16 +245,6 @@ export function LandingPage() {
                   Hablemos sin compromiso
                 </Link>
               </div>
-              <div className={styles.heroMeta}>
-                <span>Sin registro</span>
-                <span>Datos de ejemplo: nada es real</span>
-                <span>Los mapas necesitan internet</span>
-                <span>En validación: aún sin prueba con un cliente</span>
-              </div>
-              <Link href="#estado" className={styles.inlineLink}>
-                Qué hay hoy, qué falta y qué se acuerda con usted{" "}
-                <ArrowRight size={14} aria-hidden />
-              </Link>
               <p className={styles.heroBehind}>
                 {behindOtear.who ? (
                   <>
@@ -268,16 +261,34 @@ export function LandingPage() {
             </div>
 
             <div className={styles.heroVisual}>
-              <HeroProof placement="side" />
+              <DemoDevices />
               {/* The aircraft is drawn by <DroneFlight /> on a fixed layer; it
-                first circles over this slot. The placeholder reserves the
-                space. */}
+                first circles over this slot, above the computer and the phone.
+                The slot only gives it a rectangle to fly around. */}
               <div
                 className={styles.droneWrap}
                 data-drone-slot
                 aria-hidden="true"
-              />
+              >
+                {/* Only shown when the browser has no WebGL (DroneFlight sets data-flat). */}
+                <svg
+                  className={styles.flatAircraft}
+                  viewBox="0 0 120 80"
+                  focusable="false"
+                >
+                  <path
+                    d="M60 6c2 0 3 3 3 8v14l52 8c3 1 4 4 0 5l-52 3v14l14 6c2 1 2 3 0 3l-17-1-17 1c-2 0-2-2 0-3l14-6V44L5 41c-4-1-3-4 0-5l52-8V14c0-5 1-8 3-8z"
+                    fill="#f4f8fa"
+                    stroke="#0b1a24"
+                    strokeOpacity=".35"
+                  />
+                </svg>
+              </div>
             </div>
+          </div>
+
+          <div className={styles.heroProofBand} data-flight-clear>
+            <HeroProof placement="side" />
           </div>
         </section>
 
@@ -289,8 +300,8 @@ export function LandingPage() {
           <header className={styles.sectionHead} data-flight-perch="head">
             <div className={styles.sectionLabel}>Qué resuelve</div>
             <h2 className={styles.sectionTitle}>
-              Tres cosas que hoy duelen cuando pide un vuelo y mañana lo quiere
-              volver a mirar.
+              Tres problemas que aparecen cuando pide un vuelo y, más adelante,
+              quiere volver a mirarlo.
             </h2>
             <p className={styles.sectionSubtitle}>
               Lo que Otear hace distinto: no es más PDFs ni más carpetas.
@@ -321,13 +332,12 @@ export function LandingPage() {
           <header className={styles.sectionHead} data-flight-perch="head">
             <div className={styles.sectionLabel}>Ejemplos de uso</div>
             <h2 className={styles.sectionTitle}>
-              Empezamos por el campo. Sirve a{" "}
-              <span className="accent">cualquier</span> sector.
+              Un caso de uso para <span className="accent">cada sector</span>.
             </h2>
             <p className={styles.sectionSubtitle}>
-              La historia más completa de la demo es la de una hacienda; otros
-              cuatro sectores tienen proyecto de muestra, y ninguno es el límite
-              del producto: el vocabulario cambia con el suyo.
+              La demo trae cinco proyectos de ejemplo, cada uno con las palabras
+              de su sector. El de la hacienda es el más completo; si el suyo no
+              está, Otear se adapta.
             </p>
           </header>
 

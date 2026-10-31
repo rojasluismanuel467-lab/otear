@@ -246,6 +246,20 @@ export function droneOptionFor(name: string): DroneOption {
   );
 }
 
+/**
+ * A generic aircraft drawn in code that stands in for a real model whose file is not published
+ * (the DJI CAD files are not distributed while their licence is unresolved). Same category as the
+ * real one, and it depicts no real product. `null` when the option is already generic.
+ */
+export function standInFor(option: DroneOption): DroneOption | null {
+  if (!("glbUrl" in option.spec)) return null;
+  return (
+    genericOptions.find((generic) => generic.category === option.category) ??
+    genericOptions[1] ??
+    null
+  );
+}
+
 /** Options grouped by category, in gallery order, optionally keeping the ones common in a sector. */
 export function optionsByCategory(sector?: Sector) {
   return droneCategories

@@ -23,7 +23,15 @@ export function DroneFlight() {
     const cancelIdle = whenIdle(() => {
       import("./flight-scene").then(({ mountFlight }) => {
         if (cancelled) return;
-        unmount = mountFlight(host, { onReady: () => setReady(true) });
+        unmount = mountFlight(host, {
+          onReady: () => setReady(true),
+          // No WebGL (an old browser, or one with hardware acceleration off): the page
+          // shows a flat aircraft gliding over the same spot instead of nothing.
+          onUnavailable: () =>
+            document
+              .querySelector("[data-drone-slot]")
+              ?.setAttribute("data-flat", "true"),
+        });
       });
     }, 1500);
     return () => {

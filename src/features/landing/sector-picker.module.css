@@ -337,19 +337,11 @@
   color: #c7d6de;
 }
 
-.skeleton {
-  display: block;
-  height: 14px;
-  border-radius: 7px;
-  background: #ffffff14;
-}
-
-.skeleton:nth-of-type(2) {
-  width: 78%;
-}
-
-.skeleton:nth-of-type(3) {
-  width: 58%;
+.emptyText {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #9fb4bf;
+  max-width: 34ch;
 }
 
 @keyframes pickerIn {
