@@ -19,7 +19,7 @@ export { WELCOME_NOTICE };
  * On a reload the words saved in the browser would otherwise sit on top of the
  * first example, so the sector's example project is selected again.
  */
-const WELCOME_MS = 15000;
+const WELCOME_MS = 20000;
 
 export function DemoEntry() {
   const { sites, setSiteId, setNotice, setActingAs } = useDemo();
