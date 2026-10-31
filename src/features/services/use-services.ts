@@ -149,8 +149,12 @@ export function useServices() {
             ...(flown
               ? { aircraftId: flown.id, drone: `${flown.make} ${flown.model}` }
               : {}),
-            ...(input.durationMin ? { duration: input.durationMin } : {}),
-            ...(input.photoCount ? { photoCount: input.photoCount } : {}),
+            // What the operator did not declare is not filled in with the plan's numbers: without a
+            // duration nothing is added to the aircraft's hours.
+            ...(input.durationMin
+              ? { duration: input.durationMin }
+              : { duration: 0, distance: 0 }),
+            photoCount: input.photoCount ?? 0,
             date: flight && flight.date > DEMO_DATE ? DEMO_DATE : flight?.date,
             log:
               flight?.log && result.request.delivery?.coveredHa !== undefined

@@ -141,6 +141,7 @@ export function BillingView() {
           orderedHa: ordered,
           coveredHa,
           billedHa: selectedInvoice.billedHa,
+          operatorNote: Boolean(request && invoiceNote(request)),
         })
       : undefined;
   const quotedPrice =

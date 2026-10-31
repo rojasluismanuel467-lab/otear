@@ -84,7 +84,12 @@ export function FleetView() {
   });
   const selected = rows.find((row) => row.item.id === selectedId) ?? rows[0];
   const totalAlerts = rows.reduce((sum, row) => sum + row.alerts.length, 0);
-  const pilots = pilotSummaries(flights);
+  // An operator looking at the project sees its own pilots: the example fleet mixes two companies.
+  const pilots = pilotSummaries(
+    actor.role === "operator"
+      ? flights.filter((flight) => flight.operator === actor.name)
+      : flights,
+  );
 
   return (
     <div className={styles.view}>
@@ -169,6 +174,16 @@ export function FleetView() {
             aria-labelledby="pilots-title"
           >
             <h3 id="pilots-title">Pilotos de la flota</h3>
+            {actor.role === "operator" && (
+              <p className={styles.pilotsNote}>
+                Solo los pilotos de {actor.name}.
+              </p>
+            )}
+            {!pilots.length && (
+              <p className={styles.pilotsNote}>
+                Aún no hay vuelos completados de su empresa en este proyecto.
+              </p>
+            )}
             <ul>
               {pilots.map((pilot) => (
                 <li key={pilot.name}>
@@ -427,6 +442,7 @@ function AircraftDetail({
             label: "Papeles y costos",
             content: (
               <>
+                <OperatorScopeNote subject="los papeles y los costos" />
                 <section
                   className={styles.block}
                   aria-labelledby="papers-title"

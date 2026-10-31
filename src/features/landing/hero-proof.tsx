@@ -59,7 +59,8 @@ export function HeroProof({
       <p className={styles.heroProofNote}>
         Cifras de la hacienda de ejemplo de la demo, no de un cliente. Las
         hectáreas cubiertas las declara el operador; Otear no las mide con las
-        imágenes. Según el servicio, se compara en hectáreas o por vuelo.
+        imágenes. Según el servicio, se compara en hectáreas o por vuelo. El
+        operador puede dejar una nota que quien paga lee junto a esta marca.
       </p>
     </figure>
   );

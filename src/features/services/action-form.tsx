@@ -4,6 +4,7 @@ import { Button } from "@heroui/react";
 import { useState, type FormEvent } from "react";
 import {
   DEFAULT_TOLERANCE_PCT,
+  shownHa,
   toleranceText,
 } from "@/features/billing/coverage";
 import { DEMO_DATE } from "@/features/demo/demo-data";
@@ -228,7 +229,7 @@ export function ActionForm({
                 type="date"
                 min={request.windowStart}
                 max={request.windowEnd}
-                defaultValue={request.windowStart}
+                defaultValue={ownQuote?.startDate ?? request.windowStart}
               />
             </label>
           </div>
@@ -238,6 +239,7 @@ export function ActionForm({
               className="field-input"
               name="note"
               maxLength={300}
+              defaultValue={ownQuote?.note ?? ""}
               placeholder="Ej. incluye el transporte del equipo"
             />
           </label>
@@ -351,6 +353,11 @@ export function ActionForm({
                 name="durationMin"
                 inputMode="numeric"
               />
+              <span className="text-muted">
+                Si la deja en blanco, no se suma ninguna hora a la aeronave:
+                Otear no completa lo que usted no declara con las cifras del
+                plan.
+              </span>
             </label>
             <label className="form-field">
               <span className="field-label">Fotos tomadas (opcional)</span>
@@ -571,20 +578,21 @@ export function ActionForm({
               {hectares(billed)} × {formatMoney(chosen.price)} por hectárea ={" "}
               <strong>{formatMoney(Math.round(chosen.price * billed))}</strong>.
               Cifra de ejemplo.
-              {declared !== undefined && billed > declared && (
-                <>
-                  {" "}
-                  Usted declaró {hectares(declared)} al entregar. Si factura
-                  más, el cliente verá la diferencia marcada en Pagos
-                  {((billed - declared) / declared) * 100 >
-                  DEFAULT_TOLERANCE_PCT
-                    ? ` (pasa del ${DEFAULT_TOLERANCE_PCT} % de referencia de la demo)`
-                    : ""}
-                  . Puede facturar así si hay una razón; explíquela en la nota
-                  para el cliente, más abajo. {toleranceText()}
-                </>
-              )}
-              {orderedHa > 0 && billed > orderedHa && (
+              {declared !== undefined &&
+                shownHa(billed) > shownHa(declared) && (
+                  <>
+                    {" "}
+                    Usted declaró {hectares(declared)} al entregar. Si factura
+                    más, el cliente verá la diferencia marcada en Pagos
+                    {((billed - declared) / declared) * 100 >
+                    DEFAULT_TOLERANCE_PCT
+                      ? ` (pasa del ${DEFAULT_TOLERANCE_PCT} % de referencia de la demo)`
+                      : ""}
+                    . Puede facturar así si hay una razón; explíquela en la nota
+                    para el cliente, más abajo. {toleranceText()}
+                  </>
+                )}
+              {orderedHa > 0 && shownHa(billed) > shownHa(orderedHa) && (
                 <>
                   {" "}
                   Además, el cliente pidió {hectares(orderedHa)} y esta factura

@@ -176,6 +176,85 @@ function checkNote(note: string, what: string): string | null {
 
 const fail = (error: string): FollowUpResult => ({ ok: false, error });
 
+const MIN_REASON_WORDS = 3;
+const MIN_REASON_LETTERS = 15;
+
+/** Answers that say nothing; compared without accents, capitals or punctuation. */
+const EMPTY_REASONS = new Set([
+  "no aplica",
+  "no aplica ya",
+  "n a",
+  "na",
+  "ok",
+  "error",
+  "por error",
+  "ya no",
+  "no importa",
+  "no es nada",
+  "no es relevante",
+  "sin motivo",
+  "sin razon",
+  "porque si",
+  "otro",
+  "otros",
+  "x",
+]);
+
+function plainText(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Whether a reason for discarding says something: it is not a catch-all answer («no aplica», «ok»)
+ * and has at least three words and fifteen letters. A simple rule, not a judgement of the content:
+ * the reason is only worth writing if it can be read later. Null when it is enough.
+ */
+export function checkDiscardReason(reason: string): string | null {
+  const text = reason.trim();
+  if (!text) {
+    return "Escriba por qué se descarta: queda en el historial de la medida.";
+  }
+  const plain = plainText(text);
+  if (EMPTY_REASONS.has(plain)) {
+    return `«${text}» no explica nada. Escriba qué se comprobó o por qué ya no hay nada que corregir.`;
+  }
+  const words = plain.split(" ").filter(Boolean).length;
+  if (words < MIN_REASON_WORDS || text.length < MIN_REASON_LETTERS) {
+    return `El motivo es muy corto: use al menos ${MIN_REASON_WORDS} palabras y ${MIN_REASON_LETTERS} letras para decir qué se comprobó o por qué ya no hay nada que corregir.`;
+  }
+  return null;
+}
+
+const DISCARD_PREFIX = "Se descartó con la medida sin cerrar. Motivo: ";
+
+/** Whether the finding was discarded while its measure was still not closed. */
+export function isDiscardedMeasure(finding: Finding): boolean {
+  return (
+    finding.status === "dismissed" &&
+    finding.followUp !== undefined &&
+    finding.followUp.status !== "closed"
+  );
+}
+
+/** The day and reason written when the measure was discarded; null when the history has none. */
+export function discardNote(
+  followUp: FindingFollowUp,
+): { at: string; reason: string } | null {
+  for (let index = followUp.history.length - 1; index >= 0; index -= 1) {
+    const entry = followUp.history[index];
+    if (entry.text.startsWith(DISCARD_PREFIX)) {
+      return { at: entry.at, reason: entry.text.slice(DISCARD_PREFIX.length) };
+    }
+  }
+  return null;
+}
+
 /** Opens the measure: responsible person and deadline. */
 export function openFollowUp(
   finding: Finding,
@@ -264,10 +343,7 @@ export function discardFollowUp(
   today = FOLLOW_UP_TODAY,
 ): FollowUpResult {
   if (followUp.status === "closed") return fail("La medida ya está cerrada.");
-  const error = checkNote(
-    reason,
-    "Escriba por qué se descarta: queda en el historial de la medida.",
-  );
+  const error = checkDiscardReason(reason);
   if (error) return fail(error);
   return {
     ok: true,
@@ -278,7 +354,7 @@ export function discardFollowUp(
         {
           at: today,
           by: DEMO_PROFILE_LABEL,
-          text: `Se descartó con la medida sin cerrar. Motivo: ${reason.trim()}`,
+          text: `${DISCARD_PREFIX}${reason.trim()}`,
         },
       ],
     },
@@ -393,13 +469,7 @@ export function summarizeFollowUps(
     discarded: 0,
   };
   for (const finding of findings) {
-    if (
-      finding.status === "dismissed" &&
-      finding.followUp &&
-      finding.followUp.status !== "closed"
-    ) {
-      summary.discarded += 1;
-    }
+    if (isDiscardedMeasure(finding)) summary.discarded += 1;
     if (!canHaveFollowUp(finding)) continue;
     const { followUp } = finding;
     if (!followUp) {

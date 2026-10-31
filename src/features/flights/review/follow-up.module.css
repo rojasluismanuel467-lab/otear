@@ -51,6 +51,12 @@
   background: var(--success-soft);
   color: var(--foreground);
 }
+.discardNote dd {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -127,6 +133,13 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+.boardIntro {
+  min-width: 0;
+  flex: 1 1 280px;
+}
+.filter {
+  max-width: 100%;
 }
 .boardHead h3 {
   font-size: var(--heading-section);
@@ -207,6 +220,17 @@
 }
 
 @media (max-width: 800px) {
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .filter button {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .counts {
+    max-width: 100%;
+  }
   .measure {
     grid-template-columns: minmax(0, 1fr);
   }
