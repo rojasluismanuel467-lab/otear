@@ -3,11 +3,12 @@
 import { Button } from "@heroui/react";
 import { ArrowUpRight, CircleCheck } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { QuoteAdvisor } from "@/features/agents/quote-advisor";
 import {
-  DEFAULT_TOLERANCE_PCT,
+  toleranceText,
   orderedHa as sumOrderedHa,
   orderedKm as sumOrderedKm,
 } from "@/features/billing/coverage";
@@ -88,7 +89,7 @@ function waitingFor(
   if (request.operatorId !== operatorId)
     return declined
       ? "Usted respondió que no puede atender esta solicitud."
-      : "El cliente asignó el servicio a otro operador. Su cotización queda guardada.";
+      : "Otro operador fue seleccionado para esta solicitud. Su cotización queda guardada.";
   switch (request.status) {
     case "assigned":
       return "Le toca programar el vuelo.";
@@ -147,7 +148,8 @@ export function RequestDetail({
   /** Called after a step succeeds, so the list keeps this request selected. */
   onActed?: () => void;
 }) {
-  const { site, flights, selectFlight } = useDemo();
+  const { site, flights, selectFlight, setNotice } = useDemo();
+  const router = useRouter();
   const t = useTerm();
   const { actor, nameOf, act } = useServices();
   const [openAction, setOpenAction] = useState<workflow.ActionId | null>(null);
@@ -159,7 +161,16 @@ export function RequestDetail({
   const actions = workflow.availableActions(request, actor.role, operatorId);
   const direct = actions.filter((action) => action.id !== "assign");
   const canAssign = actions.some((action) => action.id === "assign");
-  const canAct = canAssign || direct.some((action) => action.id !== "cancel");
+  // Changing a quote already sent is possible, but it is not something the operator is waiting on.
+  const hasOwnQuote = request.quotes.some(
+    (quote) => quote.operatorId === actor.id,
+  );
+  const canAct =
+    canAssign ||
+    direct.some(
+      (action) =>
+        action.id !== "cancel" && !(action.id === "quote" && hasOwnQuote),
+    );
   const ordered = sumOrderedHa(site.zones, request.zoneIds, site.sector);
   const roads = site.sector === "roads";
   const orderedKm = roads ? sumOrderedKm(site.zones, request.zoneIds) : 0;
@@ -168,7 +179,9 @@ export function RequestDetail({
     request.zoneIds,
     site.sector === "roads",
   );
-  const flightDate = flights.find((item) => item.id === request.flightId)?.date;
+  const requestFlight = flights.find((item) => item.id === request.flightId);
+  const flightDate = requestFlight?.date;
+  const flightTitle = requestFlight?.title;
   const current = workflow.stepIndex(request.status);
   const stopped =
     request.status === "cancelled" || request.status === "disputed";
@@ -194,6 +207,8 @@ export function RequestDetail({
   const seesDelivery = request.delivery && !assignedToOther;
   const agreed = request.quotes.find((quote) => quote.state === "chosen");
   const covered = request.delivery?.coveredHa;
+  // After an accepted adjustment the delivery's own note describes the figure it replaced.
+  const adjusted = request.disputeReply?.kind === "adjusted";
 
   function run(input: ActionInput) {
     const result = act(request, input);
@@ -274,6 +289,7 @@ export function RequestDetail({
             request={request}
             action={openAction}
             orderedHa={ordered}
+            actorId={actor.id}
             flightDate={flightDate}
             onSubmit={run}
             onCancel={() => setOpenAction(null)}
@@ -289,7 +305,11 @@ export function RequestDetail({
                       ? "primary"
                       : "secondary"
                   }
-                  onPress={() => setOpenAction(action.id)}
+                  onPress={() => {
+                    // An old notice would sit over the buttons of the form that opens.
+                    setNotice("");
+                    setOpenAction(action.id);
+                  }}
                 >
                   {action.label}
                 </Button>
@@ -442,6 +462,7 @@ export function RequestDetail({
                               size="sm"
                               variant="secondary"
                               onPress={() => {
+                                setNotice("");
                                 setAssignError("");
                                 setReason("");
                                 setConfirming(quote.operatorId);
@@ -532,12 +553,19 @@ export function RequestDetail({
               {nameOf(request.operatorId)} dice haber cubierto{" "}
               <strong>{hectares(covered)}</strong>
               {ordered > 0 && ` de las ${hectares(ordered)} pedidas`}.
-              {request.delivery.note ? ` ${request.delivery.note}` : ""}
+              {request.delivery.note && !adjusted
+                ? ` ${request.delivery.note}`
+                : ""}
             </p>
           ) : (
             <p className={styles.deliveryNote}>
               {nameOf(request.operatorId)} registró la entrega.
               {request.delivery.note ? ` ${request.delivery.note}` : ""}
+            </p>
+          )}
+          {adjusted && request.delivery.note && (
+            <p className="text-muted">
+              Nota original, antes del ajuste: «{request.delivery.note}»
             </p>
           )}
           {covered !== undefined && ordered > 0 && (
@@ -562,9 +590,8 @@ export function RequestDetail({
               {request.status === "verified" || request.status === "invoiced"
                 ? "Con esa cifra se aceptó la entrega."
                 : "Esa es la cifra que se da por buena al aceptar la entrega."}{" "}
-              Si se factura más, Pagos lo marca cuando la diferencia pasa de{" "}
-              {DEFAULT_TOLERANCE_PCT} %; esa tolerancia aún no se acuerda en el
-              pedido (por definir). Cifras de ejemplo.
+              Si se factura más, Pagos lo marca cuando la diferencia pasa de la
+              tolerancia. {toleranceText()} Cifras de ejemplo.
             </p>
           )}
           {request.unit === "flight" && agreed && (
@@ -652,9 +679,23 @@ export function RequestDetail({
           {request.flightId && (
             <Link
               href="/vuelos?tab=informe"
-              onClick={() => request.flightId && selectFlight(request.flightId)}
+              onClick={(event) => {
+                // Choose the flight and navigate in the same step, as Pagos does, so the
+                // destination cannot open with another flight selected.
+                if (
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  !request.flightId
+                )
+                  return;
+                event.preventDefault();
+                selectFlight(request.flightId);
+                router.push("/vuelos?tab=informe");
+              }}
             >
-              Ver el informe y el acta del vuelo{" "}
+              Ver el informe y el acta del vuelo
+              {flightTitle ? ` «${flightTitle}»` : ""}{" "}
               <ArrowUpRight size={14} aria-hidden="true" />
             </Link>
           )}

@@ -15,7 +15,8 @@ import { downloadText, formatDate, formatMoney } from "@/lib/format";
 import { PaymentAutomation } from "./payment-automation";
 import { PaymentDialog } from "./payment-dialog";
 import { AreaCheckCard } from "./area-check-card";
-import { coveredHaFor } from "@/features/services/links";
+import { coveredHaForInvoice } from "@/features/services/links";
+import { invoiceNote } from "@/features/services/workflow";
 import { revealDetail } from "@/lib/reveal-detail";
 import { areaValue, checkArea, orderedHa } from "./coverage";
 import { payReadiness } from "./readiness";
@@ -129,9 +130,9 @@ export function BillingView() {
     selectedInvoice && request?.unit !== "flight"
       ? orderedHa(site.zones, zoneIds, site.sector)
       : 0;
-  const coveredHa = flight
-    ? coveredHaFor(flight, serviceRequests)
-    : request?.delivery?.coveredHa;
+  const coveredHa = selectedInvoice
+    ? coveredHaForInvoice(selectedInvoice, flights, serviceRequests)
+    : undefined;
   const areaCheck =
     selectedInvoice && ordered > 0
       ? checkArea({
@@ -381,6 +382,8 @@ export function BillingView() {
                 value={areaMoney}
                 invoiceTotal={selectedInvoice.total}
                 zoneWord={site.zoneLabel}
+                coveredSource={flight ? "flight" : "delivery"}
+                operatorNote={request ? invoiceNote(request) : undefined}
                 onBilledChange={(billedHa) =>
                   updateInvoice(selectedInvoice.id, { billedHa })
                 }

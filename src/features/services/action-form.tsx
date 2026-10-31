@@ -2,12 +2,15 @@
 
 import { Button } from "@heroui/react";
 import { useState, type FormEvent } from "react";
-import { DEFAULT_TOLERANCE_PCT } from "@/features/billing/coverage";
+import {
+  DEFAULT_TOLERANCE_PCT,
+  toleranceText,
+} from "@/features/billing/coverage";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import type { ServiceRequest } from "@/features/demo/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { ActionInput } from "./use-services";
-import { replyKinds, type ActionId } from "./workflow";
+import { checkQuotePrice, replyKinds, type ActionId } from "./workflow";
 import styles from "./services.module.css";
 
 const number = (text: string) => Number(text.trim().replace(",", "."));
@@ -24,10 +27,13 @@ export function ActionForm({
   action,
   orderedHa,
   flightDate,
+  actorId,
   onSubmit,
   onCancel,
 }: {
   request: ServiceRequest;
+  /** The party acting: its own quote is the only one that may fill the price. */
+  actorId: string;
   action: ActionId;
   orderedHa: number;
   /** Date of the flight this service scheduled, to warn when it has not happened yet. */
@@ -36,6 +42,16 @@ export function ActionForm({
   onCancel: () => void;
 }) {
   const [error, setError] = useState("");
+  // Only the operator's own earlier quote is offered; another operator's price never is.
+  const ownQuote = request.quotes.find(
+    (item) => item.operatorId === actorId && item.state === "open",
+  );
+  const [priceText, setPriceText] = useState(
+    ownQuote ? String(ownQuote.price) : "",
+  );
+  const priceCheck = priceText.trim()
+    ? checkQuotePrice(request, number(priceText))
+    : undefined;
   const perHa = request.unit === "ha";
   const declared = request.delivery?.coveredHa;
   const chosen = request.quotes.find((item) => item.state === "chosen");
@@ -130,6 +146,7 @@ export function ActionForm({
         input = {
           id: "invoice",
           billedHa: text ? number(text) : undefined,
+          note: read("invoiceNote"),
         };
         break;
       }
@@ -169,10 +186,23 @@ export function ActionForm({
                 name="price"
                 inputMode="numeric"
                 autoFocus
-                defaultValue={
-                  request.quotes.find((item) => item.state === "open")?.price
-                }
+                value={priceText}
+                onChange={(event) => setPriceText(event.target.value)}
+                aria-describedby="price-check"
               />
+              <span
+                id="price-check"
+                className={
+                  priceCheck && !priceCheck.ok ? styles.error : "text-muted"
+                }
+                aria-live="polite"
+              >
+                {priceCheck?.ok === false
+                  ? priceCheck.error
+                  : priceCheck?.ok
+                    ? (priceCheck.warning ?? "")
+                    : ""}
+              </span>
               {perHa && orderedHa > 0 && (
                 <span className="text-muted">
                   Sobre{" "}
@@ -520,12 +550,38 @@ export function ActionForm({
                   más, el cliente verá la diferencia marcada en Pagos
                   {((billed - declared) / declared) * 100 >
                   DEFAULT_TOLERANCE_PCT
-                    ? ` (supera el ${DEFAULT_TOLERANCE_PCT} % que la demo tolera)`
+                    ? ` (pasa del ${DEFAULT_TOLERANCE_PCT} % de referencia de la demo)`
                     : ""}
-                  . Puede facturar así si hay una razón; explíquela al cliente.
+                  . Puede facturar así si hay una razón; explíquela en la nota
+                  para el cliente, más abajo. {toleranceText()}
+                </>
+              )}
+              {orderedHa > 0 && billed > orderedHa && (
+                <>
+                  {" "}
+                  Además, el cliente pidió {hectares(orderedHa)} y esta factura
+                  es por {hectares(billed)}.
                 </>
               )}
             </p>
+          )}
+          {perHa && (
+            <label className="form-field">
+              <span className="field-label">
+                Nota para el cliente (opcional)
+              </span>
+              <textarea
+                className="field-input"
+                name="invoiceNote"
+                rows={2}
+                maxLength={300}
+                placeholder="Ej. se voló un borde adicional que el cliente pidió por mensaje"
+              />
+              <span className="text-muted">
+                Queda en la historia y quien paga la lee en la verificación del
+                área, en Pagos. Solo se guarda en esta demo.
+              </span>
+            </label>
           )}
         </>
       )}

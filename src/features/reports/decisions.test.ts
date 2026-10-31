@@ -335,7 +335,9 @@ test("the report opens up to the latest decision, not only to the last flight", 
   assert.equal(
     defaultReportPeriod({
       flightDates: ["2026-10-01"],
-      requests: [{ createdOn: "2026-10-02", events: [{ on: "2026-11-03" }] }] as never,
+      requests: [
+        { createdOn: "2026-10-02", events: [{ on: "2026-11-03" }] },
+      ] as never,
       today: "2026-10-25",
     }).to,
     "2026-11-03",

@@ -1,12 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { operatorSummaries } from "./operators.ts";
-import type {
-  Finding,
-  Flight,
-  Invoice,
-  ServiceRequest,
-} from "../demo/types";
+import type { Finding, Flight, Invoice, ServiceRequest } from "../demo/types";
 
 const flight = (id: string, operator: string, extra: Partial<Flight> = {}) =>
   ({

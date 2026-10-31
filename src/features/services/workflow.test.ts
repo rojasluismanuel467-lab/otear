@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   assign,
+  checkQuotePrice,
   availableActions,
   cancel,
   createRequest,
   decline,
   deliver,
   invoice,
+  invoiceNote,
   invoicePlan,
   MAX_REASON_LENGTH,
   quote,
@@ -578,4 +580,51 @@ test("the reason for the choice is optional, trimmed, kept on the request and in
   assert.equal(long.assignReason?.length, MAX_REASON_LENGTH);
   // The rules do not change with a reason: an operator still cannot assign.
   assert.equal(assign(quoted(), "o1", as("o1"), "yo").ok, false);
+});
+
+test("a quoted price must be positive and not absurd next to the ceiling; above the ceiling it only warns", () => {
+  const request = base();
+  assert.equal(checkQuotePrice(request, 0).ok, false);
+  assert.equal(checkQuotePrice(request, Number.NaN).ok, false);
+  // 3.600.034.000 per hectare, the slip of typing over a prefilled price.
+  const slip = checkQuotePrice(request, 3_600_034_000);
+  assert.equal(slip.ok, false);
+  assert.ok(!slip.ok && slip.error.includes("error de digitación"));
+  assert.equal(
+    quote(
+      request,
+      { price: 3_600_034_000, startDate: "2026-11-02", note: "" },
+      as("o1"),
+    ).ok,
+    false,
+  );
+  // Over the ceiling (10.000) but plausible: allowed, with a warning.
+  const over = checkQuotePrice(request, 12000);
+  assert.ok(over.ok && over.overCeiling && over.warning);
+  const fine = checkQuotePrice(request, 9000);
+  assert.ok(fine.ok && !fine.overCeiling && !fine.warning);
+  // Without a ceiling a plausibility cap still stops a slip.
+  assert.equal(checkQuotePrice({ unit: "ha" }, 20_000_000).ok, false);
+  assert.equal(checkQuotePrice({ unit: "flight" }, 20_000_000).ok, true);
+});
+
+test("the note left when invoicing is kept in the history and can be read back", () => {
+  const verified: ServiceRequest = {
+    ...base(),
+    status: "verified",
+    operatorId: "o1",
+  };
+  const noted = ok(
+    invoice(
+      verified,
+      { invoiceId: "inv", billedHa: 7, note: "  Se voló un borde extra  " },
+      as("o1"),
+    ),
+  ).request;
+  assert.equal(invoiceNote(noted), "Se voló un borde extra");
+  assert.ok(noted.events.some((event) => event.type === "invoiced"));
+  const plain = ok(
+    invoice(verified, { invoiceId: "inv", billedHa: 7 }, as("o1")),
+  ).request;
+  assert.equal(invoiceNote(plain), undefined);
 });

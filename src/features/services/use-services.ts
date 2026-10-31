@@ -26,7 +26,7 @@ export type ActionInput =
     }
   | ({ id: "reply" } & workflow.ReplyInput)
   | { id: "verify"; result: "accepted" | "disputed"; note: string }
-  | { id: "invoice"; billedHa?: number }
+  | { id: "invoice"; billedHa?: number; note?: string }
   | { id: "cancel"; note: string };
 
 const addDays = (date: string, days: number) => {
@@ -70,7 +70,7 @@ export function useServices() {
   function create(input: Parameters<typeof workflow.createRequest>[0]) {
     return finish(
       workflow.createRequest(input, ctx),
-      "Solicitud enviada a los operadores invitados.",
+      "Solicitud creada en esta demo. No se envió a ningún operador.",
     );
   }
 
@@ -90,7 +90,7 @@ export function useServices() {
       case "assign":
         return finish(
           workflow.assign(request, input.operatorId, ctx, input.reason),
-          `Servicio asignado a ${nameOf(input.operatorId)}.`,
+          "Servicio asignado. Las demás cotizaciones quedan guardadas.",
         );
       case "schedule": {
         const checked = workflow.schedule(
@@ -205,7 +205,7 @@ export function useServices() {
         return finish(
           workflow.invoice(
             request,
-            { invoiceId, billedHa: plan.billedHa },
+            { invoiceId, billedHa: plan.billedHa, note: input.note },
             ctx,
           ),
           "Factura creada; está en Pagos y costos.",

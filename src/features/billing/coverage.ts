@@ -11,6 +11,10 @@ import type { Position, Sector } from "../demo/types";
 /** Difference, in percent, above which billing more (or less) than was covered is flagged. */
 export const DEFAULT_TOLERANCE_PCT = 5;
 
+/** The one way every screen says what the tolerance is: a demo reference, not an agreed rule. */
+export const toleranceText = (pct = DEFAULT_TOLERANCE_PCT) =>
+  `Referencia de la demo: ${pct} %; se pacta con el operador (por definir).`;
+
 export type AreaState = "match" | "over" | "under" | "unknown";
 
 export interface AreaCheck {

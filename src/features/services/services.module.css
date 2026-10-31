@@ -3,6 +3,8 @@
   /* La pista automática se ensanchaba con el contenido y la página se desbordaba en móvil. */
   grid-template-columns: minmax(0, 1fr);
   gap: 24px;
+  /* Room under the last control for the fixed notice, so it never covers the form's buttons. */
+  padding-bottom: 96px;
 }
 .viewAs {
   display: grid;

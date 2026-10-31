@@ -36,11 +36,19 @@ test("an invoice without a flight takes the hectares from the delivery of its se
   );
   // With a flight the record wins; otherwise the delivery of its service.
   assert.equal(
-    coveredHaForInvoice({ id: "x", flightId: "f1" }, flights, requests as never),
+    coveredHaForInvoice(
+      { id: "x", flightId: "f1" },
+      flights,
+      requests as never,
+    ),
     50,
   );
   assert.equal(
-    coveredHaForInvoice({ id: "i2", flightId: "f2" }, flights, requests as never),
+    coveredHaForInvoice(
+      { id: "i2", flightId: "f2" },
+      flights,
+      requests as never,
+    ),
     9,
   );
   // Nothing declares hectares.
