@@ -63,9 +63,29 @@
   }
 }
 @media (max-width: 480px) {
+  /* Columnas iguales y rótulos que bajan a una segunda línea: todas las pestañas caben
+     en la pantalla y ninguna queda cortada detrás de una flecha. */
+  .container {
+    --tabs-inset: 16px;
+  }
+  .list {
+    display: grid;
+    width: 100%;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
   .list [role="tab"] {
     gap: 6px;
-    padding-inline: 8px;
-    font-size: 13px;
+    padding: 4px 2px;
+    font-size: 12px;
+    line-height: 1.2;
+    height: auto;
+    min-height: 44px;
+    justify-content: center;
+    align-content: center;
+    flex-wrap: wrap;
+    gap: 0 6px;
+    text-align: center;
+    white-space: normal;
   }
 }
