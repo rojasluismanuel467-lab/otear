@@ -425,143 +425,6 @@
   min-width: 0;
 }
 
-/* La prueba va en una franja bajo el titular y deja el espacio de la izquierda al avión. */
-.heroProofBand {
-  position: relative;
-  z-index: 1;
-  max-width: 1240px;
-  margin: 56px auto 0;
-}
-
-.heroProofBand .heroProof {
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  grid-template-areas:
-    "head rows"
-    "verdict rows"
-    "note rows";
-  align-content: start;
-  align-items: start;
-  gap: 14px 48px;
-  padding: 24px 28px;
-}
-
-.heroProofBand .heroProofHead {
-  grid-area: head;
-  justify-content: flex-start;
-  gap: 8px 16px;
-}
-
-.heroProofBand .heroProofRows {
-  grid-area: rows;
-  align-self: center;
-}
-
-.heroProofBand .heroProofVerdict {
-  grid-area: verdict;
-}
-
-.heroProofBand .heroProofNote {
-  grid-area: note;
-}
-
-.heroProof {
-  margin: 0;
-  padding: 20px 22px;
-  display: grid;
-  gap: 14px;
-  border: 1px solid #ffffff26;
-  border-radius: 16px;
-  background: #0b1a24cc;
-  color: #e3eef3;
-  box-shadow: 0 18px 40px -24px #000000b3;
-}
-
-.heroProofHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.heroProofBadge {
-  padding: 3px 10px;
-  border: 1px dashed var(--sky);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 650;
-  color: var(--sky);
-}
-
-.heroProofRows {
-  display: grid;
-  gap: 12px;
-  margin: 0;
-}
-
-.heroProofRows > div {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 12px;
-  align-items: baseline;
-}
-
-.heroProofRows dt {
-  font-size: 13px;
-  color: #b9cbd4;
-}
-
-.heroProofRows dd {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #fff;
-  font-feature-settings: "tnum";
-}
-
-.heroProofBar {
-  grid-column: 1 / -1;
-  display: flex;
-  height: 8px;
-  border-radius: 999px;
-  background: #ffffff1f;
-  overflow: hidden;
-}
-
-.heroProofBar i {
-  display: block;
-  height: 100%;
-  background: var(--sky);
-}
-
-.heroProofBar .heroProofOver {
-  background: #f2b84b;
-}
-
-.heroProofVerdict {
-  margin: 0;
-  padding-left: 12px;
-  border-left: 3px solid #f2b84b;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #fff;
-}
-
-.heroProofNote {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #9fb4bf;
-}
-
-/* Una sola copia se ve: junto al avión en pantalla ancha, bajo el titular en pantalla angosta. */
-.heroProofInline {
-  display: none;
-}
-
 .heroBehind {
   margin-top: 32px;
   font-size: 14px;
@@ -1805,21 +1668,8 @@ a.channel:focus-visible {
 /* --- responsive --- */
 
 @media (max-width: 1100px) {
-  .heroProofBand {
-    display: none;
-  }
-
-  .heroProofSide {
-    display: none;
-  }
-
-  .heroProofInline {
-    display: grid;
-    margin-bottom: 24px;
-  }
-
   /* Apilado, lo primero tras el titular es lo que Otear no es (no hace los vuelos);
-     luego la prueba y después el resto. Solo cambia el orden visual: el DOM sigue
+     después el resto. Solo cambia el orden visual: el DOM sigue
      igual y los dos enlaces de acción quedan al final, como siempre. */
   .heroCopy {
     display: flex;
@@ -1836,14 +1686,6 @@ a.channel:focus-visible {
 
   .heroCopy > .heroNote {
     order: 1;
-  }
-
-  .heroCopy > .heroProofInline {
-    order: 2;
-  }
-
-  .heroCopy > .inlineLink {
-    align-self: flex-start;
   }
 
   .heroInner,

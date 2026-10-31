@@ -19,7 +19,6 @@ import { DemoLink } from "./demo-link";
 import { DroneCursor } from "./drone-cursor";
 import { DroneFlight } from "./drone-flight";
 import { behindOtear, example } from "./example-case";
-import { HeroProof } from "./hero-proof";
 import { DemoDevices } from "./demo-devices";
 import { LandingInvite } from "./landing-invite";
 import { LeadForm } from "./lead-form";
@@ -220,7 +219,6 @@ export function LandingPage() {
                 <span className={styles.titleAccent}>comparar</span> los vuelos
                 de dron de su operación.
               </h1>
-              <HeroProof placement="inline" />
               <p className={styles.subtitle}>
                 Reúna en un solo lugar los vuelos de su finca, vía, obra, predio
                 o mina, o de lo que usted supervise. Compare cada zona con su
@@ -285,10 +283,6 @@ export function LandingPage() {
                 </svg>
               </div>
             </div>
-          </div>
-
-          <div className={styles.heroProofBand} data-flight-clear>
-            <HeroProof placement="side" />
           </div>
         </section>
 
