@@ -18,6 +18,8 @@ import styles from "./landing.module.css";
 import { DemoLink } from "./demo-link";
 import { DroneCursor } from "./drone-cursor";
 import { DroneFlight } from "./drone-flight";
+import { behindOtear, example } from "./example-case";
+import { HeroProof } from "./hero-proof";
 import { LeadForm } from "./lead-form";
 import { SectorPicker } from "./sector-picker";
 
@@ -38,21 +40,6 @@ const steps = [
     body: "Los soportes del vuelo (la autorización del sitio, la inspección del equipo, la charla de seguridad) y el informe del vuelo se pueden firmar: el informe, por el operador y por quien lo revisa o interviene. Cada documento guarda una marca que cambia si alguien edita una cifra: la firma queda sin validez y el historial dice qué campo cambió. Es una firma electrónica simple de ejemplo, sin valor legal, y el informe sigue siendo un borrador de demostración.",
   },
 ];
-
-/**
- * Figures taken from the demo's own example hacienda (Pagos > Antes de pagar,
- * first flight): ordered = sum of its zones' areas, covered = what its operator
- * declares in the flight log, billed = what the invoice says. If the seed data
- * changes, check these three numbers again.
- */
-const example = {
-  ordered: "27,9",
-  covered: "26,4",
-  coveredPct: "94,7",
-  billed: "27,9",
-  over: "1,5",
-  overPct: "+5,7",
-};
 
 /** The featured case: the demo's most complete story (a hacienda). */
 const mainCase = {
@@ -177,6 +164,13 @@ const proposals = [
   "Piezas propias para su sector.",
 ];
 
+/** What the page says about who is behind Otear: only what the owner gave. */
+function behindText() {
+  return behindOtear.who
+    ? `Un proyecto de ${behindOtear.who}, en validación: todavía no hay una prueba con los vuelos de un cliente.`
+    : "Un proyecto en validación: todavía no tiene clientes ni una prueba con sus vuelos.";
+}
+
 export function LandingPage() {
   return (
     <div className={styles.page}>
@@ -217,6 +211,7 @@ export function LandingPage() {
               <span className={styles.titleAccent}>comparar</span> los vuelos de
               dron de su operación.
             </h1>
+            <HeroProof placement="inline" />
             <p className={styles.subtitle}>
               Reúna en un solo lugar los vuelos de su finca, vía, obra, predio o
               mina, o de lo que usted supervise. Compare cada zona con su vuelo
@@ -251,15 +246,23 @@ export function LandingPage() {
               Qué hay hoy, qué falta y qué se acuerda con usted{" "}
               <ArrowRight size={14} aria-hidden />
             </Link>
+            <p className={styles.heroBehind}>
+              <strong>Quién está detrás.</strong> {behindText()} Escriba a{" "}
+              <a href="mailto:hola@otear.app">hola@otear.app</a>.
+            </p>
           </div>
 
-          {/* The aircraft is drawn by <DroneFlight /> on a fixed layer; it first
-              circles over this slot. The placeholder reserves the space. */}
-          <div
-            className={styles.droneWrap}
-            data-drone-slot
-            aria-hidden="true"
-          />
+          <div className={styles.heroVisual}>
+            <HeroProof placement="side" />
+            {/* The aircraft is drawn by <DroneFlight /> on a fixed layer; it
+                first circles over this slot. The placeholder reserves the
+                space. */}
+            <div
+              className={styles.droneWrap}
+              data-drone-slot
+              aria-hidden="true"
+            />
+          </div>
         </div>
       </section>
 
@@ -685,6 +688,8 @@ export function LandingPage() {
           data-flight-perch="home"
         />
         <strong>Otear</strong> · Validación comercial — datos de ejemplo.
+        <br />
+        {behindText()}
         <br />
         No conectamos aún con sistemas reales de empresas ni de operadores.
         <div className={styles.footerLinks}>
