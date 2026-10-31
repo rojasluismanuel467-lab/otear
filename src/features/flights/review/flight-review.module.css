@@ -351,11 +351,13 @@
   letter-spacing: var(--heading-sub-tracking);
   line-height: 1.35;
 }
+.viewerFrame {
+  margin-bottom: 15px;
+}
 .viewerImage {
   width: 100%;
   height: auto;
   border-radius: 12px;
-  margin-bottom: 15px;
 }
 .compare {
   padding: 24px;
@@ -460,7 +462,7 @@
 .findingDetail {
   overflow: hidden;
 }
-.findingDetail > img {
+.findingDetail > span img {
   display: block;
   width: 100%;
   height: auto;

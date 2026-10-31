@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Button, Tabs } from "@heroui/react";
 import {
@@ -34,6 +33,7 @@ import { ExampleNotice } from "../example-notice";
 import { useFindingWords } from "../use-finding-words";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SiteImage } from "@/components/ui/site-image";
 import { formatDate } from "@/lib/format";
 import { EvidenceGallery } from "./evidence-gallery";
 import { FlightReport } from "./flight-report";
@@ -579,12 +579,11 @@ function FlightContent({
                     className={`surface ${styles.findingDetail}`}
                     aria-label={`Detalle ${agree(words, "del", "de la")} ${words.singular} ${agree(words, "seleccionado", "seleccionada")}`}
                   >
-                    <Image
+                    <SiteImage
                       src={selectedFinding.imageUrl}
-                      alt={`Fotografía ilustrativa para ${words.the} ${words.singular} ${selectedFinding.title.toLowerCase()}; no es evidencia del sitio`}
+                      alt={`Imagen ilustrativa para ${words.the} ${words.singular} ${selectedFinding.title.toLowerCase()}; no es evidencia del sitio`}
                       width={900}
                       height={600}
-                      unoptimized
                     />
                     <div className={styles.findingBody}>
                       <div className={styles.findingBadges}>

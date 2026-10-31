@@ -3,6 +3,7 @@ import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
 import { planMission } from "@/features/flights/mission-plan";
+import { ROAD_ILLUSTRATION_URL } from "@/lib/illustration";
 import { dayText, FOLLOW_UP_TODAY } from "@/features/flights/follow-up";
 import {
   lineLengthKm,
@@ -164,7 +165,7 @@ const baseSites: Site[] = [
     location: "Guacarí – Buga, Valle del Cauca",
     zoneLabel: "Tramos",
     center: [3.80756, -76.30829],
-    imageUrl: "/images/aerial-road.jpg",
+    imageUrl: ROAD_ILLUSTRATION_URL,
     zones: [...roadZones],
   },
   {

@@ -1,0 +1,21 @@
+.frame {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.frame img {
+  display: block;
+}
+.tag {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  max-width: calc(100% - 24px);
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: #fff;
+  background: color-mix(in srgb, #222b32 86%, transparent);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+}
