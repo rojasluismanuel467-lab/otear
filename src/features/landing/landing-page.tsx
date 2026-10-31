@@ -56,25 +56,25 @@ const cases = [
   {
     sector: "Carreteras",
     title: "Interventoría y mantenimiento vial",
-    line: "Recorra la vía por tramos, marque drenajes, taludes y deterioros y compárelos con la visita anterior. Cada medida correctiva tiene responsable, plazo y se cierra con una nota.",
+    line: "Recorra la vía por tramos, marque drenajes, taludes y deterioros y compárelos con la visita anterior.",
     Icon: Route,
   },
   {
     sector: "Construcción",
     title: "Avance de obra",
-    line: "Compare el avance de cada frente con lo planeado, revise cada fecha con el mismo encuadre y guarde los levantamientos por fecha.",
+    line: "Compare el avance de cada frente con lo planeado y guarde los levantamientos por fecha.",
     Icon: HardHat,
   },
   {
     sector: "Minería",
     title: "Minas a cielo abierto",
-    line: "Mida el avance de cada banco frente al plan, vigile crestas y taludes y deje cada novedad con su evidencia, responsable, plazo y cierre con nota.",
+    line: "Mida el avance de cada banco frente al plan y vigile crestas y taludes en cada vuelo.",
     Icon: Pickaxe,
   },
   {
     sector: "Vigilancia",
     title: "Perímetros y predios",
-    line: "Revise por sectores cerramientos y accesos, compare un vuelo con el anterior y deje cada novedad con su evidencia y una tarea de revisión.",
+    line: "Revise por sectores cerramientos y accesos y deje cada novedad con su evidencia y una tarea de revisión.",
     Icon: ShieldCheck,
   },
 ];
@@ -359,13 +359,24 @@ export function LandingPage() {
               <h4>Pedido, cubierto y facturado</h4>
               <span className={styles.exampleBadge}>Cifras de ejemplo</span>
             </div>
+            <dl className={styles.figureRow}>
+              <div>
+                <dt>Se pidieron</dt>
+                <dd>{example.ordered} ha</dd>
+              </div>
+              <div>
+                <dt>El operador declara</dt>
+                <dd>{example.covered} ha</dd>
+              </div>
+              <div>
+                <dt>Facturó</dt>
+                <dd>{example.billed} ha</dd>
+              </div>
+            </dl>
             <p className={styles.exampleText}>
-              Es el mismo ejemplo de la primera pantalla: se pidieron{" "}
-              {example.ordered} ha, el operador declara haber cubierto{" "}
-              {example.covered} ({example.coveredPct} % de lo pedido) y facturó{" "}
-              {example.billed}. Antes de registrar el pago, Otear marca la
-              diferencia: «Facturó {example.over} ha más de las cubiertas (
-              {example.overPct} %)». {toleranceText()}
+              Antes de registrar el pago, Otear marca la diferencia: «Facturó{" "}
+              {example.over} ha más de las cubiertas ({example.overPct} %)».{" "}
+              {toleranceText()}
             </p>
             <p className={styles.exampleNote}>
               Cifras sintéticas de la demo, no de un cliente ni un ahorro real.
@@ -387,57 +398,54 @@ export function LandingPage() {
         <h3 className={styles.otherCasesTitle}>
           También con proyecto de muestra en la demo
         </h3>
-        <div className={styles.otherCases}>
-          <ul
-            className={`${styles.role} ${styles.compactCases}`}
-            data-flight-clear
-          >
-            {cases.map(({ sector, title, line, Icon }) => (
-              <li key={sector} className={styles.compactCase}>
-                <span className={styles.caseIcon} aria-hidden>
-                  <Icon size={18} />
-                </span>
-                <div>
-                  <div className={styles.compactCaseName}>
-                    <span className={styles.roleName}>{sector}</span>
-                    <span className={styles.compactCaseTitle}>{title}</span>
-                  </div>
-                  <p className={styles.compactCaseLine}>{line}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <article
-            className={`${styles.role} ${styles.caseOpen}`}
-            data-flight-clear
-          >
-            <div className={styles.roleInner}>
-              <div className={styles.caseHead}>
-                <span className={styles.caseIcon} aria-hidden>
-                  <Plus size={18} />
-                </span>
-                <span className={styles.roleName}>Su sector</span>
-              </div>
-              <h3 className={styles.caseTitle}>Lo que usted opere</h3>
-              <p className={styles.roleLine}>
-                Si hay un terreno, una instalación o un activo que se mira mejor
-                desde arriba y se compara en el tiempo, Otear se adapta. Todavía
-                no hay un piloto con sus propios vuelos en estos sectores:
-                queremos oír el suyo.
-              </p>
-              <div className={styles.roleTags}>
-                {otherSectors.map((name) => (
-                  <span key={name} className={styles.roleTag}>
-                    {name}
-                  </span>
-                ))}
-              </div>
-              <Link href="#contacto" className={styles.inlineLink}>
-                Cuéntenos cuál es el suyo <ArrowRight size={14} aria-hidden />
-              </Link>
+        <ul className={styles.sectorGrid} data-flight-clear>
+          {cases.map(({ sector, title, line, Icon }) => (
+            <li key={sector} className={`${styles.role} ${styles.sectorCard}`}>
+              <span className={styles.caseIcon} aria-hidden>
+                <Icon size={18} />
+              </span>
+              <span className={styles.roleName}>{sector}</span>
+              <h4 className={styles.sectorTitle}>{title}</h4>
+              <p className={styles.sectorLine}>{line}</p>
+            </li>
+          ))}
+        </ul>
+
+        <article
+          className={`${styles.role} ${styles.sectorOpen}`}
+          aria-labelledby="su-sector-title"
+          data-flight-clear
+        >
+          <div className={styles.sectorOpenCopy}>
+            <div className={styles.caseHead}>
+              <span className={styles.caseIcon} aria-hidden>
+                <Plus size={18} />
+              </span>
+              <span className={styles.roleName}>Su sector</span>
             </div>
-          </article>
-        </div>
+            <h4 id="su-sector-title" className={styles.sectorTitle}>
+              Lo que usted opere
+            </h4>
+            <p className={styles.sectorLine}>
+              Si hay un terreno, una instalación o un activo que se mira mejor
+              desde arriba y se compara en el tiempo, Otear se adapta. Todavía
+              no hay un piloto con sus propios vuelos en estos sectores:
+              queremos oír el suyo.
+            </p>
+          </div>
+          <div className={styles.sectorOpenSide}>
+            <div className={styles.roleTags}>
+              {otherSectors.map((name) => (
+                <span key={name} className={styles.roleTag}>
+                  {name}
+                </span>
+              ))}
+            </div>
+            <Link href="#contacto" className={styles.inlineLink}>
+              Cuéntenos cuál es el suyo <ArrowRight size={14} aria-hidden />
+            </Link>
+          </div>
+        </article>
       </section>
 
       <section className={styles.section} id="para-quien">

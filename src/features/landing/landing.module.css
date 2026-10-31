@@ -1075,83 +1075,124 @@
   margin-top: 0;
 }
 
-/* Los otros cuatro sectores: una sola lista compacta junto a «Su sector». */
+/* Los otros cuatro sectores: cuadrícula de tarjetas iguales (icono, sector, título, una frase),
+   y «Su sector» como una franja de ancho completo, no como otra tarjeta. */
 .otherCasesTitle {
-  margin: 40px 0 16px;
-  font-size: 14px;
+  margin: 48px 0 16px;
+  font-size: 13px;
   font-weight: 650;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--foreground);
 }
 
-.otherCases {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: 16px;
-  align-items: stretch;
-}
-
-.compactCases {
+.sectorGrid {
   list-style: none;
   margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.sectorCard {
   display: grid;
   align-content: start;
-  gap: 0;
-  padding: 8px 24px;
+  gap: 4px;
+  padding: 24px 22px 26px;
 }
 
-.compactCase {
-  position: relative;
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  gap: 14px;
-  padding: 16px 0;
+.sectorCard .caseIcon {
+  margin-bottom: 14px;
 }
 
-.compactCase + .compactCase {
-  border-top: 1px solid var(--border);
-}
-
-.compactCaseName {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 10px;
+.sectorCard .roleName {
   margin-bottom: 4px;
 }
 
-.compactCaseName .roleName {
-  margin-bottom: 0;
-}
-
-.compactCaseTitle {
-  font-size: 15px;
-  font-weight: 650;
+.sectorTitle {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
   color: var(--foreground);
+  text-wrap: balance;
+  margin-bottom: 8px;
 }
 
-.compactCaseLine {
+.sectorLine {
   font-size: var(--text-small);
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--foreground);
   text-wrap: pretty;
   margin: 0;
-  max-width: none;
 }
 
-/* --- "su sector" open card + inline links --- */
-
-.caseOpen {
+.sectorOpen {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 16px 48px;
+  align-items: center;
+  padding: 24px 28px;
   border: 1.5px dashed color-mix(in srgb, var(--accent) 60%, var(--border));
 }
 
-.caseOpen .roleLine {
-  margin-bottom: 16px;
+.sectorOpenCopy .caseHead {
+  margin-bottom: 8px;
 }
 
-/* El área táctil de 44 px entra en el relleno de la tarjeta para no estirar la fila. */
-.caseOpen .inlineLink {
+.sectorOpenCopy .sectorLine {
+  max-width: var(--measure-body);
+}
+
+.sectorOpenSide {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.sectorOpenSide .roleTags {
+  margin-top: 0;
+}
+
+/* Cifras del caso principal: tres columnas con la cifra grande, como en la primera pantalla. */
+.figureRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.figureRow > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.figureRow > div + div {
+  border-left: 1px solid var(--border);
+}
+
+.figureRow dt {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.figureRow dd {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+/* --- "su sector" inline links --- */
+
+.inlineLink {
   align-self: flex-start;
   margin-bottom: -14px;
 }
@@ -1719,8 +1760,12 @@ a.channel:focus-visible {
   }
 
   .mainCase,
-  .otherCases {
+  .sectorOpen {
     grid-template-columns: 1fr;
+  }
+
+  .sectorGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .droneWrap {
@@ -1774,6 +1819,18 @@ a.channel:focus-visible {
 
   .example {
     padding: 24px 20px;
+  }
+
+  .sectorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .figureRow > div {
+    padding: 12px 10px;
+  }
+
+  .figureRow dd {
+    font-size: 20px;
   }
 
   .formGrid {
