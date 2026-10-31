@@ -19,6 +19,7 @@ import {
 import { PageHeading } from "@/components/ui/page-heading";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { OperatorScopeNote } from "@/components/ui/operator-scope-note";
 import { useDemo } from "@/features/demo/demo-context";
 import { useModuleTitle } from "@/features/config/use-config";
 import type { FlightDocument } from "@/features/demo/types";
@@ -193,6 +194,7 @@ export function DocumentView() {
           </span>
         }
       />
+      <OperatorScopeNote subject="los papeles y los soportes" />
       <section
         className={`alert-banner ${styles.attention}`}
         data-tone={attentionTone}
