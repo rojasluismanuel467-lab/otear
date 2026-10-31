@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Button, Modal } from "@heroui/react";
 import {
+  Copy,
   Download,
   FileUp,
   Fingerprint,
@@ -355,6 +356,17 @@ function EvidenceBody({
     setDownloadCheck(stored ? checkDownload(stored, text) : null);
   }
 
+  async function copyHash(hash: string) {
+    try {
+      await navigator.clipboard.writeText(hash);
+      setNotice("Huella copiada: son los 64 caracteres completos.");
+    } catch {
+      setNotice(
+        "No se pudo copiar solo. Seleccione la huella con el ratón o el teclado y cópiela.",
+      );
+    }
+  }
+
   const roleSignature = (role: string) =>
     working.signatures.find((signature) => signature.role === role);
 
@@ -364,9 +376,19 @@ function EvidenceBody({
         <StatusBadge tone={tones[state.status]}>
           {statusLabels[state.status]}
         </StatusBadge>
-        <span className={styles.hash} title={state.hash}>
+        <span className={styles.hash}>
           <Fingerprint size={15} aria-hidden="true" />
-          Huella {state.hash.slice(0, 16)}…
+          <span>
+            Huella <code className={styles.hashFull}>{state.hash}</code>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => void copyHash(state.hash)}
+          >
+            <Copy size={14} aria-hidden="true" />
+            Copiar huella
+          </Button>
         </span>
       </div>
       <p className={styles.note}>{template.note}</p>
@@ -724,10 +746,12 @@ function EvidenceBody({
         >
           <h3>Verificar un archivo descargado</h3>
           <p className={styles.hint}>
-            Pegue el texto del .txt que descargó de este documento (o cárguelo,
-            o escriba la huella de 64 caracteres) y se compara con la huella
-            guardada. Todo ocurre en su navegador; no se envía nada. Solo
-            comprueba que el texto es el mismo, no quién lo firmó ni cuándo.
+            Pegue el texto del .txt que descargó, o el del recuadro «Documento»
+            de arriba (cárguelo con el botón, o escriba la huella de 64
+            caracteres: se copia completa con «Copiar huella») y se compara con
+            la huella guardada. Todo ocurre en su navegador; no se envía nada.
+            Solo comprueba que el texto es el mismo, no quién lo firmó ni
+            cuándo.
           </p>
           <label className="form-field">
             <span className="field-label">Texto del archivo o huella</span>

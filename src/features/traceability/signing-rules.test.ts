@@ -269,6 +269,48 @@ test("a downloaded copy is checked against the saved fingerprint", () => {
   assert.equal(checkDownload(evidence, "  ").result, "unreadable");
 });
 
+test("the text of the «Documento» box on screen is also accepted, and a failure says why", () => {
+  let evidence = withSignature(report(), operator, NOW);
+  evidence = withSignature(evidence, reviewer, NOW);
+  const template = templates["flight-report"];
+  // What the box shows: the body, with no title and no «Estado:» lines.
+  const screen = template.render(evidence.fields);
+  const fromScreen = checkDownload(evidence, screen);
+  assert.equal(fromScreen.result, "match");
+  assert.match(fromScreen.message, /recuadro «Documento»/);
+  // A trailing line break, Windows line endings or the title on top do not matter.
+  assert.equal(checkDownload(evidence, `${screen}\n\n`).result, "match");
+  assert.equal(
+    checkDownload(evidence, screen.replace(/\n/g, "\r\n")).result,
+    "match",
+  );
+  assert.equal(
+    checkDownload(evidence, `${template.title}\n${screen}`).result,
+    "match",
+  );
+  // One letter changed: different, and it does not say it was «unreadable».
+  const changed = checkDownload(
+    evidence,
+    screen.replace("Drenaje obstruido", "Drenaje obstruida"),
+  );
+  assert.equal(changed.result, "mismatch");
+  // A fingerprint that is too short says how many characters it has.
+  const short = checkDownload(evidence, "abc123");
+  assert.equal(short.result, "unreadable");
+  assert.match(short.message, /64 caracteres/);
+  assert.match(short.message, /escribió 6/);
+  // A copy of a file of another document says what is missing.
+  const other = documentText(evidence).replace(
+    template.title.toUpperCase(),
+    "OTRO DOCUMENTO",
+  );
+  const lost = checkDownload(evidence, other);
+  assert.equal(lost.result, "unreadable");
+  assert.match(lost.message, /INFORME DEL VUELO/);
+  // Too short to be a document.
+  assert.match(checkDownload(evidence, "hola, esto es todo").message, /corto/);
+});
+
 test("the heading agrees with the sector's word in every preset", () => {
   const expected: Record<string, [string, string]> = {
     agricultura: [
