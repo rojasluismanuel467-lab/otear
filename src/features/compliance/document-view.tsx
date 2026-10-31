@@ -25,6 +25,7 @@ import type { FlightDocument } from "@/features/demo/types";
 import { downloadText, formatDate } from "@/lib/format";
 import { DEMO_DATE } from "@/features/demo/demo-data";
 import { revealDetail } from "@/lib/reveal-detail";
+import { SignedRecords } from "./signed-records";
 import styles from "./compliance.module.css";
 
 const categoryLabels = {
@@ -361,6 +362,7 @@ export function DocumentView() {
                 description="Pruebe con otro sujeto, estado o texto de búsqueda."
               />
             )}
+            <SignedRecords />
             <div className={styles.railFooter}>
               {(query || category !== "all" || status !== "all") && (
                 <button
@@ -516,7 +518,10 @@ export function DocumentView() {
           el texto del documento tal como se muestra en pantalla (no con el
           archivo que se descarga). Si alguien cambia una letra, el código
           cambia y las firmas anteriores quedan sin validez: sirve para notar
-          que algo se modificó después de firmar.
+          que algo se modificó después de firmar. El .txt que se descarga trae
+          ese mismo texto: en «Informes y actas firmados», al abrir el
+          documento, «Verificar un archivo descargado» recalcula la huella y
+          dice si coincide con la guardada en esta sesión.
         </p>
         <p>
           No es un sello de tiempo certificado ni una firma con certificado

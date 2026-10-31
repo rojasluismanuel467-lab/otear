@@ -627,13 +627,13 @@ export const templates: Record<TemplateId, TemplateDef> = {
       },
       {
         key: "findingsTitle",
-        label: "Título de los hallazgos",
+        label: "Título de los puntos incluidos",
         type: "text",
         hidden: true,
       },
       {
         key: "findings",
-        label: "Hallazgos incluidos",
+        label: "Puntos incluidos",
         type: "textarea",
         hidden: true,
       },
