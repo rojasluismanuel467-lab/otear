@@ -43,10 +43,9 @@ export const presets: Preset[] = [
     id: "cana",
     label: "Caña de azúcar (ingenio o cañicultor)",
     description:
-      "Habla de suertes, haciendas, zafra y novedades de campo. Añade a cada vuelo los campos «Edad del cultivo» y «Estado de corte».",
+      "Habla de suertes, haciendas y novedades de campo; los lotes de la hacienda de ejemplo pasan a llamarse «Suerte». Añade a cada vuelo los campos «Edad del cultivo» y «Estado de corte».",
     terms: {
       finding: { singular: "Novedad de campo", plural: "Novedades de campo" },
-      operator: { singular: "Aplicador", plural: "Aplicadores" },
       manager: { singular: "Ingenio", plural: "Ingenios" },
       owner: { singular: "Cañicultor", plural: "Cañicultores" },
     },
@@ -130,4 +129,30 @@ export function applyPreset(
     zoneWords: { ...preset.zoneWords },
     fields: applyPresetFields(config.fields, preset.fields ?? []),
   };
+}
+
+/** The preset that speaks each example site's language. */
+export const presetBySector: Record<Sector, PresetId> = {
+  agriculture: "agricultura",
+  roads: "carreteras",
+  construction: "construccion",
+  security: "vigilancia",
+  mining: "mineria",
+};
+
+/**
+ * What the words become when the demo moves to another sector's example from the top bar, so
+ * the menu and the texts never mix two sectors. Null when nothing should change: the company
+ * wrote its own words («Personalizada»), the sugar-cane template already speaks for farms, or
+ * the sector's preset is already on.
+ */
+export function configForSector(
+  config: CompanyConfig,
+  sector: Sector,
+): CompanyConfig | null {
+  if (config.presetId === "custom") return null;
+  if (sector === "agriculture" && config.presetId === "cana") return null;
+  const target = presetBySector[sector];
+  if (config.presetId === target) return null;
+  return applyPreset(config, target);
 }

@@ -13,7 +13,8 @@ import {
   type CompanyConfig,
 } from "./config.ts";
 import { can, planFor } from "./licence.ts";
-import { applyPreset } from "./presets.ts";
+import { applyPreset, configForSector } from "./presets.ts";
+import { withZoneWord } from "./zone-word.ts";
 
 const pro = (extra: Partial<CompanyConfig> = {}): CompanyConfig => ({
   ...defaultConfig,
@@ -155,4 +156,43 @@ test("the sugar-cane preset renames the zones and the import keeps them", () => 
   if (cleaned.ok)
     assert.deepEqual(cleaned.config.zoneWords, { agriculture: "Suertes" });
   assert.deepEqual(applyPreset(result, "general").zoneWords, {});
+});
+
+test("moving the demo to another sector brings that sector's words, unless the company wrote its own", () => {
+  const onRoads = configForSector(pro(), "roads");
+  assert.ok(onRoads);
+  assert.equal(onRoads?.presetId, "carreteras");
+  assert.equal(term(onRoads, "finding", "plural"), "No conformidades");
+  // Coming back from another sector must not leave its words behind.
+  const back = configForSector(onRoads, "construction");
+  assert.ok(back);
+  assert.equal(term(back, "finding"), "Observación");
+  // Already speaking the sector's language, or the cane template on a farm: nothing to change.
+  assert.equal(configForSector(onRoads, "roads"), null);
+  assert.equal(
+    configForSector(applyPreset(pro(), "cana"), "agriculture"),
+    null,
+  );
+  // The company's own words are never overwritten.
+  assert.equal(configForSector(pro({ presetId: "custom" }), "mining"), null);
+});
+
+test("an imported mining preset stays a mining preset", () => {
+  const result = validateConfig({ version: 1, presetId: "mineria" });
+  assert.ok(result.ok);
+  if (result.ok) assert.equal(result.config.presetId, "mineria");
+});
+
+test("the company's word for the zones renames the numbered example zones only", () => {
+  const site = {
+    zoneLabel: "Lotes",
+    zones: [{ name: "Lote 3" }, { name: "Potrero norte" }, { name: "lote 12" }],
+  };
+  const renamed = withZoneWord(site, "Suertes");
+  assert.equal(renamed.zoneLabel, "Suertes");
+  assert.deepEqual(
+    renamed.zones.map((zone) => zone.name),
+    ["Suerte 3", "Potrero norte", "Suerte 12"],
+  );
+  assert.equal(site.zones[0].name, "Lote 3");
 });

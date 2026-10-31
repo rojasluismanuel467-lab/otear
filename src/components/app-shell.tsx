@@ -37,12 +37,17 @@ import { can } from "@/features/config/licence";
 import { ThemeApplier } from "@/features/config/theme-applier";
 import { useConfig } from "@/features/config/use-config";
 import { useDemo } from "@/features/demo/demo-context";
+import { CanaOffer } from "@/features/entry/cana-offer";
+import { WELCOME_NOTICE } from "@/features/entry/entry";
+import { useFindingWords } from "@/features/flights/use-finding-words";
 import { formatDate } from "@/lib/format";
 import { DEMO_PROFILE } from "@/features/traceability/demo-profile";
 import { SiteSwitcher } from "./site-switcher";
 import { useSidebarCollapsed } from "./use-sidebar-collapsed";
 
 const NOTICE_MS = 10000;
+/** The welcome carries a choice and a route to read, so it stays longer. */
+const WELCOME_NOTICE_MS = 20000;
 
 const moduleIcons: Record<ModuleId, LucideIcon> = {
   programacion: CalendarDays,
@@ -78,7 +83,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Un aviso informa y se va solo: no se queda tapando los botones de la pantalla.
   useEffect(() => {
     if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(""), NOTICE_MS);
+    const timer = window.setTimeout(
+      () => setNotice(""),
+      notice.startsWith(WELCOME_NOTICE) ? WELCOME_NOTICE_MS : NOTICE_MS,
+    );
     return () => window.clearTimeout(timer);
   }, [notice, setNotice]);
   // Con el cajón móvil abierto la página de atrás no debe moverse, y Escape lo cierra.
@@ -96,6 +104,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [mobileOpen]);
+  const findingWord = useFindingWords();
+  const pendingFindings = findings.filter(
+    (finding) => finding.status === "pending",
+  ).length;
   const pending = documents.filter(
     (document) => document.status !== "reviewed",
   ).length;
@@ -282,12 +294,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             </div>
             <p>
-              {pending} documentos requieren atención y{" "}
-              {
-                findings.filter((finding) => finding.status === "pending")
-                  .length
-              }{" "}
-              hallazgos están por verificar.
+              {pending}{" "}
+              {pending === 1 ? "documento requiere" : "documentos requieren"}{" "}
+              atención y {pendingFindings}{" "}
+              {pendingFindings === 1
+                ? findingWord.singular
+                : findingWord.plural}{" "}
+              {pendingFindings === 1 ? "está" : "están"} por verificar.
             </p>
             <Link
               href="/documentos"
@@ -313,7 +326,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
       {notice && (
         <div className="app-toast" role="status">
-          <span>{notice}</span>
+          <span>
+            {notice}
+            <CanaOffer />
+          </span>
           <button aria-label="Cerrar aviso" onClick={() => setNotice("")}>
             <X size={16} />
           </button>

@@ -93,8 +93,12 @@ export function buildConsolidatedReport(
   });
   const fw = input.findingWord ?? { singular: "hallazgo", plural: "hallazgos" };
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-  const confirmed = (count: number) =>
-    `confirmad${isFeminine(fw.singular) ? "a" : "o"}${count === 1 ? "" : "s"}`;
+  // «1 confirmado» / «2 confirmadas»: the participle follows the company's word and the count.
+  const participle = (stem: string, count: number) =>
+    `${stem}${isFeminine(fw.singular) ? "a" : "o"}${count === 1 ? "" : "s"}`;
+  const confirmed = (count: number) => participle("confirmad", count);
+  const vuelos = (count: number) =>
+    `${count} ${count === 1 ? "vuelo" : "vuelos"}`;
   const unit = insights.cost.unit;
   const lines: string[] = [
     "OTEAR — INFORME CONSOLIDADO · BORRADOR DE DEMOSTRACIÓN",
@@ -113,9 +117,9 @@ export function buildConsolidatedReport(
     lines.push(
       "RESUMEN",
       `Vuelos completados: ${t.flights} · ${number(t.hours)} h · ${number(t.km)} km · ${t.photos} fotografías`,
-      `${cap(fw.plural)}: ${t.findings} (${t.reviewed} revisados, ${t.pending} por revisar)` +
+      `${cap(fw.plural)}: ${t.findings} (${t.reviewed} ${participle("revisad", t.reviewed)}, ${t.pending} por revisar)` +
         (suggested
-          ? `. Se excluyen ${suggested} ${suggested === 1 ? "sugerencia" : "sugerencias"} de IA que nadie ha revisado todavía.`
+          ? `. ${suggested === 1 ? "Se excluye" : "Se excluyen"} ${suggested} ${suggested === 1 ? "sugerencia automática" : "sugerencias automáticas"} que nadie ha revisado todavía.`
           : ""),
       "",
     );
@@ -140,7 +144,7 @@ export function buildConsolidatedReport(
     );
     for (const zone of insights.byZone.filter((item) => item.findings > 0)) {
       lines.push(
-        `- ${zone.name}: ${zone.findings} (${zone.confirmed} confirmados, ${zone.dismissed} descartados, ${zone.pending} por revisar) en ${zone.flightsWithFindings} vuelos`,
+        `- ${zone.name}: ${zone.findings} (${zone.confirmed} ${confirmed(zone.confirmed)}, ${zone.dismissed} ${participle("descartad", zone.dismissed)}, ${zone.pending} por revisar) en ${vuelos(zone.flightsWithFindings)}`,
       );
     }
     lines.push("");
@@ -261,7 +265,7 @@ export function buildConsolidatedReport(
   lines.push(
     "LÍMITES",
     "Cifras calculadas con los datos de la sesión de demostración; no incluyen análisis de IA ni mediciones de campo.",
-    "La revisión humana de cada hallazgo sigue siendo necesaria.",
+    `La revisión humana de cada ${fw.singular} sigue siendo necesaria.`,
   );
   return lines.join("\n");
 }

@@ -4,7 +4,9 @@ import { useState } from "react";
 import { PageHeading } from "@/components/ui/page-heading";
 import { ParcelMap } from "@/components/maps/parcel-map";
 import { useDemo } from "@/features/demo/demo-context";
-import { useModuleTitle, useTerm } from "@/features/config/use-config";
+import { useModuleTitle } from "@/features/config/use-config";
+import { countOf } from "@/features/flights/finding-words";
+import { useFindingWords } from "@/features/flights/use-finding-words";
 import { findingsByZone, ownFindings } from "@/features/reports/insights";
 import type { Position } from "@/features/demo/types";
 import {
@@ -52,12 +54,8 @@ const stepNumber: Record<Step, number> = {
 function SiteMapping() {
   const moduleTitle = useModuleTitle("mapa");
   const { site, flights, findings, replaceZones, setNotice } = useDemo();
-  const t = useTerm();
   const evolutionTitle = useModuleTitle("evolucion");
-  const findingWord = {
-    singular: t("finding").toLowerCase(),
-    plural: t("finding", "plural").toLowerCase(),
-  };
+  const findingWord = useFindingWords();
   const zoneStats = findingsByZone(site, ownFindings(findings), flights);
   const kind = outlineKindFor(site.sector);
   const routes = routesOf(flights);
@@ -241,7 +239,7 @@ function SiteMapping() {
   function handleApply() {
     const result = replaceZones(site.id, toZones(site, zones));
     setNotice(
-      `Distribución guardada solo en esta sesión. ${result.flights} vuelos y ${result.findings} ${findingWord.plural} quedaron asociados a ${site.zoneLabel.toLowerCase()}.`,
+      `Distribución guardada solo en esta sesión. Se asociaron a ${site.zoneLabel.toLowerCase()}: ${result.flights} ${result.flights === 1 ? "vuelo" : "vuelos"} y ${countOf(findingWord, result.findings)}.`,
     );
     goTo("overview");
   }
@@ -277,7 +275,7 @@ function SiteMapping() {
     <div className={styles.view}>
       <PageHeading
         title={moduleTitle}
-        description={`Parta de lo que ya existe y repártalo en ${site.zoneLabel.toLowerCase()}. Así los vuelos, los ${findingWord.plural} y los costos hablan de lo mismo. Los contornos son de ejemplo; solo el mapa de fondo es una imagen real del lugar.`}
+        description={`Parta de lo que ya existe y repártalo en ${site.zoneLabel.toLowerCase()}. Así los vuelos, ${findingWord.thePlural} ${findingWord.plural} y los costos hablan de lo mismo. Los contornos son de ejemplo; solo el mapa de fondo es una imagen real del lugar.`}
       />
       <section className={`surface ${styles.stage}`}>
         <aside

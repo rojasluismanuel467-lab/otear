@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Check, CircleDashed, CircleDot } from "lucide-react";
 import { useDemo } from "@/features/demo/demo-context";
+import { placeWordsFor } from "@/features/traceability/templates";
 import { useFindingWords } from "../use-finding-words";
 import type { Flight } from "@/features/demo/types";
 import { buildItinerary, type StageState } from "../itinerary";
@@ -22,9 +23,10 @@ const labels: Record<StageState, string> = {
 
 /** The seven stages of an operation, from planning to payment. */
 export function FlightItinerary({ flight }: { flight: Flight }) {
-  const { findings, invoices, documents, evidences } = useDemo();
+  const { site, findings, invoices, documents, evidences } = useDemo();
   const findingWords = useFindingWords();
   const stages = buildItinerary({
+    placeOf: placeWordsFor(site.sector).of,
     flight,
     findings,
     invoices,

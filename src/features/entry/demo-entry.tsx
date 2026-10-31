@@ -19,7 +19,7 @@ export { WELCOME_NOTICE };
  * On a reload the words saved in the browser would otherwise sit on top of the
  * first example, so the sector's example project is selected again.
  */
-const WELCOME_MS = 15000;
+const WELCOME_MS = 20000;
 
 export function DemoEntry() {
   const { sites, setSiteId, setNotice, setActingAs } = useDemo();
@@ -53,7 +53,12 @@ export function DemoEntry() {
       : undefined;
     if (site) setSiteId(site.id);
     const preset = start.preset;
-    if (preset) update((current) => applyPreset(current, preset));
+    const zoneWords = start.zoneWords;
+    if (preset)
+      update((current) => {
+        const next = applyPreset(current, preset);
+        return zoneWords ? { ...next, zoneWords } : next;
+      });
     if (entry.viewAs === "operator") setActingAs(OPERATOR_A);
     // The welcome says where to look, so it leaves by itself and when the visitor
     // goes to another screen; another notice replaces it earlier.

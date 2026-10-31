@@ -70,7 +70,7 @@ export const moduleDefs: ModuleDef[] = [
     id: "pagos",
     href: "/pagos",
     label: "Pagos y costos",
-    title: "Pagos y facturas",
+    title: "Pagos y costos",
   },
   {
     id: "documentos",
@@ -329,6 +329,7 @@ export function validateConfig(
           "carreteras",
           "construccion",
           "vigilancia",
+          "mineria",
           "custom",
         ] as const
       ).find((id) => id === data.presetId) ?? "custom",

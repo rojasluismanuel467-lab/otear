@@ -98,7 +98,7 @@ export function FlightReviewView() {
     <>
       <PageHeading
         title={moduleTitle}
-        description={`Revise la entrega, confirme los ${words.plural} y prepare el siguiente paso. El informe de cada vuelo está en su pestaña «Informe del vuelo».`}
+        description={`Revise la entrega, confirme ${words.thePlural} ${words.plural} y prepare el siguiente paso. El informe de cada vuelo está en su pestaña «Informe del vuelo».`}
       />
       <ExampleNotice />
       {flight ? (
@@ -389,7 +389,7 @@ function FlightContent({
                 </h3>
                 <p>
                   {flight.status === "completed"
-                    ? `Revise los ${words.plural} del operador y las sugerencias automáticas, y decida cuáles necesitan una verificación en sitio. El informe del vuelo ya reúne lo que importa para quien no estuvo.`
+                    ? `Revise ${words.thePlural} ${words.plural} del operador y las sugerencias automáticas, y decida cuáles necesitan una verificación en sitio. El informe del vuelo ya reúne lo que importa para quien no estuvo.`
                     : "Este registro conserva lo previsto. No tiene fotografías ni resultados de una operación realizada."}
                 </p>
               </div>
@@ -433,8 +433,9 @@ function FlightContent({
             </section>
           </div>
           <p className="demo-note">
-            Datos de ejemplo. La ruta, la ejecución y los {words.plural} son
-            inventados para explorar el producto; no prueban una operación real.
+            Datos de ejemplo. La ruta, la ejecución y {words.thePlural}{" "}
+            {words.plural} son {agree(words, "inventados", "inventadas")} para
+            explorar el producto; no prueban una operación real.
           </p>
         </Tabs.Panel>
 
@@ -469,7 +470,7 @@ function FlightContent({
               title={`Este vuelo no tiene ${words.plural}`}
               description={
                 flight.status === "completed"
-                  ? `No hay ${words.plural} asociados a esta entrega de ejemplo.`
+                  ? `No hay ${words.plural} ${agree(words, "asociados", "asociadas")} a esta entrega de ejemplo.`
                   : `Un vuelo programado no tiene ${words.plural} de ejecución. Revise un vuelo completado para explorar el recorrido.`
               }
             />

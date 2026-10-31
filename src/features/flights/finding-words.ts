@@ -16,6 +16,14 @@ export interface FindingWords {
   the: string;
   /** «un» or «una». */
   a: string;
+  /** «los» or «las», for the plural. */
+  thePlural: string;
+  /** «todos» or «todas». */
+  allPlural: string;
+  /** «del» or «de la». */
+  ofThe: string;
+  /** «este» or «esta». */
+  this: string;
 }
 
 const NOT_HEAD = new Set(["no", "el", "la", "un", "una", "los", "las"]);
@@ -45,6 +53,11 @@ const FEMININE_OTHER = new Set([
   "moto",
   "cruz",
   "red",
+  "suerte",
+  "parte",
+  "calle",
+  "torre",
+  "clase",
 ]);
 /** Nouns in -ión that are masculine. */
 const MASCULINE_ION = new Set(["avión", "camión", "gorrión", "sarampión"]);
@@ -80,7 +93,26 @@ export function findingWords(singular: string, plural: string): FindingWords {
     feminine,
     the: feminine ? "la" : "el",
     a: feminine ? "una" : "un",
+    thePlural: feminine ? "las" : "los",
+    allPlural: feminine ? "todas" : "todos",
+    ofThe: feminine ? "de la" : "del",
+    this: feminine ? "esta" : "este",
   };
+}
+
+/** «Lotes» → «Lote», «Sectores» → «Sector», «Niveles» → «Nivel», «Suertes» → «Suerte». */
+export function singularOfLabel(label: string): string {
+  const text = label.trim();
+  if (/(ores|eles)$/i.test(text)) return text.slice(0, -2);
+  return text.replace(/s$/, "");
+}
+
+/**
+ * Grammar for the plural word a site uses for its zones («Lotes», «Suertes», «Bancos»…), so a
+ * sentence can say «las suertes» or «del lote» whichever word the company set.
+ */
+export function zoneGrammar(pluralLabel: string): FindingWords {
+  return findingWords(singularOfLabel(pluralLabel), pluralLabel);
 }
 
 /** Picks the form that agrees with the word: `agree(words, "confirmado", "confirmada")`. */
