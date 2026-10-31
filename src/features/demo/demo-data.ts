@@ -3,6 +3,7 @@ import { newEvidence, withSignature } from "@/features/traceability/integrity";
 import { autofill, templates } from "@/features/traceability/templates";
 import { defaultPlan } from "@/features/fleet/fleet";
 import { planMission } from "@/features/flights/mission-plan";
+import { plannedAt } from "@/features/evolution/evolution";
 import {
   illustrationView,
   MINE_ILLUSTRATION_URL,
@@ -587,6 +588,37 @@ const orderedHaOf = (site: Site, zoneIds: string[]) =>
       .reduce((sum, zone) => sum + polygonAreaHa(zone.outline), 0) * 10,
   ) / 10;
 
+/**
+ * Volume of each mine bench the plan calls for, in m³ (example figures, invented for the demo). It
+ * is the same for every bench, so the volume-weighted advance equals the mean advance Evolución shows.
+ */
+const BENCH_PLANNED_M3 = 22_000;
+const thousands = (value: number) =>
+  String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+/** What the latest flight of the mine reports in m³, derived from the progress series so both agree. */
+function minedVolumeNote(site: Site): string {
+  const rows = captureSeries.mining?.zones ?? [];
+  const last = captureDates.length - 1;
+  const perBench = site.zones.map((zone, row) => {
+    const removed =
+      Math.round((((rows[row]?.[last] ?? 0) / 100) * BENCH_PLANNED_M3) / 10) *
+      10;
+    return { name: zone.name, removed };
+  });
+  const removed = perBench.reduce((sum, item) => sum + item.removed, 0);
+  const planned = site.zones.length * BENCH_PLANNED_M3;
+  const expected = site.schedule
+    ? (plannedAt(site.schedule, captureDates[last]) / 100) * planned
+    : planned;
+  const behind = Math.round((expected - removed) / 100) * 100;
+  const lines = perBench.map(
+    (item) =>
+      `${item.name}: ${thousands(item.removed)} m³ de ${thousands(BENCH_PLANNED_M3)} previstos`,
+  );
+  return `Volumen removido por banco (cifras de ejemplo): ${lines.join("; ")}. En total ${thousands(removed)} m³ de ${thousands(planned)} (${Math.round((removed / planned) * 100)} %)${behind > 0 ? `, unos ${thousands(behind)} m³ por debajo de lo previsto a esta fecha` : ""}.`;
+}
+
 const flightDrafts: Flight[] = sites.flatMap((site, index) => {
   const common = {
     siteId: site.id,
@@ -639,9 +671,17 @@ const flightDrafts: Flight[] = sites.flatMap((site, index) => {
         gsdCm: 2.1,
         overlapPct: 75,
         controlPoints: false,
-        deliverables: ["Fotografías originales (JPG)", "Ortomosaico (GeoTIFF)"],
-        debrief:
-          "Cobertura completa. Revisar la esquina norte con más traslape en el próximo vuelo.",
+        deliverables: [
+          "Fotografías originales (JPG)",
+          "Ortomosaico (GeoTIFF)",
+          ...(site.sector === "mining"
+            ? [
+                "Modelo de superficie (GeoTIFF)",
+                "Volumen removido por banco (tabla, de ejemplo)",
+              ]
+            : []),
+        ],
+        debrief: `Cobertura completa. Revisar la esquina norte con más traslape en el próximo vuelo.${site.sector === "mining" ? ` ${minedVolumeNote(site)}` : ""}`,
       },
     },
     {
