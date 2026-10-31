@@ -58,7 +58,7 @@ export function MeasureBoard({
       aria-labelledby="measure-board-title"
     >
       <div className={styles.boardHead}>
-        <div>
+        <div className={styles.boardIntro}>
           <h3 id="measure-board-title">Medidas correctivas del sitio</h3>
           <p>
             Hoy en la demostración es {dayText(FOLLOW_UP_TODAY)}. Cada medida
@@ -84,10 +84,22 @@ export function MeasureBoard({
             de ellas, <strong>{summary.overdue}</strong>{" "}
             {summary.overdue === 1 ? "vencida" : "vencidas"}
           </li>
+          {summary.discarded > 0 && (
+            <li>
+              y <strong>{summary.discarded}</strong>{" "}
+              {summary.discarded === 1
+                ? "descartada sin cerrar"
+                : "descartadas sin cerrar"}{" "}
+              (aparte)
+            </li>
+          )}
         </ul>
       </div>
       {total > 0 && (
-        <div className="segmented-control" aria-label="Qué medidas ver">
+        <div
+          className={`segmented-control ${styles.filter}`}
+          aria-label="Qué medidas ver"
+        >
           {options.map((option) => (
             <button
               type="button"

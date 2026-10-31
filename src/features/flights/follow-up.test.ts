@@ -5,10 +5,13 @@ import {
   FOLLOW_UP_TODAY,
   canHaveFollowUp,
   changeTerms,
+  checkDiscardReason,
   closeFollowUp,
   discardFollowUp,
+  discardNote,
   dueText,
   followUpBadge,
+  isDiscardedMeasure,
   isOverdue,
   measureList,
   measuresText,
@@ -311,10 +314,64 @@ test("discarding a finding with an open measure needs a reason and leaves it in 
     const last = result.followUp.history[result.followUp.history.length - 1];
     assert.ok(last.text.includes("Motivo: El contratista lo corrigió"));
     assert.ok(last.by, "the entry says whose profile recorded it");
+    assert.equal(
+      discardNote(result.followUp)?.reason,
+      "El contratista lo corrigió antes de la visita.",
+    );
   }
   assert.equal(
-    discardFollowUp(measure("closed", "2026-10-10"), "ya estaba cerrada", TODAY)
-      .ok,
+    discardFollowUp(
+      measure("closed", "2026-10-10"),
+      "ya estaba cerrada hace días",
+      TODAY,
+    ).ok,
+    false,
+  );
+});
+
+test("a reason for discarding must say something, and the message says what is missing", () => {
+  for (const empty of [
+    "",
+    "No aplica",
+    "no aplica.",
+    "  OK ",
+    "Error",
+    "Por error",
+  ]) {
+    assert.ok(checkDiscardReason(empty), `«${empty}» is not a reason`);
+  }
+  assert.ok(checkDiscardReason("No aplica")?.includes("no explica nada"));
+  assert.ok(checkDiscardReason("ya se hizo")?.includes("muy corto"));
+  assert.equal(checkDiscardReason("El contratista ya lo corrigió"), null);
+  assert.equal(
+    discardFollowUp(measure("open", "2026-10-20"), "No aplica", TODAY).ok,
+    false,
+  );
+});
+
+test("only a finding discarded with its measure not closed counts as a discarded measure", () => {
+  assert.equal(
+    isDiscardedMeasure(
+      finding("a", {
+        status: "dismissed",
+        followUp: measure("inProgress", "2026-10-01"),
+      }),
+    ),
+    true,
+  );
+  assert.equal(
+    isDiscardedMeasure(
+      finding("b", {
+        status: "dismissed",
+        followUp: measure("closed", "2026-10-01", { closedOn: "2026-10-02" }),
+      }),
+    ),
+    false,
+  );
+  assert.equal(
+    isDiscardedMeasure(
+      finding("c", { followUp: measure("open", "2026-11-01") }),
+    ),
     false,
   );
 });

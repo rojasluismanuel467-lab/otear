@@ -12,8 +12,10 @@ import {
   closeFollowUp,
   dayText,
   discardFollowUp,
+  discardNote,
   dueText,
   followUpBadge,
+  isDiscardedMeasure,
   openFollowUp,
   reopenFollowUp,
   startCorrection,
@@ -66,7 +68,12 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
   }
 
   const badge = followUp ? followUpBadge(followUp, FOLLOW_UP_TODAY) : null;
-  const active = followUp !== undefined && followUp.status !== "closed";
+  // A discarded finding keeps its measure written down but no longer moves it forward.
+  const dropped = followUp !== undefined && blocked !== null;
+  const active =
+    followUp !== undefined && followUp.status !== "closed" && !dropped;
+  const droppedNote =
+    dropped && isDiscardedMeasure(finding) ? discardNote(followUp) : null;
 
   return (
     <div className={styles.panel}>
@@ -112,20 +119,34 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
 
       {followUp && badge && (
         <>
-          {blocked && (
+          {dropped && (
             <p className={styles.hint}>
-              {words.Singular} {agree(words, "descartado", "descartada")}: la
-              medida queda anotada pero no se cuenta en los resúmenes mientras
-              siga así.
+              {words.Singular} {agree(words, "descartado", "descartada")}
+              {isDiscardedMeasure(finding)
+                ? ": la medida quedó descartada sin cerrar. Se cuenta aparte en los resúmenes y ya no se puede avanzar. Si devuelve " +
+                  `${agree(words, "este", "esta")} ${words.singular} a pendiente, la medida vuelve a seguirse.`
+                : ": su medida estaba cerrada y queda anotada."}
             </p>
           )}
           <div className={styles.status}>
-            <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
-            <span className={styles.due}>
-              {badge.label === "Vencida"
-                ? `${statusLabel(followUp.status)} · ${dueText(followUp, FOLLOW_UP_TODAY)}`
-                : dueText(followUp, FOLLOW_UP_TODAY)}
-            </span>
+            {dropped && isDiscardedMeasure(finding) ? (
+              <>
+                <StatusBadge tone="neutral">Descartada sin cerrar</StatusBadge>
+                <span className={styles.due}>
+                  Estaba {statusLabel(followUp.status).toLowerCase()} · plazo{" "}
+                  {dayText(followUp.dueDate)}
+                </span>
+              </>
+            ) : (
+              <>
+                <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
+                <span className={styles.due}>
+                  {badge.label === "Vencida"
+                    ? `${statusLabel(followUp.status)} · ${dueText(followUp, FOLLOW_UP_TODAY)}`
+                    : dueText(followUp, FOLLOW_UP_TODAY)}
+                </span>
+              </>
+            )}
           </div>
           <dl className={styles.facts}>
             <div>
@@ -139,6 +160,12 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
               <dt>Plazo</dt>
               <dd>{dayText(followUp.dueDate)}</dd>
             </div>
+            {droppedNote && (
+              <div className={styles.discardNote}>
+                <dt>Motivo del descarte · {dayText(droppedNote.at)}</dt>
+                <dd>{droppedNote.reason}</dd>
+              </div>
+            )}
             {followUp.status === "closed" && followUp.closure && (
               <div className={styles.closure}>
                 <dt>
@@ -160,7 +187,7 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
 
           {form === "none" && (
             <div className={styles.actions}>
-              {followUp.status === "open" && (
+              {active && followUp.status === "open" && (
                 <Button
                   variant="secondary"
                   onPress={() =>
@@ -193,7 +220,7 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
                   Descartar con motivo
                 </Button>
               )}
-              {followUp.status === "closed" && (
+              {followUp.status === "closed" && !dropped && (
                 <Button variant="outline" onPress={() => show("reopen")}>
                   <RotateCcw size={16} aria-hidden="true" />
                   Reabrir
@@ -250,7 +277,7 @@ export function FollowUpPanel({ finding }: { finding: Finding }) {
                 setForm("none");
                 setError("");
                 setNotice(
-                  `${words.Singular} ${agree(words, "descartado", "descartada")} con motivo. La medida queda anotada y se cuenta aparte, como «descartada sin cerrar». No se avisó a nadie.`,
+                  `${words.Singular} ${agree(words, "descartado", "descartada")} con motivo. La medida queda anotada como «descartada sin cerrar»; se cuenta aparte, en el tablero de Vuelos y en Evolución. No se avisó a nadie.`,
                 );
               }}
             >
