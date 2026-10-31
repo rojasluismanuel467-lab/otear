@@ -33,6 +33,7 @@ Configuración única, en GitHub → repo → **Settings** → **Secrets and var
 | Variable o Secret | `NEXT_PUBLIC_WHATSAPP_NUMBER` | número con indicativo, solo dígitos |
 | Variable o Secret | `NEXT_PUBLIC_CONTACT_EMAIL` | correo de contacto (ej. `hola@otear.app`) |
 | Variable | `NEXT_PUBLIC_BOOKING_URL` | opcional |
+| Variable | `NEXT_PUBLIC_CF_ANALYTICS_TOKEN` | opcional: token de Cloudflare Web Analytics (Analytics & Logs > Web Analytics > Add a site). Cuenta visitas de la landing, sin cookies; la demo no se mide. Sin token no se mide nada y la página no dice nada al respecto. Qué mirar: visitas, de dónde llegan y cuánto baja la gente; no cuenta clics ni envíos (el formulario no pasa por ningún servidor). |
 
 Las variables `NEXT_PUBLIC_*` van como **Variables** y no como Secrets porque quedan visibles en la página. Se fijan al construir: para cambiarlas, edite la variable y vuelva a correr el flujo (**Actions** → **Run workflow**).
 

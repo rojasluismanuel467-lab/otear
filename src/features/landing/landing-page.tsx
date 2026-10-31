@@ -22,6 +22,7 @@ import { behindOtear, example } from "./example-case";
 import { HeroProof } from "./hero-proof";
 import { LeadForm } from "./lead-form";
 import { SectorPicker } from "./sector-picker";
+import { VisitCounter, VisitCounterNotice } from "./visit-counter";
 
 const steps = [
   {
@@ -176,6 +177,7 @@ export function LandingPage() {
     <div className={styles.page}>
       <DroneCursor />
       <DroneFlight />
+      <VisitCounter />
       <header className={styles.topbar} data-cursor-theme="dark">
         <div className={styles.topbarInner}>
           <Link href="/" className={styles.brand} aria-label="Otear, inicio">
@@ -692,6 +694,7 @@ export function LandingPage() {
         {behindText()}
         <br />
         No conectamos aún con sistemas reales de empresas ni de operadores.
+        <VisitCounterNotice />
         <div className={styles.footerLinks}>
           <DemoLink>Ver demo</DemoLink>
           <a href="mailto:hola@otear.app">hola@otear.app</a>
