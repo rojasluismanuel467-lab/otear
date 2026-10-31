@@ -50,6 +50,10 @@ En la app todo `p` recibe `max-width: var(--measure-body)` por defecto (`:where(
 
 Sobre la textura de relieve de la landing, el encabezado de cada sección (`.sectionHead`) lleva un velo radial del color de fondo, más opaco en el centro y transparente en los bordes, para que el texto no compita con las curvas. Sobre tarjetas y paneles no hace falta.
 
+## Carta de navegación sobre el azul
+
+Las bandas azul oscuro de la landing (primera pantalla y «Entre a la demo») llevan la misma carta que el resto del producto, en versión para fondo oscuro: relieve (`chart-relief-dark.webp`), curvas y cotas reales (`chart-nav-dark.svg`), una cuadrícula de latitud y longitud cada 15′ con marcas en cruz y coordenadas rotuladas (se calcula con la proyección real del mosaico, norte arriba), y una rosa de los vientos (`compass-rose.svg`, norte geográfico, sin declinación magnética). Se regeneran con `python3 scripts/generate-chart-dark.py` a partir de las texturas claras. Tras el texto del hero hay un velo difuminado (`.heroCopy::before`) para que la carta se vea alrededor y no debajo de las frases; no poner texto pequeño sobre la carta sin velo. La carta queda quieta salvo un paralaje suave con el desplazamiento.
+
 ## Cursor de la landing
 
 En pantallas con mouse, la landing sustituye el cursor por un ala delta vista desde arriba, con forma de puntero: la punta es el punto de clic y solo se ladea un poco con la velocidad horizontal (`features/landing/drone-cursor.tsx`). Es oscura sobre fondos claros y clara sobre los oscuros (`data-cursor-theme="dark"`). Sobre enlaces, botones y campos de texto se oculta para dejar ver el cursor nativo. No existe en pantallas táctiles y no se mueve con `prefers-reduced-motion`.
