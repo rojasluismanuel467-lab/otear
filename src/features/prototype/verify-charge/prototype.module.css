@@ -1,0 +1,555 @@
+/*
+ * Prototype S2 «Verificar el cobro»: medium fidelity. Greys only (every colour has R = G = B), standard
+ * type, no motion, no shadows. A state is told apart by its border, its label and its text, never by colour.
+ * The page covers the demo's own background (its relief and tints) with an opaque white layer.
+ */
+.root {
+  --ink: #111;
+  --ink-2: #333;
+  --muted: #595959;
+  --line: #767676;
+  --soft: #f2f2f2;
+  --soft-2: #e0e0e0;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  background: #fff;
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  overflow: auto;
+  scroll-behavior: auto;
+  scrollbar-color: var(--line) #fff;
+}
+.root *,
+.root *::before,
+.root *::after {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
+/* Borders without a colour of their own (and the field caret) would take the demo's blue-grey tints. */
+.root :where(*, *::before, *::after) {
+  border-color: var(--line);
+}
+.root input,
+.root textarea {
+  caret-color: var(--ink);
+}
+.root ::selection {
+  background: var(--soft-2);
+  color: var(--ink);
+}
+.root :focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+.root h1,
+.root h2,
+.root h3,
+.root p {
+  margin: 0;
+  max-width: none;
+  text-wrap: auto;
+}
+.root p {
+  max-width: 68ch;
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  border-right: 2px solid var(--ink);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+}
+.brand {
+  font-size: 22px;
+  font-weight: 700;
+}
+.org {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  font-size: 14px;
+}
+.nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.navItem {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+.navActive {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 700;
+}
+.navDisabled {
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  cursor: not-allowed;
+}
+.navNote {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------- Main ---------- */
+.main {
+  padding: 28px 32px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+.crumb {
+  align-self: flex-start;
+}
+.title {
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.subtitle {
+  color: var(--muted);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sim {
+  border: 1px dashed var(--line);
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--ink-2);
+  max-width: none;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 2px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+.btnPrimary {
+  background: var(--ink);
+  color: #fff;
+}
+.btnLink {
+  border-color: transparent;
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding-inline: 4px;
+}
+.btn:disabled {
+  border: 2px dashed var(--line);
+  background: var(--soft);
+  color: var(--muted);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+.btn[aria-busy="true"] {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--soft-2) 0 8px,
+    #fff 8px 16px
+  );
+  color: var(--ink);
+  border-style: solid;
+  cursor: progress;
+}
+.reason {
+  font-size: 14px;
+  color: var(--muted);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+}
+.actionCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+/* ---------- State boxes (error, loading, ok, info) ---------- */
+.box {
+  border: 2px solid var(--ink);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+.boxLabel {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.boxError {
+  border-style: double;
+  border-width: 5px;
+  background: var(--soft);
+}
+.boxLoading {
+  border-style: dashed;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--soft) 0 10px,
+    #fff 10px 20px
+  );
+}
+.boxOk {
+  background: var(--soft);
+}
+.boxInfo {
+  border-width: 1px;
+}
+.boxTitle {
+  font-weight: 700;
+}
+
+/* ---------- Table of labors ---------- */
+.tableWrap {
+  border: 2px solid var(--ink);
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.table caption {
+  text-align: left;
+  padding: 12px 14px;
+  font-weight: 700;
+  border-bottom: 2px solid var(--ink);
+}
+.table tbody th {
+  background: transparent;
+  font-size: 15px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.table th,
+.table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.table th {
+  background: var(--soft);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.table tr:last-child td {
+  border-bottom: 0;
+}
+.rowFlag td,
+.rowFlag th {
+  background: var(--soft);
+}
+.right {
+  text-align: right !important;
+  white-space: nowrap;
+}
+.tag {
+  display: inline-block;
+  border: 1px solid var(--ink);
+  padding: 1px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tagFlag {
+  border-width: 2px;
+}
+.tagDone {
+  border-style: dashed;
+  color: var(--ink-2);
+}
+
+/* ---------- Verification ---------- */
+.columns {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.step {
+  border: 1px solid var(--line);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stepLocked {
+  border-style: dashed;
+  background: var(--soft);
+}
+.stepTitle {
+  font-size: 16px;
+  font-weight: 700;
+}
+.radio {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.radio input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--ink);
+}
+.radioOn {
+  border: 2px solid var(--ink);
+}
+.radioOff {
+  border-style: dashed;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.card {
+  border: 1px solid var(--line);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.cardOn {
+  border: 2px solid var(--ink);
+  background: var(--soft);
+}
+.cardLabel {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  font-weight: 700;
+}
+.cardValue {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.cardSub {
+  font-size: 15px;
+}
+.cardSource {
+  font-size: 13px;
+  color: var(--muted);
+}
+.verdict {
+  border: 3px solid var(--ink);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.verdictTitle {
+  font-size: 22px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.placeholder {
+  border: 2px dashed var(--line);
+  background:
+    linear-gradient(
+      to top right,
+      transparent calc(50% - 1px),
+      var(--line) 50%,
+      transparent calc(50% + 1px)
+    ),
+    linear-gradient(
+      to bottom right,
+      transparent calc(50% - 1px),
+      var(--line) 50%,
+      transparent calc(50% + 1px)
+    ),
+    var(--soft);
+  display: grid;
+  place-items: center;
+  width: 100%;
+  position: relative;
+}
+.placeholder span {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  font-size: 14px;
+  text-align: center;
+  max-width: 80%;
+}
+.note {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+}
+.noteLabel {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Share evidence ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.label {
+  font-weight: 700;
+}
+.input,
+.textarea {
+  width: 100%;
+  border: 2px solid var(--ink);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  min-height: 44px;
+}
+.textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+.input:disabled,
+.textarea:disabled {
+  border-style: dashed;
+  border-color: var(--line);
+  background: var(--soft);
+  color: var(--muted);
+}
+.inputError {
+  border-style: double;
+  border-width: 5px;
+}
+.counter {
+  font-size: 14px;
+  color: var(--muted);
+  align-self: flex-end;
+}
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 44px;
+  padding: 6px 0;
+}
+.check input {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  accent-color: var(--ink);
+}
+
+/* ---------- Dialog ---------- */
+.dialog {
+  border: 3px solid var(--ink);
+  padding: 22px;
+  max-width: 480px;
+  width: calc(100% - 48px);
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+.dialogTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+/* ---------- Data cases (validation panel) ---------- */
+.cases {
+  margin-top: auto;
+  border: 1px dashed var(--line);
+  padding: 8px 12px;
+  font-size: 14px;
+}
+.cases summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 32px;
+}
+.cases select {
+  font: inherit;
+  min-height: 44px;
+  border: 2px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  padding: 6px 10px;
+  max-width: 100%;
+}
+.casesGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

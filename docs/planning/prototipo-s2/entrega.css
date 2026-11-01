@@ -1,0 +1,32 @@
+@page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+* { box-sizing: border-box; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; max-width: none; margin: 0; padding: 0; }
+header#title-block-header { margin-bottom: 10mm; border-bottom: 2px solid #111; padding-bottom: 5mm; }
+h1.title { font-size: 22pt; margin: 0 0 2mm; }
+p.subtitle { font-size: 13pt; margin: 0 0 3mm; color: #333; }
+p.author, p.date { margin: 0; font-size: 10pt; color: #333; }
+h1 { font-size: 16pt; border-bottom: 1px solid #767676; padding-bottom: 2mm; margin: 8mm 0 3mm; break-after: avoid; }
+h1 { break-before: page; }
+h2 { font-size: 12.5pt; margin: 6mm 0 2mm; break-after: avoid; }
+h3 { font-size: 11pt; margin: 4mm 0 1.5mm; break-after: avoid; }
+p, li { orphans: 3; widows: 3; }
+blockquote { margin: 3mm 0; padding: 3mm 4mm; border-left: 4px solid #111; background: #f2f2f2; }
+blockquote p { margin: 0; }
+table { border-collapse: collapse; width: 100%; margin: 3mm 0; font-size: 9pt; }
+th, td { border: 1px solid #767676; padding: 2mm 2.5mm; vertical-align: top; text-align: left; }
+thead th { background: #e6e6e6; }
+tr { break-inside: avoid; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; background: #f2f2f2; padding: 0 1mm; }
+.ficha { border: 1px solid #111; padding: 4mm 5mm; }
+.ficha h2 { margin-top: 0; }
+.pendiente { border: 2px dashed #111; background: #f2f2f2; padding: 3mm 4mm; margin: 3mm 0; font-weight: bold; }
+.par { display: flex; gap: 4mm; margin: 3mm 0; break-inside: avoid; align-items: flex-start; }
+.par figure { flex: 1 1 0; margin: 0; min-width: 0; }
+.par img { width: 100%; border: 1px solid #767676; display: block; }
+figcaption { font-size: 8.5pt; color: #333; margin-top: 1mm; }
+table.estados { table-layout: fixed; font-size: 8pt; }
+table.estados th, table.estados td { padding: 1mm; }
+table.estados td img { width: 100%; display: block; }
+table.estados tbody th { width: 17%; background: #f2f2f2; }
+img { max-width: 100%; }
+a { color: #111; }
