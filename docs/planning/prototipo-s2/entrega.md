@@ -1,7 +1,7 @@
 ---
 title: "Otear · Prototipo de mediana fidelidad"
 subtitle: "Semana 2 · Verificar el cobro de una labor contratada por hectárea"
-author: "Luis Manuel Rojas Correa · Prototipado (2026-2) MCUX"
+author: "LUIS MANUEL ROJAS CORREA · Código A00399289 · Prototipado (2026-2) MCUX"
 date: "1 de noviembre de 2026"
 lang: es-CO
 ---
