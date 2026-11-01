@@ -1,49 +1,76 @@
-@page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+/* Formato APA 7.ª edición, trabajo de estudiante: Arial 11 pt, márgenes de 2,54 cm,
+   interlineado doble en el texto, tablas y código a espacio sencillo. */
+@page { size: Letter; margin: 25.4mm; }
 * { box-sizing: border-box; }
-body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; max-width: none; margin: 0; padding: 0; }
-header#title-block-header { margin-bottom: 10mm; border-bottom: 2px solid #111; padding-bottom: 5mm; }
-h1.title { font-size: 22pt; margin: 0 0 2mm; }
-p.subtitle { font-size: 13pt; margin: 0 0 3mm; color: #333; }
-p.author, p.date { margin: 0; font-size: 10pt; color: #333; }
-h1 { font-size: 16pt; border-bottom: 1px solid #767676; padding-bottom: 2mm; margin: 8mm 0 3mm; break-after: avoid; }
-h1 { break-before: page; }
-h2 { font-size: 12.5pt; margin: 6mm 0 2mm; break-after: avoid; }
-h3 { font-size: 11pt; margin: 4mm 0 1.5mm; break-after: avoid; }
-p, li { orphans: 3; widows: 3; }
-blockquote { margin: 3mm 0; padding: 3mm 4mm; border-left: 4px solid #111; background: #f2f2f2; }
-blockquote p { margin: 0; }
-table { border-collapse: collapse; width: 100%; margin: 3mm 0; font-size: 9pt; }
-th, td { border: 1px solid #767676; padding: 2mm 2.5mm; vertical-align: top; text-align: left; }
-thead th { background: #e6e6e6; }
-tr { break-inside: avoid; }
-code { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; background: #f2f2f2; padding: 0 1mm; }
-.ficha { border: 1px solid #111; padding: 4mm 5mm; }
-.ficha h2 { margin-top: 0; }
-.pendiente { border: 2px dashed #111; background: #f2f2f2; padding: 3mm 4mm; margin: 3mm 0; font-weight: bold; }
-.par { display: flex; gap: 4mm; margin: 3mm 0; break-inside: avoid; align-items: flex-start; }
-.par figure { flex: 1 1 0; margin: 0; min-width: 0; }
-.par img { width: 100%; border: 1px solid #767676; display: block; }
-figcaption { font-size: 8.5pt; color: #333; margin-top: 1mm; }
-table.estados { table-layout: fixed; font-size: 8pt; }
-table.estados th, table.estados td { padding: 1mm; }
-table.estados td img { width: 100%; display: block; }
-table.estados tbody th { width: 17%; background: #f2f2f2; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 1.5; color: #000; margin: 0; counter-reset: tabla fig; }
 img { max-width: 100%; }
-a { color: #111; }
-h1 { break-before: page; }
-h1.title { break-before: auto; }
-#enlace-del-prototipo, #referencias { break-before: auto; }
-.skill table { table-layout: fixed; font-size: 8.3pt; }
+a { color: #000; }
+
+/* Portada */
+.portada { text-align: center; break-after: page; padding-top: 22mm; }
+.portada .logo { width: 62mm; display: block; margin: 0 auto 26mm; }
+.portada p { margin: 0; line-height: 2; text-indent: 0; }
+.portada .p-titulo { font-size: 14pt; margin-top: 4mm; }
+.portada .p-subtitulo { margin-bottom: 10mm; }
+.titulo-repetido { text-align: center; line-height: 2; margin: 0; text-indent: 0; }
+
+/* Texto: doble espacio y sangría de 1,27 cm */
+body > p, body > ul > li, body > ol > li, .refs p, blockquote p { line-height: 2; }
+body > p { margin: 0; text-indent: 12.7mm; }
+body > p.titulo-repetido { text-indent: 0; }
+body > ul, body > ol { margin: 0; padding-left: 12.7mm; }
+body > ul > li, body > ol > li { margin: 0; }
+p, li { orphans: 3; widows: 3; }
+
+/* Niveles de título APA */
+h1 { font-size: 11pt; font-weight: bold; text-align: center; margin: 0; line-height: 2; break-after: avoid; }
+h2 { font-size: 11pt; font-weight: bold; text-align: left; margin: 0; line-height: 2; break-after: avoid; }
+h3 { font-size: 11pt; font-weight: bold; font-style: italic; text-align: left; margin: 0; line-height: 2; break-after: avoid; }
+h4 { font-size: 11pt; font-weight: bold; margin: 2mm 0 0 12.7mm; line-height: 1.6; break-after: avoid; }
+#referencias, .skill-anexo { break-before: page; }
+
+/* Cita en bloque (hipótesis) */
+blockquote { margin: 0 0 0 12.7mm; padding: 0; border: 0; background: none; }
+blockquote p { margin: 0; text-indent: 0; }
+
+/* Tablas: sin líneas verticales, regla arriba, bajo el encabezado y abajo */
+table { border-collapse: collapse; width: 100%; margin: 0 0 6mm; font-size: 9.5pt; line-height: 1.3; border-top: 1px solid #000; border-bottom: 1px solid #000; }
+caption { caption-side: top; text-align: left; font-style: italic; font-size: 11pt; line-height: 1.5; padding: 0 0 2mm; }
+caption::before { counter-increment: tabla; content: "Tabla " counter(tabla); display: block; font-weight: bold; font-style: normal; }
+th, td { border: 0; padding: 1.6mm 2.2mm; vertical-align: top; text-align: left; }
+thead th { border-bottom: 1px solid #000; font-weight: bold; }
+tr { break-inside: avoid; }
+thead { break-after: avoid; }
+caption { break-after: avoid; }
+table.estados { table-layout: fixed; font-size: 8pt; }
+
+/* Figuras: etiqueta y título en cursiva arriba de la imagen */
+.par { display: flex; gap: 5mm; margin: 2mm 0 6mm; break-inside: avoid; align-items: flex-start; }
+.par figure { flex: 1 1 0; margin: 0; min-width: 0; display: flex; flex-direction: column-reverse; counter-increment: fig; }
+.par img { width: 100%; border: 1px solid #000; display: block; }
+figcaption { font-size: 10pt; font-style: italic; line-height: 1.35; margin-bottom: 1.5mm; }
+.par figcaption::before { content: "Figura " counter(fig); display: block; font-weight: bold; font-style: normal; }
+.estado { break-inside: avoid; margin: 0 0 6mm; counter-increment: fig; }
+.estado .figlabel { margin: 0; line-height: 1.35; text-indent: 0; }
+.estado .figlabel::before { content: "Figura " counter(fig); display: block; font-weight: bold; }
+.estado .figlabel i { font-size: 10pt; }
+.estado .fila { display: flex; gap: 4mm; align-items: flex-start; margin: 1.5mm 0; }
+.estado figure { margin: 0; display: block; }
+.estado figcaption { font-style: normal; font-size: 9pt; margin: 1mm 0 0; }
+.estado img { max-width: 100%; width: auto; display: block; border: 1px solid #000; }
+.estado .fila:last-child img { max-width: 150mm; }
+
+/* Código y bloques del anexo a espacio sencillo */
+pre { font-size: 8.5pt; line-height: 1.3; background: none; padding: 2.5mm 3mm; white-space: pre-wrap; border: 1px solid #000; margin: 0 0 5mm; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; }
+.skill { font-size: 9.5pt; line-height: 1.3; }
+.skill p { line-height: 1.3; text-indent: 0; }
+.skill ol, .skill ul { line-height: 1.3; }
+.skill table { table-layout: fixed; font-size: 8.5pt; }
 .skill th:nth-child(1), .skill td:nth-child(1) { width: 6%; }
 .skill th:nth-child(2), .skill td:nth-child(2) { width: 50%; }
 .skill th:nth-child(3), .skill td:nth-child(3) { width: 20%; }
 .skill th:nth-child(4), .skill td:nth-child(4) { width: 24%; }
-.skill h3 { font-size: 11.5pt; }
-.skill h4 { font-size: 10.5pt; margin-top: 4mm; }
-pre { font-size: 8pt; background: #f2f2f2; padding: 2mm; white-space: pre-wrap; border: 1px solid #767676; }
-.estado { break-inside: avoid; margin-bottom: 3mm; }
-.estado h3 { margin: 2mm 0 1mm; }
-.estado .fila { display: flex; gap: 4mm; align-items: flex-start; margin-bottom: 2mm; }
-.estado figure { margin: 0; }
-.estado img { max-width: 100%; width: auto; display: block; border: 1px solid #767676; }
-.estado .fila:last-child img { max-width: 170mm; }
+
+/* Referencias: sangría francesa de 1,27 cm, orden alfabético */
+.refs p { margin: 0; padding-left: 12.7mm; text-indent: -12.7mm; }

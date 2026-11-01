@@ -15,13 +15,28 @@ const { chromium } = require("playwright-core");
 const skillPath = resolve(here, "../../../.claude/skills/otear-prototipo-s2/SKILL.md");
 const skillRaw = readFileSync(skillPath, "utf8");
 const front = skillRaw.match(/^---\n([\s\S]*?)\n---\n/)?.[0] ?? "";
-const skillBody = skillRaw
+const skillBodyRaw = skillRaw
   .slice(front.length)
   .replace(/^## /gm, "#### ")
   .replace(/^# /gm, "### ");
-const annex = `## Anexo A · Skill completa (otear-prototipo-s2)
+// APA: every table gets a numbered caption; the title comes from the heading above it.
+let lastHeading = "";
+let inTable = false;
+const skillLines = [];
+for (const line of skillBodyRaw.split("\n")) {
+  const h = line.match(/^#{3,4} (.*)/);
+  if (h) lastHeading = h[1].replace(/\*/g, "").trim();
+  if (inTable && !line.startsWith("|")) {
+    skillLines.push("", `Table: Reglas del bloque ${lastHeading}`);
+    inTable = false;
+  }
+  if (line.startsWith("|")) inTable = true;
+  skillLines.push(line);
+}
+const skillBody = skillLines.join("\n");
+const annex = `## Anexo A. Skill completa (otear-prototipo-s2) {.skill-anexo}
 
-Archivo: \`.claude/skills/otear-prototipo-s2/SKILL.md\`. Se reproduce completa, con su encabezado.
+Archivo: \`.claude/skills/otear-prototipo-s2/SKILL.md\`. Se reproduce completa, con su encabezado. Las referencias a la «Tabla 3», «Tabla 10» y similares dentro de la skill son tablas de S1 (Rojas Correa, 2026), no de este documento.
 
 \`\`\`
 ${front.trim()}
@@ -41,7 +56,7 @@ const STATES = [
 const cell = (key, n, label) =>
   `<figure><img src="capturas/estados/${key}-${n}.png"><figcaption>${label}</figcaption></figure>`;
 const statesHtml = STATES.map(
-  ([title, key]) => `<div class="estado"><h3>${title}</h3>
+  ([title, key]) => `<div class="estado"><p class="figlabel"><i>Estados de «${title}»</i></p>
 <div class="fila">${cell(key, "1-normal", "Normal")}${cell(key, "2-cargando", "Cargando")}${cell(key, "4-deshabilitado", "Deshabilitado")}</div>
 <div class="fila">${cell(key, "3-error", "Error")}</div></div>`,
 ).join("\n");
@@ -73,7 +88,16 @@ const browser = await chromium.launch({
 const page = await browser.newPage();
 await page.goto(pathToFileURL(htmlPath).href, { waitUntil: "load" });
 const out = join(here, final ? "entrega.pdf" : "entrega-borrador.pdf");
-await page.pdf({ path: out, format: "A4", printBackground: true, preferCSSPageSize: true });
+await page.pdf({
+  path: out,
+  format: "Letter",
+  printBackground: true,
+  preferCSSPageSize: true,
+  displayHeaderFooter: true,
+  headerTemplate:
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;width:100%;text-align:right;padding-right:25.4mm;padding-top:8mm"><span class="pageNumber"></span></div>',
+  footerTemplate: "<span></span>",
+});
 await browser.close();
 
 // Attach the skill file itself so it travels with the PDF (Chromium cannot embed attachments).
