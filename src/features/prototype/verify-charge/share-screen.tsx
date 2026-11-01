@@ -110,7 +110,9 @@ export function ShareScreen({
   return (
     <>
       <Button variant="link" className={styles.crumb} onClick={onBack}>
-        ← Volver a verificar el cobro
+        {claim
+          ? "← Volver a Labores y tareas"
+          : "← Volver a verificar el cobro"}
       </Button>
       <header className={styles.head}>
         <h1 className={styles.title}>Compartir evidencia</h1>
@@ -250,7 +252,13 @@ export function ShareScreen({
               demás fotos de la finca.
             </p>
           </fieldset>
+        </div>
 
+        <div className={styles.stack}>
+          <Placeholder
+            label={`Vista previa de la evidencia: mapa del operador y fotos de los ${lotsPhrase(labor.lotIds)}`}
+            ratio="16 / 9"
+          />
           {claim ? null : (
             <div className={styles.actions}>
               <ButtonWithReason
@@ -267,13 +275,6 @@ export function ShareScreen({
               </Button>
             </div>
           )}
-        </div>
-
-        <div className={styles.stack}>
-          <Placeholder
-            label={`Vista previa de la evidencia: mapa del operador y fotos de los ${lotsPhrase(labor.lotIds)}`}
-            ratio="4 / 3"
-          />
         </div>
       </div>
     </>

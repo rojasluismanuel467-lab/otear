@@ -466,7 +466,7 @@
   min-height: 44px;
 }
 .textarea {
-  min-height: 150px;
+  min-height: 110px;
   resize: vertical;
 }
 .input:disabled,
@@ -505,6 +505,7 @@
   padding: 22px;
   max-width: 480px;
   width: calc(100% - 48px);
+  margin: auto;
   font: inherit;
   color: var(--ink);
   background: #fff;
@@ -528,7 +529,9 @@
 .cases summary {
   cursor: pointer;
   font-weight: 700;
-  min-height: 32px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 .cases select {
   font: inherit;

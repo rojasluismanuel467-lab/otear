@@ -243,7 +243,10 @@ export function verifyCharge(input: {
         : check.state === "match" || check.state === "under"
           ? "accept"
           : "none",
-    toleranceNote: toleranceText(check.tolerancePct),
+    toleranceNote: toleranceText(check.tolerancePct).replace(
+      "Referencia de la demo",
+      "Referencia del prototipo",
+    ),
   };
 }
 

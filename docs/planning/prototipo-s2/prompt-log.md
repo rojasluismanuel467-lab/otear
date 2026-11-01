@@ -1,5 +1,7 @@
 # Prompt log — prototipo S2 «Verificar el cobro»
 
+> Versión de trabajo. La versión de la entrega (iteración 2 reescrita tras la revisión externa) está en `entrega.md`, sección 4.
+
 Herramienta: Claude Code (Claude Sonnet 5.5) sobre el repositorio de Otear, código Next.js/TypeScript. Contexto cargado: la skill `.claude/skills/otear-prototipo-s2/SKILL.md` (7 bloques) y `CLAUDE.md`/`AGENTS.md`.
 
 > Pendiente: la «plantilla B» de la consigna no estaba disponible al escribir esto. Las iteraciones están en capas (pantalla, comportamiento, contenido) pero hay que pasarlas a su formato antes de entregar.

@@ -372,7 +372,11 @@ export function VerifyScreen({
                 {map.kind === "ready" ? hectares(map.reading.appliedHa) : "—"}
               </span>
               <span className={styles.cardSub}>
-                {verification ? pesos(verification.appliedTotal) : "Sin leer"}
+                {verification
+                  ? pesos(verification.appliedTotal)
+                  : map.kind === "ready"
+                    ? "Falta comparar"
+                    : "Sin leer"}
               </span>
               <span className={styles.cardSource}>
                 {map.kind === "ready"
@@ -406,9 +410,9 @@ export function VerifyScreen({
           ) : (
             <StateBox tone="info" title="Todavía no hay una comparación.">
               <p>
-                Lea el mapa del operador, elija uno de sus vuelos y pulse
-                «Comparar». Aquí aparecerá si lo cobrado coincide con lo
-                aplicado.
+                {map.kind === "ready"
+                  ? "Elija uno de sus vuelos y pulse «Comparar». Aquí aparecerá si lo cobrado coincide con lo aplicado."
+                  : "Lea el mapa del operador, elija uno de sus vuelos y pulse «Comparar». Aquí aparecerá si lo cobrado coincide con lo aplicado."}
               </p>
             </StateBox>
           )}
@@ -432,7 +436,7 @@ export function VerifyScreen({
               }
             >
               <ErrorText
-                why="La demo simuló una falla al guardar, y su cobro sigue sin aceptar."
+                why="La simulación falló al guardar, y su cobro sigue sin aceptar."
                 todo="Reintente, o cierre este aviso y decida más tarde: no se cambió nada."
               />
             </StateBox>
@@ -445,9 +449,11 @@ export function VerifyScreen({
                 verification?.primary === "send" ? "primary" : "secondary"
               }
               reason={
-                verification
-                  ? undefined
-                  : "Compare primero para ver qué enviar."
+                !verification
+                  ? "Compare primero para ver qué enviar."
+                  : verification.noCharge
+                    ? "No hay diferencia que reclamar: la factura está en $0."
+                    : undefined
               }
               onClick={() => verification && onShare(verification)}
             >
@@ -541,7 +547,7 @@ function VerdictBox({ verification }: { verification: Verification }) {
       </h2>
       <p>
         {verification.headline}
-        {pct !== undefined && check.state !== "match"
+        {pct !== undefined && check.state !== "match" && !verification.noCharge
           ? ` (${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1, signDisplay: "exceptZero" }).format(pct)} % frente a lo aplicado)`
           : ""}
       </p>

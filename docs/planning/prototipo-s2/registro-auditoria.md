@@ -1,5 +1,7 @@
 # Registro de auditoría — prototipo S2 «Verificar el cobro»
 
+> Versión de trabajo. La versión de la entrega, con D6 a D8 (hallados por la revisión externa del 1 nov) y las cifras corregidas, está en `entrega.md`, sección 5. Informe de la revisión: `revision-externa.md`.
+
 Qué se auditó: la primera versión que generó la IA (Claude Code, siguiendo la skill `otear-prototipo-s2`) del flujo pantallas 10 → 11 → 12. Todas las capturas están en `capturas/` y se tomaron en un navegador real a 1280 × 800, no en el editor. Prefijo `antes-` es la versión generada; `despues-` es la corregida.
 
 ## a) Decisiones de la IA que se corrigieron
@@ -47,7 +49,7 @@ Se cargan desde el panel «Datos de prueba» del propio prototipo. Medición aut
 | Nota del operador de 716 caracteres | El veredicto bajó a y = 701; acciones fuera de pantalla | Nota plegada bajo las acciones (D2) | `antes-B1…` / `despues-B1…` |
 | Cobro de $0 (0 ha facturadas) | Veredicto sin pesos, «−100 %», «Aceptar» como primaria, mensaje en blanco | Estado propio «sin cobro», acciones deshabilitadas con motivo (D3) | `antes-B2…` / `despues-B2…` |
 | 40 labores | No se desbordó la lista (se desplaza dentro de la página). Sí fallaban los textos fijos de errores y soportes con otras labores | Textos construidos por labor (D5) | `stress-forty-labors-1-lista.png` |
-| Nombre de operador de 77 caracteres | **Nada se rompió**: el nombre se parte en varias líneas en la tabla, el subtítulo y la tarjeta «Cobrado», sin tapar nada. La regla `overflow-wrap: anywhere` ya estaba desde el primer borrador, así que el caso no la puso a prueba por sí solo | — | `despues-B3-operador-largo-verificar.png` |
+| Nombre de operador de 78 caracteres | **Nada se rompió**: el nombre se parte en varias líneas en la tabla, el subtítulo y la tarjeta «Cobrado», sin tapar nada. La regla `overflow-wrap: anywhere` ya estaba desde el primer borrador, así que el caso no la puso a prueba por sí solo | — | `despues-B3-operador-largo-verificar.png` |
 | Cobro de $50.000.000 (2.717.391 $/ha) | **El diseño no se rompió** y la diferencia en pesos sale bien ($3.532.608). Queda una duda de producto sin resolver: nada avisa que el precio por hectárea es muy distinto al pactado en otras labores | Sin cambio; es una decisión pendiente (Otear no tiene tarifas de mercado y no debe inventarlas) | `stress-huge-charge-2-verificar.png` |
 | 0 labores | **Nada se rompió**: estado vacío que dice qué aparece ahí y que registrar una labor no hace parte del prototipo | — | `stress-no-labors-1-lista.png` |
 | Campos vacíos (WhatsApp, mensaje, ningún soporte) | «Enviar» deshabilitado diciendo qué falta, de a un motivo | — | `11-compartir-deshabilitado.png` |

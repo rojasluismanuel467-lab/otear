@@ -178,8 +178,8 @@ const baseLabors: Labor[] = [
   {
     id: "plateo-9-16",
     name: "Plateo",
-    lotIds: [9, 16],
-    lotsText: "Lotes 9 y 16",
+    lotIds: [9, 10],
+    lotsText: "Lotes 9 y 10",
     doneBy: "Cuadrilla de la hacienda",
     date: "2026-10-22",
     kind: "own",
@@ -219,7 +219,7 @@ export const SCENARIO_LABELS: Record<Scenario, string> = {
   "long-operator": `Operador con un nombre de ${LONG_OPERATOR_NAME.length} caracteres`,
   "long-note": `Nota del operador de ${LONG_NOTE.length} caracteres`,
   "zero-charge": "Cobro de $0 (0 ha facturadas)",
-  "huge-charge": "Cobro de $50.000.000",
+  "huge-charge": "Cobro de casi $50.000.000 ($2.717.391 por ha)",
   "forty-labors": "40 labores en la lista",
   "no-labors": "0 labores en la lista",
 };
@@ -236,7 +236,7 @@ const LABOR_NAMES = [
 function manyLabors(count: number): Labor[] {
   const extra: Labor[] = Array.from({ length: count - baseLabors.length }).map(
     (_, index) => {
-      const lot = (index % 16) + 1;
+      const lot = (index % 12) + 1;
       const own = index % 3 !== 0;
       return {
         id: `labor-${index + 5}`,

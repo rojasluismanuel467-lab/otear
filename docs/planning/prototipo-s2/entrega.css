@@ -30,3 +30,20 @@ table.estados td img { width: 100%; display: block; }
 table.estados tbody th { width: 17%; background: #f2f2f2; }
 img { max-width: 100%; }
 a { color: #111; }
+h1 { break-before: page; }
+h1.title { break-before: auto; }
+#enlace-del-prototipo, #referencias { break-before: auto; }
+.skill table { table-layout: fixed; font-size: 8.3pt; }
+.skill th:nth-child(1), .skill td:nth-child(1) { width: 6%; }
+.skill th:nth-child(2), .skill td:nth-child(2) { width: 50%; }
+.skill th:nth-child(3), .skill td:nth-child(3) { width: 20%; }
+.skill th:nth-child(4), .skill td:nth-child(4) { width: 24%; }
+.skill h3 { font-size: 11.5pt; }
+.skill h4 { font-size: 10.5pt; margin-top: 4mm; }
+pre { font-size: 8pt; background: #f2f2f2; padding: 2mm; white-space: pre-wrap; border: 1px solid #767676; }
+.estado { break-inside: avoid; margin-bottom: 3mm; }
+.estado h3 { margin: 2mm 0 1mm; }
+.estado .fila { display: flex; gap: 4mm; align-items: flex-start; margin-bottom: 2mm; }
+.estado figure { margin: 0; }
+.estado img { max-width: 100%; width: auto; display: block; border: 1px solid #767676; }
+.estado .fila:last-child img { max-width: 170mm; }
