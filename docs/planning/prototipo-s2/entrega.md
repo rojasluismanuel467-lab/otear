@@ -68,7 +68,11 @@ Elegí cada nivel por lo que la prueba de la semana 4 necesita saber. Las cinco 
 
 **La skill.** Está en `.claude/skills/otear-prototipo-s2/SKILL.md`. Tiene los siete bloques de la consigna (producto y usuario, hipótesis y riesgos, flujos y arquitectura, reglas de la etapa, reglas de contenido, reglas de comportamiento, prohibiciones). Cada regla dice qué hallazgo de S1 la respalda y cómo se comprueba en el navegador. El anexo completo está a continuación de este bloque.
 
-<div class="pendiente">PENDIENTE: captura de la skill cargada en Claude Code (sesión nueva en el repositorio, escribir <code>/</code> y capturar la lista donde aparece <b>otear-prototipo-s2</b> con su descripción). Guardarla como <code>capturas/skill-cargada.png</code>.</div>
+<div class="par">
+<figure><img src="capturas/skill-cargada.png"><figcaption>El archivo de la skill abierto en el proyecto, con su encabezado (nombre y descripción) leído sin errores</figcaption></figure>
+</div>
+
+El archivo `SKILL.md` también va **adjunto a este PDF** (en el panel de adjuntos del visor), tal como está en el repositorio.
 
 <!--SKILL_ANNEX-->
 

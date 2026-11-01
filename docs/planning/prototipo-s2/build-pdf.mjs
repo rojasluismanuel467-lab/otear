@@ -75,4 +75,13 @@ await page.goto(pathToFileURL(htmlPath).href, { waitUntil: "load" });
 const out = join(here, final ? "entrega.pdf" : "entrega-borrador.pdf");
 await page.pdf({ path: out, format: "A4", printBackground: true, preferCSSPageSize: true });
 await browser.close();
+
+// Attach the skill file itself so it travels with the PDF (Chromium cannot embed attachments).
+const { PDFDocument } = require("pdf-lib");
+const doc = await PDFDocument.load(readFileSync(out));
+await doc.attach(readFileSync(skillPath), "SKILL.md", {
+  mimeType: "text/markdown",
+  description: "Skill otear-prototipo-s2, tal como está en .claude/skills/otear-prototipo-s2/SKILL.md",
+});
+writeFileSync(out, await doc.save());
 console.log(`${out} (pendientes: ${pending})`);
