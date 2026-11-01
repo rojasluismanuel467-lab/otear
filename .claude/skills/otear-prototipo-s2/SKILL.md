@@ -1,6 +1,6 @@
 ---
 name: otear-prototipo-s2
-description: Reglas para construir el prototipo de mediana fidelidad de Otear (Semana 2, Prototipado MCUX): el flujo «Verificar el cobro de una labor contratada» (pantallas 10, 11 y 12 de S1) en escala de grises, sin animación, con datos verosímiles y los estados Normal, Cargando, Error y Deshabilitado. Úsese al crear o modificar cualquier archivo bajo src/features/prototype/ o src/app/prototipo/.
+description: "Reglas para construir el prototipo de mediana fidelidad de Otear (Semana 2, Prototipado MCUX): el flujo «Verificar el cobro de una labor contratada» (pantallas 10, 11 y 12 de S1) en escala de grises, sin animación, con datos verosímiles y los estados Normal, Cargando, Error y Deshabilitado. Úsese al crear o modificar cualquier archivo bajo src/features/prototype/ o src/app/prototipo/."
 ---
 
 # Skill del proyecto: prototipo S2 de Otear («Verificar cobro»)
