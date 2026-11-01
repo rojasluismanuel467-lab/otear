@@ -26,10 +26,10 @@ Otear reúne en un solo lugar las fotos, los mapas y los vuelos de dron de una f
 **Límites que conviene saber antes de leer.**
 
 - Los datos son de ejemplo (Hacienda Santa Rita, sus lotes y cifras de S1), no de un cliente.
-- No hice pruebas con personas en esta semana: las dos hipótesis se miden en la semana 4.
+- Al entregar este documento todavía no he hecho pruebas con personas. Las dos hipótesis se validan esta misma semana, el lunes 2 y el martes 3 de noviembre de 2026, que son los días en que conseguí la reunión con los participantes. Los resultados no están en este documento.
 - El prototipo es de escritorio, de 1024 px en adelante. Todo se midió en un viewport de 1280 × 800 (el área del documento, no la ventana del navegador). A 375 px no se usa.
 - Cada paso espera 0,9 s a propósito para poder ver el estado «Cargando». Ese tiempo se descuenta cuando mida tiempos.
-- No hice prueba piloto, que recomienda Pernice (s. f.) antes de las sesiones con participantes para que los errores del prototipo no alteren lo que se mide. La haré en la semana 4.
+- No hice prueba piloto, que recomienda Pernice (s. f.) antes de las sesiones con participantes para que los errores del prototipo no alteren lo que se mide. La haré antes de las sesiones del lunes y el martes.
 - Un recorrido solo con teclado, de la lista al envío de la evidencia, lo hice yo el 1 de noviembre; con lector de pantalla no lo probé.
 
 **Uso de IA.** La skill, el prototipo y la lógica los escribió Claude Code a partir de mis decisiones de flujo, alcance y criterios. Una segunda sesión de Claude, que no veía mi conversación, revisó la entrega contra la rúbrica. Lo que corrijo en la sección 5 salió de revisar yo lo generado y de ese informe.
@@ -50,7 +50,7 @@ También voy a registrar, sin que decidan la hipótesis: cuánto tardan desde qu
 
 Además, la fila 2 de S1 pide que al menos 3 de los 5 entrevistados hayan tenido una diferencia de cobro en el último año; lo preguntaré aparte.
 
-**Cómo lo mediré.** Prueba moderada con 5 personas del perfil, con la tarea T2 y pensando en voz alta. Tengo previsto registrar éxito y tiempo en Maze si acepta un enlace externo; si no, con cronómetro y notas. Una persona «sin ayuda» es la que no recibe ninguna pista del moderador. Antes de las cinco sesiones haré una prueba piloto con una persona fuera de la muestra. Si alguien pulsa algo que no responde (por ejemplo, una de las seis secciones deshabilitadas del menú), el moderador no lo guía: le dice que eso no funciona en el prototipo y le pregunta qué esperaba, como recomienda Pernice (s. f.), y lo anota como hallazgo.
+**Cómo lo mediré.** Las sesiones son el lunes 2 y el martes 3 de noviembre de 2026. Prueba moderada con 5 personas del perfil (si asisten menos, lo diré al reportar y no aplicaré el criterio de «4 de 5» sin aclararlo), con la tarea T2 y pensando en voz alta. Tengo previsto registrar éxito y tiempo en Maze si acepta un enlace externo; si no, con cronómetro y notas. Una persona «sin ayuda» es la que no recibe ninguna pista del moderador. Antes de las cinco sesiones haré una prueba piloto con una persona fuera de la muestra. Si alguien pulsa algo que no responde (por ejemplo, una de las seis secciones deshabilitadas del menú), el moderador no lo guía: le dice que eso no funciona en el prototipo y le pregunta qué esperaba, como recomienda Pernice (s. f.), y lo anota como hallazgo.
 
 **Cómo leer los resultados.** Con 5 personas la prueba es formativa: sirve para encontrar y corregir problemas, no para estimar una tasa. Con el método de Wald ajustado, 4 de 5 equivale a un intervalo de confianza del 95 % entre 36 % y 98 %, y 5 de 5 entre 51 % y 100 % (MeasuringU, s. f.). Por eso «4 de 5» es mi regla para decidir si rediseño, no una cifra de éxito.
 
@@ -58,7 +58,7 @@ Además, la fila 2 de S1 pide que al menos 3 de los 5 entrevistados hayan tenido
 
 # 2. Matriz de fidelidad
 
-Elegí cada nivel por lo que la prueba de la semana 4 necesita saber. Las cinco dimensiones son independientes (McCurdy et al., 2006): un prototipo puede ser bajo en una y alto en otra. Pernice (s. f.) lo plantea igual: la fidelidad puede variar por separado en interactividad, aspecto visual y contenido. Este es de fidelidad mixta. La Tabla 1 resume cada dimensión.
+Elegí cada nivel por lo que la prueba del 2 y 3 de noviembre necesita saber. Las cinco dimensiones son independientes (McCurdy et al., 2006): un prototipo puede ser bajo en una y alto en otra. Pernice (s. f.) lo plantea igual: la fidelidad puede variar por separado en interactividad, aspecto visual y contenido. Este es de fidelidad mixta. La Tabla 1 resume cada dimensión.
 
 | Dimensión | Nivel y qué se ve | Por qué ese nivel, y qué no podré concluir |
 |---|---|---|
