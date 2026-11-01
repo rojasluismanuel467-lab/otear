@@ -12,7 +12,7 @@ lang: es-CO
 
 Otear reúne en un solo lugar las fotos, los mapas y los vuelos de dron de una finca. Hernando, de 56 años, administra la Hacienda Santa Rita (caña de azúcar, Valle del Cauca), trabaja en el computador de la oficina y usa WhatsApp. Contrata fumigaciones y otras labores que le cobran por hectárea y no tiene cómo comprobar cuántas hectáreas se hicieron de verdad. Ese es el punto de dolor PP3 de mi Semana 1 (S1): paga lo que no puede comprobar y queda mal ante sus socios si algo falla.
 
-**El flujo que prototipé.** Es la tarea T2 de S1: «El operador le cobró 18,4 ha de fumigación. Revise si las hizo y, si no, mándele la evidencia». Son tres pantallas: Labores y tareas (10), Verificar cobro (11) y Compartir evidencia (12). Lo elegí porque es donde Hernando decide si paga, y aceptar un cobro no se puede deshacer. Además depende de algo que todavía no sé si es posible: que el operador entregue un mapa de aplicación que se pueda leer (Tabla 3, fila 4). Los otros dos flujos de S1, subir un vuelo y pasar de un hallazgo a una tarea, tienen patrones conocidos o dependen de cosas que aún no decido, como qué hacer con las fotos sin GPS.
+**El flujo que prototipé.** Es la tarea T2 de S1: «El operador le cobró 18,4 ha de fumigación. Revise si las hizo y, si no, mándele la evidencia». En S1 hice los wireframes de baja fidelidad (cajas, textos de ejemplo y marcadores); esta semana los convierto en un prototipo de fidelidad media, que responde y usa datos creíbles. Son tres pantallas: Labores y tareas (10), Verificar cobro (11) y Compartir evidencia (12). Lo elegí porque es donde Hernando decide si paga, y aceptar un cobro no se puede deshacer. Además depende de algo que todavía no sé si es posible: que el operador entregue un mapa de aplicación que se pueda leer (Tabla 3, fila 4). Los otros dos flujos de S1, subir un vuelo y pasar de un hallazgo a una tarea, tienen patrones conocidos o dependen de cosas que aún no decido, como qué hacer con las fotos sin GPS.
 
 **Siglas de S1 que aparecen en este documento.** PP1 a PP4: puntos de dolor. OB1 a OB3: objetivos de negocio. OD1: que Hernando sienta que sabe lo que pasa y lo que paga. T2: la tarea de la prueba que acabo de citar. Tabla 3: la matriz de supuestos de S1 (fila 2: verificar el cobro; fila 3: usabilidad con una persona de 56 años; fila 4: mapa del operador y GPS). Tabla 10: elementos de cada flujo. Tabla 11: cargas y errores por pantalla.
 
@@ -22,6 +22,7 @@ Otear reúne en un solo lugar las fotos, los mapas y los vuelos de dron de una f
 - No hice pruebas con personas en esta semana: las dos hipótesis se miden en la semana 4.
 - El prototipo es de escritorio, de 1024 px en adelante. Todo se midió en un viewport de 1280 × 800 (el área del documento, no la ventana del navegador). A 375 px no se usa.
 - Cada paso espera 0,9 s a propósito para poder ver el estado «Cargando». Ese tiempo se descuenta cuando mida tiempos.
+- No hice prueba piloto, que Pernice (NN/g) recomienda antes de las sesiones con participantes para que los errores del prototipo no alteren lo que se mide. La haré en la semana 4.
 - Un recorrido solo con teclado, de la lista al envío de la evidencia, lo hice yo el 1 de noviembre; con lector de pantalla no lo probé.
 
 **Uso de IA.** La skill, el prototipo y la lógica los escribió Claude Code a partir de mis decisiones de flujo, alcance y criterios. Una segunda sesión de Claude, que no veía mi conversación, revisó la entrega contra la rúbrica. Lo que corrijo en la sección 5 salió de revisar yo lo generado y de ese informe.
@@ -44,7 +45,7 @@ También voy a registrar, sin que decidan la hipótesis: cuánto tardan desde qu
 
 Además, la fila 2 de S1 pide que al menos 3 de los 5 entrevistados hayan tenido una diferencia de cobro en el último año; lo preguntaré aparte.
 
-**Cómo lo mediré.** Prueba moderada con 5 personas del perfil, con la tarea T2 y pensando en voz alta. Tengo previsto registrar éxito y tiempo en Maze si acepta un enlace externo; si no, con cronómetro y notas. Una persona «sin ayuda» es la que no recibe ninguna pista del moderador.
+**Cómo lo mediré.** Prueba moderada con 5 personas del perfil, con la tarea T2 y pensando en voz alta. Tengo previsto registrar éxito y tiempo en Maze si acepta un enlace externo; si no, con cronómetro y notas. Una persona «sin ayuda» es la que no recibe ninguna pista del moderador. Antes de las cinco sesiones haré una prueba piloto con una persona fuera de la muestra. Si alguien pulsa algo que no responde (por ejemplo, una de las seis secciones deshabilitadas del menú), el moderador no lo guía: le dice que eso no funciona en el prototipo y le pregunta qué esperaba, como recomienda Pernice (NN/g), y lo anota como hallazgo.
 
 **Cómo leer los resultados.** Con 5 personas la prueba es formativa: sirve para encontrar y corregir problemas, no para estimar una tasa. Con el método de Wald ajustado, 4 de 5 equivale a un intervalo de confianza del 95 % entre 36 % y 98 %, y 5 de 5 entre 51 % y 100 % (MeasuringU). Por eso «4 de 5» es mi regla para decidir si rediseño, no una cifra de éxito.
 
@@ -52,7 +53,7 @@ Además, la fila 2 de S1 pide que al menos 3 de los 5 entrevistados hayan tenido
 
 # 2. Matriz de fidelidad
 
-Elegí cada nivel por lo que la prueba de la semana 4 necesita saber. Las cinco dimensiones son independientes (McCurdy et al., 2006): un prototipo puede ser bajo en una y alto en otra. Este es de fidelidad mixta.
+Elegí cada nivel por lo que la prueba de la semana 4 necesita saber. Las cinco dimensiones son independientes (McCurdy et al., 2006): un prototipo puede ser bajo en una y alto en otra. Pernice (NN/g) lo plantea igual: la fidelidad puede variar por separado en interactividad, aspecto visual y contenido. Este es de fidelidad mixta.
 
 | Dimensión | Nivel y qué se ve | Por qué ese nivel, y qué no podré concluir |
 |---|---|---|
@@ -60,7 +61,7 @@ Elegí cada nivel por lo que la prueba de la semana 4 necesita saber. Las cinco 
 | **Amplitud** | **Un flujo** de los tres de S1: verificar el cobro (pantallas 10, 11 y 12 y el estado «En reclamo»). Las otras seis secciones del menú están deshabilitadas. | Es el flujo de mayor riesgo (PP3, fila 2 de la Tabla 3). Subir un vuelo ya tiene un patrón conocido y depende de la política de fotos sin GPS, que sigue sin resolverse; del hallazgo a la tarea depende de una IA que aún no valido. Ampliar costaría días y no respondería a H1 ni a H2. **No podré concluir** cómo se siente moverse entre secciones. |
 | **Profundidad** | **Alta en ese flujo.** Camino completo con tres salidas (enviar evidencia, aceptar, pedir el mapa al operador), errores con salida (mapa en formato no admitido, sin zonas, de otra finca o demasiado grande; vuelo que no cubre los lotes; mensaje no entregado) y una confirmación antes de aceptar el cobro, que no se puede deshacer. | H2 solo se prueba si existe el momento de decidir entre aceptar y reclamar. La fila 4 de la Tabla 3 (que el operador entregue un mapa legible) solo se prueba si el mapa puede fallar. Un flujo a medias habría dejado fuera lo que quiero observar. **No podré concluir** qué pasa después de enviar la evidencia: la respuesta del operador no está. |
 | **Interactividad** | **Media-alta.** Responden los elementos de la tarea: cargar un archivo o usar el de ejemplo, elegir vuelo, comparar, editar el mensaje, marcar soportes, confirmar. Cada elemento clave tiene Normal, Cargando, Error y Deshabilitado en la misma pantalla. Transiciones instantáneas. | Medir éxito y tiempo exige que el sistema responda como uno real; con imágenes estáticas el participante tendría que adivinar. Quito la animación porque esta semana valido orientación, no movimiento. **No podré concluir** si el movimiento ayudaría a entender un cambio de estado. |
-| **Modelo de datos** | **Alto en forma, de ejemplo en origen.** Las cifras de S1 cuadran entre pantallas (18,4 ha cobradas, 17,1 ha aplicadas, 20,8 ha de los lotes, 1,3 ha = $117.000 a $90.000 por ha). El mapa del operador es un KML que el navegador lee de verdad, con la misma aritmética de hectáreas de la demo anterior y 16 pruebas automáticas. Hay seis casos extremos cargables. | Los participantes tienen que reaccionar a dinero y hectáreas creíbles; con «$XX.XXX» no habría reacción que medir. Un archivo real que puede fallar prueba la factibilidad de leer mapas de operadores (fila 4). **No podré concluir** que sirva con los formatos de mapa que traigan operadores reales: eso necesita los tres operadores y los tres vuelos de la fila 4. |
+| **Modelo de datos** | **Alto en forma, de ejemplo en origen.** Las cifras de S1 cuadran entre pantallas (18,4 ha cobradas, 17,1 ha aplicadas, 20,8 ha de los lotes, 1,3 ha = $117.000 a $90.000 por ha). El mapa del operador es un KML que el navegador lee de verdad, con la misma aritmética de hectáreas de la demo anterior y 16 pruebas automáticas. Hay seis casos extremos cargables. | Pernice distingue contenido de fidelidad alta (el contenido final completo) de contenido de fidelidad baja (resúmenes o marcadores). Aquí es alto: los participantes tienen que reaccionar a dinero y hectáreas creíbles; con «$XX.XXX» no habría reacción que medir. Un archivo real que puede fallar prueba la factibilidad de leer mapas de operadores (fila 4). **No podré concluir** que sirva con los formatos de mapa que traigan operadores reales: eso necesita los tres operadores y los tres vuelos de la fila 4. |
 
 # 3. Skill, herramienta y captura de carga
 
@@ -78,19 +79,77 @@ El archivo `SKILL.md` también va **adjunto a este PDF** (en el panel de adjunto
 
 # 4. Prompt log
 
-Usé dos iteraciones. La primera construyó el flujo completo; la segunda corrigió defectos que encontró una revisión externa. Las capas de cada prompt siguen la guía de contexto, tarea, restricciones y estados de Lovable (s. f.), adaptada a las tres de la consigna: pantalla, comportamiento y contenido.
-
-<div class="pendiente">PENDIENTE: pasar las dos iteraciones a la «plantilla B» de la consigna (la tengo que conseguir). Abajo está todo el contenido real; solo falta el formato.</div>
+Usé dos iteraciones. La primera construyó el flujo completo; la segunda corrigió defectos que encontró una revisión externa. Sigo el formato de «Prompt por pantalla» del Figma de la clase: un bloque por pantalla, que parte de «Aplica [el sistema] a la pantalla X» y fija cada componente con valores exactos, y para los ajustes el «Prompt ajuste» («Ajusta solo este caso sin cambiar el resto: [caso]. Aplica [ajuste]. Regla: nada puede desbordar ni quedar cortado»). En ese Figma no encontré ninguna plantilla rotulada «B»; si el docente se refiere a otra, la paso a ese formato. Cada prompt cubre las tres capas de la consigna: **pantalla** (qué se ve), **comportamiento** (qué pasa al actuar) y **contenido** (qué dice, con datos reales).
 
 ## Iteración 1 · Construir el flujo
 
-**Prompt que escribí** (después de analizar la consigna y de elegir el flujo B): «Flujo B, empieza con la skill y la ruta del prototipo». Es corto a propósito: la especificación completa ya estaba en la skill y en el Brief de S1, y la herramienta la leyó antes de escribir código. Las tres capas que esa skill le dio son:
+**Lo que escribí de verdad** (después de analizar la consigna y de elegir el flujo B): «Flujo B, empieza con la skill y la ruta del prototipo». Es corto a propósito: la especificación completa ya estaba en la skill y en el Brief de S1, y la herramienta la leyó antes de escribir código. Los tres bloques de abajo no son un mensaje que haya enviado así: son esa especificación, ordenada en el formato «Prompt por pantalla» para que se vea qué le exigía a la herramienta en cada pantalla, con la regla de la skill entre corchetes.
 
-| Capa | Lo que le exigía |
-|---|---|
-| **Pantalla** | 10 Labores y tareas → 11 Verificar cobro → 12 Compartir evidencia, en la ruta `/prototipo/verificar-cobro/`, 1280 × 800, grises, sin marca (bloque 4 de la skill). |
-| **Comportamiento** | Leer el mapa del operador (cargando, error, listo); comparar contra un vuelo propio posterior a la labor; veredicto según la tolerancia; enviar evidencia o aceptar con confirmación; errores con salida (bloque 6). |
-| **Contenido** | Hacienda Santa Rita, Agrodron del Valle, 18,4 ha cobradas, 17,1 ha en su mapa, 20,8 ha medidas, diferencia de 1,3 ha = $117.000 a $90.000 por ha (regla 5.2). |
+**Prompt por pantalla · Pantalla 10, Labores y tareas**
+
+```
+Aplica la skill otear-prototipo-s2 a la pantalla 10 (entrada del flujo; ruta /prototipo/verificar-cobro/, 1280 × 800).
+
+PANTALLA
+- Menú lateral fijo con las 7 secciones de S1; solo «Labores y tareas» habilitada, las otras seis con aria-disabled [3.3].
+- h1 «Labores y tareas»; debajo, una tabla de labores (operador, lotes, hectáreas cobradas, estado).
+- Arial 16 px en el cuerpo, ninguna etiqueta bajo 12 px, botones de 44 px de alto como mínimo [4.2, 4.7].
+- Solo grises: texto #111, secundario #595959, bordes #767676, fondos #F2F2F2; sin marca ni color [4.1].
+- Sin transiciones ni animación [4.3].
+
+COMPORTAMIENTO
+- Cada fila con diferencia por verificar tiene el botón «Verificar cobro»; tras enviar la evidencia pasa a «Ver reclamo» [6.9].
+- Foco visible: trazo negro de 3 px; orden de Tab lógico [4.8].
+
+CONTENIDO
+- Hacienda Santa Rita; Agrodron del Valle fumigó los lotes 5 y 6 el vie 16 oct 2026 a $90.000 por ha; cobró 18,4 ha ($1.656.000) [5.2].
+- Coma decimal, punto de miles, fechas «vie 16 oct 2026» [5.3].
+- Más filas de otros operadores y labores, todas con texto real [5.1].
+```
+
+**Prompt por pantalla · Pantalla 11, Verificar cobro**
+
+```
+Aplica la skill otear-prototipo-s2 a la pantalla 11 (segunda pantalla del flujo). Mismos tokens de grises, Arial y 44 px.
+
+PANTALLA
+- h1 «Verificar cobro». Tres columnas lado a lado: Cobrado, Aplicado (según el mapa del operador) y Pedido (lotes medidos) [2.1].
+- Columna del mapa: marcador con X, proporción 16:9, y «Usar el mapa de ejemplo» [4.4].
+- Veredicto antes de cualquier botón; la nota del operador va debajo de las acciones, plegada [5.7].
+
+COMPORTAMIENTO
+- «Comparar» deshabilitado hasta tener mapa leído y vuelo propio elegido, con el motivo escrito [6.2].
+- Elegir un mapa → «Cargando el mapa…» 0,9 s → «17,1 ha leídas del mapa», o error con salida («Pedir el mapa al operador», «Elegir otro archivo») [6.1].
+- «Comparar» → Cargando → veredicto en la misma pantalla; con diferencia sobre la tolerancia, el botón primario es «Enviar evidencia al operador» y «Aceptar el cobro» es secundario y está separado [6.3, 6.4].
+- «Aceptar el cobro» es irreversible: diálogo propio con «Cancelar» como foco inicial [6.5].
+- Cada botón deshabilitado dice por qué; cada elemento clave (mapa, Comparar, Enviar, Aceptar) tiene Normal, Cargando, Error y Deshabilitado [4.5, 4.6].
+
+CONTENIDO
+- 18,4 ha cobradas, 17,1 ha en su mapa (aplicacion_lotes5-6.kml), 20,8 ha medidas en el vuelo del 24 oct; diferencia 1,3 ha = $117.000 [5.2].
+- «Referencia del prototipo: 5 %; se pacta con el operador (por definir)» junto al veredicto [2.3].
+- Cada cifra con su origen; «Simulación: no se envía nada a nadie» [5.5, 5.6].
+- Errores con qué pasó, por qué y qué hacer, sin culpar a Hernando [5.4].
+```
+
+**Prompt por pantalla · Pantalla 12, Compartir evidencia**
+
+```
+Aplica la skill otear-prototipo-s2 a la pantalla 12 (tercera pantalla). Mismos tokens.
+
+PANTALLA
+- h1 «Compartir evidencia»; mensaje editable, tres soportes y vista previa de la evidencia (marcador con X, proporción real).
+- «Enviar» y «Cancelar» visibles sin desplazarse a 1280 × 800 [1.5].
+
+COMPORTAMIENTO
+- Mensaje escrito con las cifras reales de la comparación; soportes marcados por defecto: mapa del operador, medición del vuelo, fotos [6.6].
+- «Enviar» deshabilitado si no hay destino válido, mensaje o ningún soporte, y dice cuál falta [6.6].
+- «Enviar» → «Enviando…» → «Evidencia enviada» y la 10 muestra «En reclamo»; o error «El mensaje no llegó» con «Reintentar», «Corregir el número» y «Copiar el mensaje y el enlace» [6.7].
+- El número que provoca el error solo aparece en el panel plegado «Datos de prueba» [6.7].
+
+CONTENIDO
+- Enlace que vence en 15 días; se comparte solo lo necesario [6.6].
+- «Simulación: no se envía nada a nadie. Los datos de ejemplo no son de un cliente real» [5.6].
+```
 
 **Lo que generó la herramienta:** la ruta, la lógica con 16 pruebas y las tres pantallas.
 
@@ -107,11 +166,13 @@ Usé dos iteraciones. La primera construyó el flujo completo; la segunda corrig
 
 **Cómo ocurrió.** Terminada la iteración 1, audité el resultado (sección 5, D1 a D5) y corregí en la conversación sin redactar un prompt aparte. Después mandé la entrega a una sesión de revisión independiente. Su informe encontró tres defectos que seguían en el sitio publicado y se los pasé a la herramienta tal cual. Escribo aquí esa corrección con las tres capas de lo que pedí y de lo que se cambió, para que se vea qué reglas de negocio hay detrás.
 
-| Capa | Lo que se pidió |
+En el formato «Prompt ajuste», uno por caso. «Regla» en los tres: nada puede desbordar ni quedar cortado, y no se toca nada más.
+
+| Caso (pantalla · comportamiento · contenido) | Ajuste que se pidió |
 |---|---|
-| **Pantalla** | En «Verificar cobro» no se toca la estructura de tres columnas. El diálogo «¿Aceptar el cobro de $1.656.000?» se muestra centrado. En «Compartir evidencia», el botón «Enviar» debe verse sin desplazarse a 1280 × 800: sube la vista previa y baja a 16:9. |
-| **Comportamiento** | Si la factura está en $0 no hay cobro que aceptar ni diferencia que reclamar: «Enviar evidencia al operador» y «Aceptar el cobro» quedan deshabilitados, cada uno con su motivo escrito; el veredicto no imprime porcentaje. Si no pasa, no hay salida nueva: el estado explica por qué y «Volver a Labores y tareas» sigue activo. |
-| **Contenido** | «No hay diferencia que reclamar: la factura está en $0.» Con el mapa leído y sin comparar, la tarjeta «Aplicado» dice «Falta comparar», no «Sin leer». Los lotes de «Plateo» son 9 y 10 (la hacienda tiene 12 lotes). El prototipo no se llama a sí mismo «la demo». |
+| **C1 · Pantalla 11, factura en $0** (comportamiento) | Ajusta solo este caso sin cambiar el resto: con la factura en $0 no hay cobro que aceptar ni diferencia que reclamar. Aplica: «Enviar evidencia al operador» y «Aceptar el cobro» quedan deshabilitados, cada uno con su motivo escrito; el veredicto no imprime porcentaje. Si no pasa, no hay salida nueva: el estado explica por qué y «Volver a Labores y tareas» sigue activo. |
+| **C2 · Pantalla 11, diálogo de aceptar** (pantalla) | Ajusta solo este caso sin cambiar el resto: el diálogo «¿Aceptar el cobro de $1.656.000?» sale pegado a la esquina. Aplica: centrado en la ventana, sin tocar la estructura de tres columnas. |
+| **C3 · Pantalla 12, botón «Enviar»** (pantalla y contenido) | Ajusta solo este caso sin cambiar el resto: «Enviar» no se ve sin desplazarse a 1280 × 800. Aplica: los botones suben bajo la vista previa, que baja a 16:9. Contenido: «No hay diferencia que reclamar: la factura está en $0.»; con el mapa leído y sin comparar, la tarjeta «Aplicado» dice «Falta comparar»; los lotes de «Plateo» son 9 y 10. |
 
 **Lo que generó:** los cambios D6 a D8 de la sección 5, con captura de antes (sitio publicado) y de después.
 
@@ -250,6 +311,7 @@ Está publicado y es público. Para quien lo califica, un recorrido de un minuto
 # Referencias
 
 - McCurdy, M., Connors, C., Pyrzak, G., Kanefsky, B. y Vera, A. (2006). *Breaking the fidelity barrier: An examination of our current characterization of prototypes and an example of a mixed-fidelity success.* CHI 2006, 1233–1242.
+- Pernice, K. (s. f.). *UX prototypes: Low fidelity vs. high fidelity.* Nielsen Norman Group. https://www.nngroup.com/articles/ux-prototype-hi-lo-fidelity/ (la lista de lecturas del curso la fecha en 2016; la página no muestra fecha).
 - MeasuringU (s. f.). *10 things to know about completion rates.* https://measuringu.com/completion-rates/
 - Lovable (s. f.). *Prompting.* https://docs.lovable.dev/prompting/prompting-one
 - Rojas Correa, L. M. (2026, 25 de octubre). *Otear: prototipo de baja fidelidad (Brief y Matriz de Supuestos, Semana 1).* Prototipado, Icesi.
