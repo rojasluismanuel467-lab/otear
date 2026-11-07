@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
-import { existsSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { homedir } from "node:os";
 
 const here = dirname(fileURLToPath(import.meta.url));

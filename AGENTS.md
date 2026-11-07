@@ -46,7 +46,7 @@ Aplica a `src/features/prototype/verify-charge/` y `src/app/prototipo/`. La land
 | --- | --- |
 | Color | Solo `var(--ds-color-*)`: primary (default, hover, soft), secondary, surface (default, background, disabled), text (ink, muted), border (control, subtle), error, success, warning (cada uno default, wash, ink). Texto ≥ 4,5:1; bordes de controles ≥ 3:1 (probado en `theme.test.ts`). |
 | Tipografía | Instrument Sans. Tres roles, cinco estilos: Heading/Page 28/36 700, Heading/Section 20/28 700, Body/Default 16/24 400, Body/Strong 16/24 600, Caption/Default 14/20 400. Nada por debajo de 14 px. En el CSS se usan los atajos `--t-*` del `.root`, que solo se arman con variables del tema. |
-| Espaciado | Escala de 8 pt: `--ds-space-4, 8, 12, 16, 24, 32`. Ningún otro valor. |
+| Espaciado | Escala de 8 pt: `--ds-space-4, 8, 12, 16, 24, 32`. Ningún otro valor para espacios; las medidas de la rejilla de la pantalla (columna lateral 232 px, columnas 380 px, diálogo 480 px) son de maquetación y no son espacios. |
 | Radio | `--ds-radius-small` 4 (etiquetas), `medium` 8 (botones, campos, avisos), `large` 16 (tarjetas, diálogo). |
 | Objetivo táctil | `--ds-size-target` 44 px de alto mínimo para todo lo que se pulsa. |
 | Foco | `box-shadow: var(--ds-focus-ring)` más `outline: 2px solid transparent` (visible en colores forzados). Nunca quitar el foco. |
@@ -59,9 +59,10 @@ Aplica a `src/features/prototype/verify-charge/` y `src/app/prototipo/`. La land
 | --- | --- | --- |
 | `Button/Primary/*`, `Button/Secondary/*` | `Button` en `parts.tsx` (`variant`) | Default, Hover, Focus, Disabled (`disabled`), Loading (`loading`) |
 | `ButtonWithReason/*` | `ButtonWithReason` | Enabled, Disabled con la razón escrita debajo |
-| `Field/Text/*` | `.input` / `.textarea` en `share-screen.tsx` (`data-ds="Field/Text"`) | Default, Focus, Disabled, Error (`aria-invalid`), Success |
+| `Field/Text/*` | `.input` / `.textarea` en `share-screen.tsx` (`data-ds="Field/Text"`) | Default, Focus, Disabled, Error (`aria-invalid`). Success existe solo en Figma: el flujo no lo usa |
 | `Alert/*` | `Alert` (`kind`) | Info, Loading, Success, Warning, Error |
 | `Badge/Status/*` | `Badge` (`kind`) | Default, Success, Warning, Error |
+| (sin maestro en Figma todavía) | `Button` con `variant="link"` (el enlace «← Volver») | Default, Hover, Focus; pendiente de dibujar como `Button/Link/*` en la página `_UI Kit` |
 
 **Micro-interacciones críticas (no cambiar su comportamiento):** (1) «Comparar» → «Comparando…» → resultado o error; (2) «Aceptar el cobro» → «Registrando…» → aceptado o error con «Reintentar». El estado de carga aparece en el mismo clic (medido: ≤ 20 ms; el criterio es ≤ 100 ms) dentro del mismo botón y el resultado entra en 250 ms. Todo error dice qué pasó, por qué y qué hacer (`ErrorText`).
 

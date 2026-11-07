@@ -483,7 +483,7 @@ export function VerifyScreen({
                 Nota del operador en la factura ({labor.operatorNote.length}{" "}
                 caracteres)
               </summary>
-              <p style={{ maxWidth: "none", marginTop: 8 }}>
+              <p style={{ maxWidth: "none", marginTop: "var(--ds-space-8)" }}>
                 {labor.operatorNote}
               </p>
             </details>
@@ -513,7 +513,10 @@ export function VerifyScreen({
             ? ` Todavía hay una diferencia de ${hectares(Math.abs(verification.value?.differenceHa ?? 0))} sin aclarar con el operador.`
             : ""}
         </p>
-        <div className={styles.actions} style={{ marginTop: 16 }}>
+        <div
+          className={styles.actions}
+          style={{ marginTop: "var(--ds-space-16)" }}
+        >
           <Button
             autoFocus
             variant="primary"

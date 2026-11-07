@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Otear: prototipo de alta fidelidad, auditoría del diseño final</title>
+<style>
+  @page { size: Letter; margin: 14mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 9.4pt; line-height: 1.38; color: #111; margin: 0; }
+  h1 { font-size: 15pt; margin: 0 0 1mm; }
+  h2 { font-size: 11pt; margin: 4mm 0 1.4mm; border-bottom: 1px solid #111; padding-bottom: 0.6mm; break-after: avoid; }
+  h3 { font-size: 10pt; margin: 3mm 0 1mm; break-after: avoid; }
+  p { margin: 0 0 1.6mm; }
+  a { color: #111; }
+  .meta { color: #333; font-size: 9pt; margin-bottom: 2mm; }
+  .links { border: 1px solid #111; padding: 1.8mm 2.6mm; margin: 2mm 0 2.4mm; font-size: 9pt; }
+  .links p { margin: 0.4mm 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 8.5pt; line-height: 1.32; margin: 1.5mm 0 2.4mm; border-top: 1px solid #111; border-bottom: 1px solid #111; }
+  th, td { text-align: left; vertical-align: top; padding: 1mm 1.6mm; }
+  th { border-bottom: 1px solid #111; }
+  caption { text-align: left; font-style: italic; font-size: 8.6pt; padding-bottom: 0.8mm; caption-side: top; }
+  .par { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; padding: 0 17mm; margin: 1.5mm 0 2mm; }
+  figure { margin: 0; break-inside: avoid; }
+  figure img { width: 100%; display: block; border: 1px solid #999; }
+  figcaption { font-size: 8.2pt; color: #333; margin-top: 0.6mm; }
+  pre { font-size: 7.6pt; line-height: 1.32; background: #f2f2f2; border: 1px solid #bbb; padding: 1.4mm 2mm; margin: 0 0 1.8mm; white-space: pre-wrap; }
+  .dec { break-inside: avoid; }
+  .salto { break-before: page; }
+  .nota { font-size: 8.4pt; color: #333; }
+  ul { margin: 0 0 1.6mm; padding-left: 5mm; } li { margin: 0.3mm 0; }
+</style>
+</head>
+<body>
+
+<h1>Otear: prototipo de alta fidelidad y auditoría del diseño final</h1>
+<p class="meta">Semana 3 · Prototipado de Alta Fidelidad e Interactividad Avanzada · Luis Manuel Rojas Correa (A00399289) · Universidad Icesi · Prototipado (2026-2) MCUX · Nicolás Salom · 7 de noviembre de 2026</p>
+
+<div class="links">
+<p><b>URL pública del prototipo:</b> <a href="https://otear.pages.dev/prototipo/verificar-cobro/">https://otear.pages.dev/prototipo/verificar-cobro/</a></p>
+<p><b>Video del recorrido (máx. 3 min):</b> <i>(se añade al grabar el video)</i></p>
+<p><b>Repositorio (público; ver <code>theme.json</code> y <code>AGENTS.md</code> en la raíz):</b> <a href="https://github.com/rojasluismanuel467-lab/otear">https://github.com/rojasluismanuel467-lab/otear</a></p>
+<p><b>UI Kit en Figma (página «_UI Kit»):</b> <a href="https://www.figma.com/design/Q6mPLc5fmbp56a2Zm4zPii/?node-id=56-2">https://www.figma.com/design/Q6mPLc5fmbp56a2Zm4zPii/?node-id=56-2</a></p>
+</div>
+
+<h2>1. Qué se entrega y dónde se comprueba</h2>
+<p>Este trabajo eleva el prototipo funcional de S2 (el flujo «Verificar el cobro de una labor contratada» para Hernando, 56 años, administrador de la Hacienda Santa Rita) sin crear un proyecto nuevo ni cambiar el flujo: tres pantallas, la misma lógica, los mismos datos. Lo que cambió es la capa visual y de estados, que ahora sale de un sistema de diseño.</p>
+<table>
+<caption>Tabla 1. Entregables de la Semana 3 y cómo verificarlos</caption>
+<tr><th style="width:27%">Entregable</th><th>Dónde está y qué se puede comprobar</th></tr>
+<tr><td>UI Kit en Figma</td><td>Página «_UI Kit»: 20 estilos de color, 5 estilos de texto (Heading, Body, Caption), escala de espaciado 4-8-12-16-24-32, 3 radios, estilo de efecto «Focus/Ring» y 26 componentes con el estado en el nombre (<i>Button/Primary/Default</i>, <i>Alert/Error</i>, <i>Badge/Status/Success</i>…): Button (Primary y Secondary × Default, Hover, Focus, Disabled, Loading), Field/Text (Default, Focus, Disabled, Error, Success), Alert (Info, Loading, Success, Warning, Error), Badge/Status (4) y ButtonWithReason (2). Sin Variants ni Variables de Figma, como pide la consigna. El kit se escribió en Figma con el MCP oficial desde Claude Code; la ruta obligatoria para la IA es la A (<code>AGENTS.md</code>).</td></tr>
+<tr><td>Design system para la IA</td><td><code>AGENTS.md</code> (sección «Sistema de diseño del prototipo»: reglas, tabla Figma ↔ código, micro-interacciones, mensajes de commit) y <code>theme.json</code> (54 variables CSS generadas, fuente única). <code>npm run theme</code> genera las variables CSS y <code>npm test</code> falla si el CSS tiene un color, tamaño de letra o duración escritos a mano.</td></tr>
+<tr><td>Sistema aplicado al repositorio de S2</td><td>El mismo repositorio. todo color, tamaño de letra, espacio, radio, grosor de borde y duración de <code>prototype.module.css</code> sale de <code>var(--ds-*)</code> (solo quedan literales las medidas de la rejilla de la pantalla: 232, 380 y 480 px); cada componente lleva su nombre del UI Kit en <code>data-ds</code>. La lógica de verificación y sus 16 pruebas no cambiaron.</td></tr>
+<tr><td>Micro-interacciones</td><td>Dos momentos críticos con tres estados cada uno, diseñados en Figma (figura 1) y construidos en código: «Comparar» y «Aceptar el cobro».</td></tr>
+<tr><td>URL pública</td><td>GitHub → Cloudflare Pages (despliegue automático al subir a <code>main</code>), sin pantallas sin salida.</td></tr>
+</table>
+
+<h3>Análisis teórico: el sistema de diseño como especificación que la IA ejecuta</h3>
+<p>Un archivo de Figma bonito no basta: la IA genera CSS arbitrario si no tiene una especificación. Por eso los valores viven en un solo archivo legible por máquina (<code>theme.json</code>), las reglas de uso en <code>AGENTS.md</code> y los nombres coinciden entre Figma y el código; así la calidad del sistema se mide en qué tan bien lo aplica el agente, y eso se prueba con una prueba automática, no con la vista. Los criterios vienen de fuentes que se pueden citar: las 10 heurísticas de usabilidad de Nielsen (1994) para decidir qué cambiar; WCAG 2.2 (W3C, 2023) para el contraste (1.4.3 y 1.4.11), el no depender solo del color (1.4.1) y el tamaño del objetivo (2.5.8); y los tres límites de tiempo de respuesta de Nielsen (1993): 0,1 s se siente instantáneo, 1 s no interrumpe el pensamiento, 10 s agota la atención. De ahí salen las reglas de movimiento del sistema: el estado de carga debe aparecer en menos de 100 ms y los cambios de estado duran 250 ms con curva de salida suave, que es lo bastante rápido para sentirse como respuesta y lo bastante lento para verse. Con «reducir movimiento» activado todo es instantáneo.</p>
+<figure>
+<img src="figma/micro-interacciones.png" alt="Micro-interacciones en Figma" style="max-height:48mm;object-fit:contain;width:auto;max-width:100%">
+<figcaption>Figura 1. Micro-interacciones en la página «_UI Kit»: «Comparar» y «Aceptar el cobro», cada una con estado inicial, de carga y de feedback (éxito y error). Las instancias son de los componentes del kit.</figcaption>
+</figure>
+
+<h2>2. Tres decisiones de diseño</h2>
+
+<div class="dec">
+<h3>Decisión 1 · El estado de carga vive en el mismo botón y dice lo que pasa</h3>
+<p><b>Principio:</b> Heurística #1 Visibilidad del estado del sistema. <b>Qué se modificó:</b> el botón «Comparando…» era un recuadro gris con rayas, sin indicador de movimiento; ahora es el mismo <code>Button/Primary</code> con un indicador que gira y el gerundio, y el aviso <code>Alert/Loading</code> lleva la palabra «Cargando» y el mismo indicador.</p>
+<div class="par">
+<figure><img src="capturas/antes/05-comparando.png" alt="Antes"><figcaption>Antes (S2): rayas grises y ningún indicador de progreso.</figcaption></figure>
+<figure><img src="capturas/despues/05-comparando.png" alt="Después"><figcaption>Después: <i>Button/Primary/Loading</i> y <i>Alert/Loading</i>.</figcaption></figure>
+</div>
+<pre>- .btn[aria-busy="true"] { background: repeating-linear-gradient(135deg, var(--soft-2) 0 8px, #fff 8px 16px); }
++ .btn[aria-busy="true"] { cursor: progress; }               /* parts.tsx: {loading ? &lt;Spinner /&gt; : null} */
++ .spinner { animation: ds-spin var(--ds-motion-spinner) linear infinite; }   /* quieto con prefers-reduced-motion */</pre>
+<p><b>Justificación:</b> sin una señal de que el clic fue recibido, Hernando duda y vuelve a pulsar; con un indicador que se mueve y una palabra, confirma de inmediato que el sistema trabaja. Medido con el script <code>capture-prototype.mjs</code>: el estado de carga aparece 4-5 ms después del clic en S2 y 13-14 ms en la versión final; los dos cumplen el criterio de 100 ms, así que la mejora no es de velocidad sino de claridad (el límite de 0,1 s no se pierde).</p>
+</div>
+
+<div class="dec">
+<h3>Decisión 2 · Un solo componente de aviso para todos los estados, incluido el veredicto</h3>
+<p><b>Principio:</b> Heurística #4 Consistencia y estándares. <b>Qué se modificó:</b> el veredicto de la comparación era una caja con borde negro de 3 px distinta de todos los demás avisos. Ahora usa la misma familia <code>Alert</code> (Success, Warning, Info) con su palabra («Atención», «Listo», «Aviso»), y el estado de las labores pasó de etiquetas grises a <code>Badge/Status</code>.</p>
+<div class="par">
+<figure><img src="capturas/antes/06-resultado.png" alt="Antes"><figcaption>Antes: el veredicto no se parece a ningún otro aviso; los estados se distinguen solo por el trazo.</figcaption></figure>
+<figure><img src="capturas/despues/06-resultado.png" alt="Después"><figcaption>Después: <i>Alert/Warning</i> («Atención») con la acción principal en <i>Button/Primary</i>.</figcaption></figure>
+</div>
+<pre>- &lt;section className={styles.verdict}&gt;                              + &lt;section className={`${styles.verdict} ${verdictClass}`} data-ds="Alert/Warning"&gt;
+-   &lt;h2 className={styles.verdictTitle}&gt;{title}&lt;/h2&gt;              +   &lt;span className={styles.alertLabel}&gt;{kindLabel[verdictKind]}&lt;/span&gt;  &lt;h2 …&gt;{title}&lt;/h2&gt;</pre>
+<p><b>Justificación:</b> cuando lo mismo se ve igual en toda la pantalla, la persona aprende una vez qué significa un aviso ámbar o uno verde y deja de releerlos. El color refuerza pero no sustituye: cada aviso lleva su palabra y una forma de borde (WCAG 1.4.1), de modo que sigue siendo legible en escala de grises o con daltonismo. Los textos pasaron de 13 px a un piso de 14 px (de 8-12 elementos por pantalla con texto menor a 14 px a ninguno).</p>
+</div>
+
+<div class="dec">
+<h3>Decisión 3 · El error dice qué pasó, por qué y qué hacer, y deja una salida</h3>
+<p><b>Principio:</b> Heurística #9 Ayudar a los usuarios a reconocer, diagnosticar y recuperarse de los errores. <b>Qué se modificó:</b> el error al registrar la aceptación tenía borde doble gris, igual de pesado que un éxito o un aviso. Ahora es <code>Alert/Error</code>: fondo y borde rojos, palabra «Error», el texto de «Por qué pasó» y «Qué puede hacer» y el botón primario «Reintentar» junto a «Cerrar».</p>
+<div class="par">
+<figure><img src="capturas/antes/10-aceptar-error.png" alt="Antes"><figcaption>Antes: el error es un recuadro de borde doble que se parece a los demás.</figcaption></figure>
+<figure><img src="capturas/despues/10-aceptar-error.png" alt="Después"><figcaption>Después: <i>Alert/Error</i> con salida clara (Reintentar).</figcaption></figure>
+</div>
+<p><b>Justificación:</b> el error es el momento en que más se pierde la confianza. El mensaje sin culpar a la persona, con la razón y el siguiente paso, y con la acción de recuperación como botón primario, hace que un fallo de la simulación no se vuelva un callejón sin salida; y el aviso entra con una transición de 250 ms para que se note sin asustar.</p>
+</div>
+
+<h2>3. Prueba de esfuerzo: contenido extremo</h2>
+<p>Con el panel «Datos de prueba» del prototipo se cargaron cuatro casos extremos además del normal: operador con nombre de 78 caracteres, nota del operador de 716 caracteres, cobro de $0 y cobro de casi $50.000.000. En cada uno se recorrió el flujo hasta el resultado y se midió en el navegador (1280×1000 px) el desborde horizontal, los elementos que pasan el borde derecho y los textos menores a 14 px.</p>
+<table>
+<caption>Tabla 2. Medición por caso de datos (lista de labores / resultado), S2 antes y versión final después</caption>
+<tr><th>Caso</th><th>Desborde horizontal</th><th>Elementos fuera del borde</th><th>Textos &lt; 14 px (antes → después)</th></tr>
+<tr><td>Normal</td><td>no / no</td><td>0 / 0</td><td>12 / 8 → 0 / 0</td></tr>
+<tr><td>Operador de 78 caracteres</td><td>no / no</td><td>0 / 0</td><td>12 / 8 → 0 / 0</td></tr>
+<tr><td>Nota de 716 caracteres</td><td>no / no</td><td>0 / 0</td><td>12 / 9 → 0 / 0</td></tr>
+<tr><td>Cobro de $0</td><td>no / no</td><td>0 / 0</td><td>12 / 8 → 0 / 0</td></tr>
+<tr><td>Cobro de $49.999.994</td><td>no / no</td><td>0 / 0</td><td>12 / 8 → 0 / 0</td></tr>
+</table>
+<div class="par">
+<figure><img src="capturas/despues/21-long-operator-resultado.png" alt="Operador largo"><figcaption>Operador con nombre de 78 caracteres: el subtítulo se parte en dos líneas y la tarjeta «Cobrado» crece sin romper la fila.</figcaption></figure>
+<figure><img src="capturas/despues/21-zero-charge-resultado.png" alt="Cobro cero"><figcaption>Cobro de $0: <i>Alert/Info</i> y ambos botones deshabilitados con la razón escrita debajo (Heurística #5).</figcaption></figure>
+</div>
+<p><b>Análisis:</b> el sistema se sostiene: ningún texto se corta ni se sale, porque las tarjetas y avisos parten la línea (<code>overflow-wrap: anywhere</code>) y las columnas usan <code>minmax(0, 1fr)</code>. Dos límites que se observaron: (a) con el nombre largo las tres tarjetas dejan de tener la misma altura (la de «Cobrado» es más alta); es aceptable porque no hay pérdida de información, pero si el nombre fuera mucho más largo convendría limitarlo a dos líneas con el nombre completo en el detalle; (b) las cifras de siete dígitos en la tabla ocupan toda la celda y dependen de que la columna «Cobro» no se estreche, algo que solo se probó a 1280 px de ancho y no en móvil.</p>
+
+<h2>4. ¿Está listo para S4 (pruebas con usuarios)?</h2>
+<p><b>Sí, para probar el flujo en computador.</b> Tiene URL pública, los tres estados (inicial, carga y feedback) de cada acción crítica, errores con salida y contenido extremo medido. Se puede medir en S4 con las tareas de S1: tasa de éxito de T2 (verificar el cobro y decidir), tiempo en la tarea, errores y reintentos, si la persona entiende el veredicto sin ayuda, y satisfacción (SUS).</p>
+<p><b>Lo que no está resuelto y debe decirse:</b> (1) el enlace «← Volver» existe solo en el código y el estado Success de <code>Field/Text</code> solo en Figma, porque el flujo no lo usa; (2) pensado para escritorio, sin prueba en celular, con lector de pantalla ni en otros navegadores; (3) el Smart Animate de 250 ms está especificado como estados en Figma y como transición CSS en el código, sin prototipo con reacciones; (4) los datos son de ejemplo y nada se envía, y la interfaz lo dice; (5) la tolerancia del 5 % sigue «por definir»; (6) los ítems del menú lateral están deshabilitados y no son parte del flujo.</p>
+<p class="nota"><b>Referencias.</b> Nielsen, J. (1993). <i>Usability engineering</i>. Morgan Kaufmann. · Nielsen, J. (1994). 10 usability heuristics for user interface design. Nielsen Norman Group. · W3C. (2023). <i>Web Content Accessibility Guidelines (WCAG) 2.2</i>. https://www.w3.org/TR/WCAG22/ · Rojas Correa, L. M. (2026). <i>Otear: prototipo de baja fidelidad</i> (Semana 1) y <i>prototipo de mediana fidelidad</i> (Semana 2) [Trabajos del curso]. Universidad Icesi.</p>
+</body>
+</html>
