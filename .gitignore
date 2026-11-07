@@ -26,3 +26,4 @@ public/models/dji/
 
 # cache de teselas de elevación (scripts/generate-chart-texture.py)
 .tiles-cache/
+docs/planning/prototipo-s3/.auditoria.build.html
