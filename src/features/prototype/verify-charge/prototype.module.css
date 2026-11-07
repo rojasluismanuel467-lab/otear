@@ -1,51 +1,57 @@
 /*
- * Prototype S2 «Verificar el cobro»: medium fidelity. Greys only (every colour has R = G = B), standard
- * type, no motion, no shadows. A state is told apart by its border, its label and its text, never by colour.
- * The page covers the demo's own background (its relief and tints) with an opaque white layer.
+ * Prototype «Verificar el cobro», Semana 3: the S2 flow with the Otear design system applied.
+ * Every colour, type size, space, radius, border width and duration comes from a `--ds-*` variable
+ * generated from theme.json (theme.css, scoped by [data-ds="otear"]). Components keep the names of the
+ * UI Kit page in Figma (Button/Primary, Alert/Error, Badge/Status/Success, Field/Text...), each one
+ * carries its name in `data-ds`. A state is never told apart by colour alone: it also has a word and a
+ * border shape (solid, dashed). Motion: 150 ms on hover, 250 ms ease-out when a state changes, all of it
+ * off with prefers-reduced-motion.
  */
 .root {
-  --ink: #111;
-  --ink-2: #333;
-  --muted: #595959;
-  --line: #767676;
-  --soft: #f2f2f2;
-  --soft-2: #e0e0e0;
+  /* Text roles of the UI Kit, assembled only from theme variables. */
+  --t-heading-page: var(--ds-type-heading-page-weight)
+    var(--ds-type-heading-page-size) / var(--ds-type-heading-page-line)
+    var(--ds-font-sans);
+  --t-heading-section: var(--ds-type-heading-section-weight)
+    var(--ds-type-heading-section-size) / var(--ds-type-heading-section-line)
+    var(--ds-font-sans);
+  --t-body: var(--ds-type-body-default-weight)
+    var(--ds-type-body-default-size) / var(--ds-type-body-default-line)
+    var(--ds-font-sans);
+  --t-strong: var(--ds-type-body-strong-weight)
+    var(--ds-type-body-strong-size) / var(--ds-type-body-strong-line)
+    var(--ds-font-sans);
+  --t-caption: var(--ds-type-caption-default-weight)
+    var(--ds-type-caption-default-size) / var(--ds-type-caption-default-line)
+    var(--ds-font-sans);
   position: fixed;
   inset: 0;
   z-index: 50;
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
-  background: #fff;
-  color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 16px;
-  line-height: 1.45;
+  background: var(--ds-color-surface-background);
+  color: var(--ds-color-text-ink);
+  font: var(--t-body);
   overflow: auto;
-  scroll-behavior: auto;
-  scrollbar-color: var(--line) #fff;
+  scrollbar-color: var(--ds-color-border-control)
+    var(--ds-color-surface-background);
 }
-.root *,
-.root *::before,
-.root *::after {
-  transition: none !important;
-  animation: none !important;
-  scroll-behavior: auto !important;
-}
-/* Borders without a colour of their own (and the field caret) would take the demo's blue-grey tints. */
+/* Borders without a colour of their own would take the demo's tints. */
 .root :where(*, *::before, *::after) {
-  border-color: var(--line);
+  border-color: var(--ds-color-border-subtle);
 }
 .root input,
 .root textarea {
-  caret-color: var(--ink);
+  caret-color: var(--ds-color-text-ink);
 }
 .root ::selection {
-  background: var(--soft-2);
-  color: var(--ink);
+  background: var(--ds-color-primary-soft);
+  color: var(--ds-color-text-ink);
 }
+/* Focus ring (effect style «Focus/Ring» in Figma); the transparent outline keeps it visible in forced colours. */
 .root :focus-visible {
-  outline: 3px solid var(--ink);
-  outline-offset: 3px;
+  outline: 2px solid transparent;
+  box-shadow: var(--ds-focus-ring);
 }
 .root h1,
 .root h2,
@@ -54,6 +60,7 @@
   margin: 0;
   max-width: none;
   text-wrap: auto;
+  letter-spacing: normal;
 }
 .root p {
   max-width: 68ch;
@@ -61,21 +68,23 @@
 
 /* ---------- Sidebar ---------- */
 .sidebar {
-  border-right: 2px solid var(--ink);
-  padding: 20px 16px;
+  background: var(--ds-color-surface-default);
+  border-right: var(--ds-border-default) solid var(--ds-color-border-subtle);
+  padding: var(--ds-space-24) var(--ds-space-16);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--ds-space-16);
   min-height: 100%;
 }
 .brand {
-  font-size: 22px;
-  font-weight: 700;
+  font: var(--t-heading-section);
+  color: var(--ds-color-primary-default);
 }
 .org {
-  border: 1px solid var(--line);
-  padding: 8px 10px;
-  font-size: 14px;
+  border: var(--ds-border-default) solid var(--ds-color-border-control);
+  border-radius: var(--ds-radius-medium);
+  padding: var(--ds-space-8) var(--ds-space-12);
+  font: var(--t-caption);
 }
 .nav {
   list-style: none;
@@ -83,470 +92,550 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--ds-space-4);
 }
 .navItem {
   display: block;
   width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid transparent;
+  min-height: var(--ds-size-target);
+  padding: var(--ds-space-8) var(--ds-space-12);
+  border: var(--ds-border-default) solid transparent;
+  border-radius: var(--ds-radius-medium);
   background: transparent;
-  color: var(--ink);
-  font: inherit;
+  color: var(--ds-color-text-ink);
+  font: var(--t-body);
   text-align: left;
 }
 .navActive {
-  background: var(--ink);
-  color: #fff;
-  font-weight: 700;
+  background: var(--ds-color-primary-default);
+  color: var(--ds-color-surface-default);
+  font: var(--t-strong);
 }
 .navDisabled {
-  color: var(--muted);
-  border: 1px dashed var(--line);
+  color: var(--ds-color-text-muted);
+  border: var(--ds-border-default) dashed var(--ds-color-border-control);
   cursor: not-allowed;
 }
 .navNote {
-  font-size: 13px;
-  color: var(--muted);
+  font: var(--t-caption);
+  color: var(--ds-color-text-muted);
 }
 
 /* ---------- Main ---------- */
 .main {
-  padding: 28px 32px 56px;
+  padding: var(--ds-space-32);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--ds-space-24);
   min-width: 0;
 }
 .crumb {
   align-self: flex-start;
 }
 .title {
-  font-size: 30px;
-  line-height: 1.15;
-  font-weight: 700;
+  font: var(--t-heading-page);
   overflow-wrap: anywhere;
 }
 .subtitle {
-  color: var(--muted);
-  font-size: 15px;
+  color: var(--ds-color-text-muted);
+  font: var(--t-body);
   overflow-wrap: anywhere;
 }
 .head {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--ds-space-8);
 }
 .sim {
-  border: 1px dashed var(--line);
-  padding: 8px 12px;
-  font-size: 14px;
-  color: var(--ink-2);
+  border: var(--ds-border-default) dashed var(--ds-color-primary-default);
+  border-radius: var(--ds-radius-medium);
+  background: var(--ds-color-primary-soft);
+  padding: var(--ds-space-8) var(--ds-space-12);
+  font: var(--t-caption);
   max-width: none;
 }
 
-/* ---------- Buttons ---------- */
+/* ---------- Button (Button/Primary, Button/Secondary, Button/Link) ---------- */
 .btn {
-  min-height: 44px;
-  padding: 10px 18px;
-  border: 2px solid var(--ink);
-  background: #fff;
-  color: var(--ink);
-  font: inherit;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-8);
+  min-height: var(--ds-size-target);
+  padding: var(--ds-space-12) var(--ds-space-24);
+  border: var(--ds-border-strong) solid var(--ds-color-secondary-default);
+  border-radius: var(--ds-radius-medium);
+  background: var(--ds-color-surface-default);
+  color: var(--ds-color-secondary-default);
+  font: var(--t-strong);
   cursor: pointer;
   text-align: center;
+  transition:
+    background-color var(--ds-motion-fast) var(--ds-motion-easing-out),
+    border-color var(--ds-motion-fast) var(--ds-motion-easing-out),
+    color var(--ds-motion-fast) var(--ds-motion-easing-out);
+}
+.btn:hover:not(:disabled) {
+  background: var(--ds-color-surface-background);
+  border-color: var(--ds-color-text-ink);
+  color: var(--ds-color-text-ink);
 }
 .btnPrimary {
-  background: var(--ink);
-  color: #fff;
+  background: var(--ds-color-primary-default);
+  border-color: var(--ds-color-primary-default);
+  color: var(--ds-color-surface-default);
+}
+.btnPrimary:hover:not(:disabled) {
+  background: var(--ds-color-primary-hover);
+  border-color: var(--ds-color-primary-hover);
+  color: var(--ds-color-surface-default);
 }
 .btnLink {
   border-color: transparent;
   background: transparent;
+  color: var(--ds-color-primary-default);
   text-decoration: underline;
-  text-underline-offset: 3px;
-  padding-inline: 4px;
+  text-underline-offset: var(--ds-space-4);
+  padding-inline: var(--ds-space-4);
 }
-.btn:disabled {
-  border: 2px dashed var(--line);
-  background: var(--soft);
-  color: var(--muted);
+.btnLink:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ds-color-primary-hover);
+}
+/* Disabled: dashed border and muted text, so it is not only a paler colour. */
+.btn:disabled:not([aria-busy="true"]) {
+  border: var(--ds-border-strong) dashed var(--ds-color-border-control);
+  background: var(--ds-color-surface-disabled);
+  color: var(--ds-color-text-muted);
   cursor: not-allowed;
   text-decoration: none;
 }
+/* Loading: same component, spinner + gerund; it answers the click at once. */
 .btn[aria-busy="true"] {
-  background: repeating-linear-gradient(
-    135deg,
-    var(--soft-2) 0 8px,
-    #fff 8px 16px
-  );
-  color: var(--ink);
-  border-style: solid;
   cursor: progress;
 }
 .reason {
-  font-size: 14px;
-  color: var(--muted);
+  font: var(--t-caption);
+  color: var(--ds-color-text-muted);
 }
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 14px;
+  gap: var(--ds-space-8) var(--ds-space-16);
   align-items: center;
 }
 .actionCol {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--ds-space-8);
   align-items: flex-start;
 }
 
-/* ---------- State boxes (error, loading, ok, info) ---------- */
-.box {
-  border: 2px solid var(--ink);
-  padding: 12px 14px;
+/* ---------- Spinner ---------- */
+.spinner {
+  flex: none;
+  width: var(--ds-space-16);
+  height: var(--ds-space-16);
+  border: var(--ds-border-strong) solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ds-spin var(--ds-motion-spinner) linear infinite;
+}
+@keyframes ds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Alert (Alert/Info, Loading, Success, Warning, Error) ---------- */
+.alert,
+.verdict {
+  border: var(--ds-border-strong) solid var(--ds-color-text-ink);
+  border-radius: var(--ds-radius-medium);
+  padding: var(--ds-space-12) var(--ds-space-16);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: #fff;
+  gap: var(--ds-space-8);
+  background: var(--ds-color-surface-default);
+  color: var(--ds-color-text-ink);
   overflow-wrap: anywhere;
+  animation: ds-enter var(--ds-motion-base) var(--ds-motion-easing-out);
 }
-.boxLabel {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+@keyframes ds-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--ds-space-8));
+  }
+}
+.alert .reason,
+.verdict .reason {
+  color: inherit;
+}
+.alertLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-8);
+  font: var(--t-strong);
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
-.boxError {
-  border-style: double;
-  border-width: 5px;
-  background: var(--soft);
+.alertTitle {
+  font: var(--t-strong);
 }
-.boxLoading {
-  border-style: dashed;
-  background: repeating-linear-gradient(
-    135deg,
-    var(--soft) 0 10px,
-    #fff 10px 20px
-  );
+.alertInfo {
+  background: var(--ds-color-primary-soft);
+  border-color: var(--ds-color-primary-default);
 }
-.boxOk {
-  background: var(--soft);
+.alertLoading {
+  background: var(--ds-color-surface-default);
+  border: var(--ds-border-strong) dashed var(--ds-color-secondary-default);
 }
-.boxInfo {
-  border-width: 1px;
+.alertSuccess {
+  background: var(--ds-color-success-wash);
+  border-color: var(--ds-color-success-default);
+  color: var(--ds-color-success-ink);
 }
-.boxTitle {
-  font-weight: 700;
+.alertWarning {
+  background: var(--ds-color-warning-wash);
+  border-color: var(--ds-color-warning-default);
+  color: var(--ds-color-warning-ink);
+}
+.alertError {
+  background: var(--ds-color-error-wash);
+  border-color: var(--ds-color-error-default);
+  color: var(--ds-color-error-ink);
 }
 
 /* ---------- Table of labors ---------- */
 .tableWrap {
-  border: 2px solid var(--ink);
+  background: var(--ds-color-surface-default);
+  border: var(--ds-border-default) solid var(--ds-color-border-subtle);
+  border-radius: var(--ds-radius-large);
   overflow-x: auto;
 }
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 15px;
+  font: var(--t-body);
 }
 .table caption {
   text-align: left;
-  padding: 12px 14px;
-  font-weight: 700;
-  border-bottom: 2px solid var(--ink);
+  padding: var(--ds-space-16);
+  font: var(--t-heading-section);
+  border-bottom: var(--ds-border-default) solid var(--ds-color-border-subtle);
 }
 .table tbody th {
   background: transparent;
-  font-size: 15px;
-  text-transform: none;
-  letter-spacing: 0;
+  font: var(--t-strong);
 }
 .table th,
 .table td {
   text-align: left;
   vertical-align: top;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
+  padding: var(--ds-space-12);
+  border-bottom: var(--ds-border-default) solid var(--ds-color-border-subtle);
   overflow-wrap: anywhere;
 }
 .table th {
-  background: var(--soft);
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  background: var(--ds-color-surface-background);
+  font: var(--t-caption);
+  font-weight: var(--ds-type-body-strong-weight);
 }
 .table tr:last-child td {
   border-bottom: 0;
 }
-.rowFlag td,
-.rowFlag th {
-  background: var(--soft);
+.table tbody .rowFlag th,
+.rowFlag td {
+  background: var(--ds-color-warning-wash);
 }
 .right {
   text-align: right !important;
   white-space: nowrap;
 }
-.tag {
+
+/* ---------- Badge (Badge/Status/Default, Success, Warning, Error) ---------- */
+.badge {
   display: inline-block;
-  border: 1px solid var(--ink);
-  padding: 1px 8px;
-  font-size: 13px;
-  font-weight: 700;
+  border: var(--ds-border-default) solid var(--ds-color-border-control);
+  border-radius: var(--ds-radius-small);
+  padding: var(--ds-space-4) var(--ds-space-12);
+  font: var(--t-caption);
+  font-weight: var(--ds-type-body-strong-weight);
   white-space: nowrap;
 }
-.tagFlag {
-  border-width: 2px;
-}
-.tagDone {
+.badgeDefault {
   border-style: dashed;
-  color: var(--ink-2);
+  background: var(--ds-color-surface-default);
+}
+.badgeSuccess {
+  background: var(--ds-color-success-wash);
+  border-color: var(--ds-color-success-default);
+  color: var(--ds-color-success-ink);
+}
+.badgeWarning {
+  background: var(--ds-color-warning-wash);
+  border-color: var(--ds-color-warning-default);
+  color: var(--ds-color-warning-ink);
+}
+.badgeError {
+  background: var(--ds-color-error-wash);
+  border-color: var(--ds-color-error-default);
+  color: var(--ds-color-error-ink);
 }
 
 /* ---------- Verification ---------- */
 .columns {
   display: grid;
   grid-template-columns: 380px minmax(0, 1fr);
-  gap: 24px;
+  gap: var(--ds-space-24);
   align-items: start;
 }
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--ds-space-16);
   min-width: 0;
 }
 .step {
-  border: 1px solid var(--line);
-  padding: 14px;
+  background: var(--ds-color-surface-default);
+  border: var(--ds-border-default) solid var(--ds-color-border-subtle);
+  border-radius: var(--ds-radius-large);
+  padding: var(--ds-space-24);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--ds-space-12);
 }
 .stepLocked {
   border-style: dashed;
-  background: var(--soft);
+  border-color: var(--ds-color-border-control);
+  background: var(--ds-color-surface-disabled);
 }
 .stepTitle {
-  font-size: 16px;
-  font-weight: 700;
+  font: var(--t-heading-section);
 }
 .radio {
   display: flex;
-  gap: 10px;
+  gap: var(--ds-space-12);
   align-items: center;
-  border: 1px solid var(--line);
-  padding: 10px 12px;
-  min-height: 44px;
+  border: var(--ds-border-default) solid var(--ds-color-border-control);
+  border-radius: var(--ds-radius-medium);
+  padding: var(--ds-space-12);
+  min-height: var(--ds-size-target);
   cursor: pointer;
+  transition: background-color var(--ds-motion-fast) var(--ds-motion-easing-out);
+}
+.radio:hover {
+  background: var(--ds-color-surface-background);
 }
 .radio input {
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-  accent-color: var(--ink);
+  width: var(--ds-space-24);
+  height: var(--ds-space-24);
+  accent-color: var(--ds-color-primary-default);
 }
 .radioOn {
-  border: 2px solid var(--ink);
+  border: var(--ds-border-strong) solid var(--ds-color-primary-default);
+  background: var(--ds-color-primary-soft);
 }
 .radioOff {
   border-style: dashed;
-  color: var(--muted);
+  color: var(--ds-color-text-muted);
   cursor: not-allowed;
 }
 .cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--ds-space-12);
 }
 .card {
-  border: 1px solid var(--line);
-  padding: 12px;
+  background: var(--ds-color-surface-default);
+  border: var(--ds-border-default) solid var(--ds-color-border-subtle);
+  border-radius: var(--ds-radius-large);
+  padding: var(--ds-space-16);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--ds-space-4);
   min-width: 0;
 }
 .cardOn {
-  border: 2px solid var(--ink);
-  background: var(--soft);
+  border: var(--ds-border-strong) solid var(--ds-color-primary-default);
+  background: var(--ds-color-primary-soft);
 }
 .cardLabel {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ink-2);
-  font-weight: 700;
+  font: var(--t-caption);
+  font-weight: var(--ds-type-body-strong-weight);
+  color: var(--ds-color-text-muted);
 }
 .cardValue {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.1;
+  font: var(--t-heading-page);
   overflow-wrap: anywhere;
 }
 .cardSub {
-  font-size: 15px;
+  font: var(--t-body);
 }
 .cardSource {
-  font-size: 13px;
-  color: var(--muted);
-}
-.verdict {
-  border: 3px solid var(--ink);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  font: var(--t-caption);
+  color: var(--ds-color-text-muted);
 }
 .verdictTitle {
-  font-size: 22px;
-  font-weight: 700;
+  font: var(--t-heading-section);
   overflow-wrap: anywhere;
 }
 .placeholder {
-  border: 2px dashed var(--line);
+  border: var(--ds-border-strong) dashed var(--ds-color-border-control);
+  border-radius: var(--ds-radius-large);
   background:
     linear-gradient(
       to top right,
       transparent calc(50% - 1px),
-      var(--line) 50%,
+      var(--ds-color-border-control) 50%,
       transparent calc(50% + 1px)
     ),
     linear-gradient(
       to bottom right,
       transparent calc(50% - 1px),
-      var(--line) 50%,
+      var(--ds-color-border-control) 50%,
       transparent calc(50% + 1px)
     ),
-    var(--soft);
+    var(--ds-color-surface-disabled);
   display: grid;
   place-items: center;
   width: 100%;
   position: relative;
 }
 .placeholder span {
-  background: #fff;
-  border: 1px solid var(--line);
-  padding: 4px 10px;
-  font-size: 14px;
+  background: var(--ds-color-surface-default);
+  border: var(--ds-border-default) solid var(--ds-color-border-control);
+  border-radius: var(--ds-radius-small);
+  padding: var(--ds-space-4) var(--ds-space-12);
+  font: var(--t-caption);
   text-align: center;
   max-width: 80%;
 }
 .note {
-  border: 1px solid var(--line);
-  padding: 10px 12px;
+  background: var(--ds-color-surface-default);
+  border: var(--ds-border-default) solid var(--ds-color-border-subtle);
+  border-radius: var(--ds-radius-medium);
+  padding: var(--ds-space-12) var(--ds-space-16);
   overflow-wrap: anywhere;
 }
 .noteLabel {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font: var(--t-strong);
 }
 
-/* ---------- Share evidence ---------- */
+/* ---------- Field (Field/Text) ---------- */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--ds-space-8);
 }
 .label {
-  font-weight: 700;
+  font: var(--t-strong);
 }
 .input,
 .textarea {
   width: 100%;
-  border: 2px solid var(--ink);
-  padding: 10px 12px;
-  font: inherit;
-  color: var(--ink);
-  background: #fff;
-  min-height: 44px;
+  border: var(--ds-border-default) solid var(--ds-color-border-control);
+  border-radius: var(--ds-radius-medium);
+  padding: var(--ds-space-12);
+  font: var(--t-body);
+  color: var(--ds-color-text-ink);
+  background: var(--ds-color-surface-default);
+  min-height: var(--ds-size-target);
+  transition: border-color var(--ds-motion-fast) var(--ds-motion-easing-out);
 }
 .textarea {
-  min-height: 110px;
+  min-height: calc(var(--ds-size-target) * 2.5);
   resize: vertical;
+}
+.input:focus,
+.textarea:focus {
+  border-color: var(--ds-color-primary-default);
 }
 .input:disabled,
 .textarea:disabled {
   border-style: dashed;
-  border-color: var(--line);
-  background: var(--soft);
-  color: var(--muted);
+  background: var(--ds-color-surface-disabled);
+  color: var(--ds-color-text-muted);
 }
-.inputError {
-  border-style: double;
-  border-width: 5px;
+/* Error: thicker red border (inset, so nothing moves) on a red wash; the text under it says what to do. */
+.inputError,
+.input[aria-invalid="true"] {
+  border-color: var(--ds-color-error-default);
+  background: var(--ds-color-error-wash);
+  box-shadow: inset 0 0 0 1px var(--ds-color-error-default);
 }
 .counter {
-  font-size: 14px;
-  color: var(--muted);
+  font: var(--t-caption);
+  color: var(--ds-color-text-muted);
   align-self: flex-end;
 }
 .check {
   display: flex;
-  gap: 10px;
+  gap: var(--ds-space-12);
   align-items: flex-start;
-  min-height: 44px;
-  padding: 6px 0;
+  min-height: var(--ds-size-target);
+  padding: var(--ds-space-8) 0;
 }
 .check input {
-  width: 22px;
-  height: 22px;
-  margin-top: 1px;
-  accent-color: var(--ink);
+  width: var(--ds-space-24);
+  height: var(--ds-space-24);
+  accent-color: var(--ds-color-primary-default);
 }
 
 /* ---------- Dialog ---------- */
 .dialog {
-  border: 3px solid var(--ink);
-  padding: 22px;
+  border: var(--ds-border-strong) solid var(--ds-color-border-control);
+  border-radius: var(--ds-radius-large);
+  padding: var(--ds-space-24);
   max-width: 480px;
-  width: calc(100% - 48px);
+  width: calc(100% - var(--ds-space-32) * 2);
   margin: auto;
-  font: inherit;
-  color: var(--ink);
-  background: #fff;
+  font: var(--t-body);
+  color: var(--ds-color-text-ink);
+  background: var(--ds-color-surface-default);
+}
+.dialog[open] {
+  animation: ds-enter var(--ds-motion-base) var(--ds-motion-easing-out);
 }
 .dialog::backdrop {
-  background: rgb(0 0 0 / 0.55);
+  background: var(--ds-color-overlay-default);
 }
 .dialogTitle {
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 10px;
+  font: var(--t-heading-section);
+  margin-bottom: var(--ds-space-12);
 }
 
 /* ---------- Data cases (validation panel) ---------- */
 .cases {
   margin-top: auto;
-  border: 1px dashed var(--line);
-  padding: 8px 12px;
-  font-size: 14px;
+  border: var(--ds-border-default) dashed var(--ds-color-border-control);
+  border-radius: var(--ds-radius-medium);
+  padding: var(--ds-space-8) var(--ds-space-12);
+  font: var(--t-caption);
 }
 .cases summary {
   cursor: pointer;
-  font-weight: 700;
-  min-height: 44px;
+  font: var(--t-strong);
+  min-height: var(--ds-size-target);
   display: flex;
   align-items: center;
 }
 .cases select {
-  font: inherit;
-  min-height: 44px;
-  border: 2px solid var(--ink);
-  background: #fff;
-  color: var(--ink);
-  padding: 6px 10px;
+  font: var(--t-body);
+  min-height: var(--ds-size-target);
+  border: var(--ds-border-default) solid var(--ds-color-border-control);
+  border-radius: var(--ds-radius-medium);
+  background: var(--ds-color-surface-default);
+  color: var(--ds-color-text-ink);
+  padding: var(--ds-space-8) var(--ds-space-12);
   max-width: 100%;
 }
 .casesGrid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--ds-space-8);
+  margin-top: var(--ds-space-8);
 }
 .srOnly {
   position: absolute;
@@ -555,4 +644,15 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Reduced motion: no transitions, no entrance, a still spinner (the word «Cargando» / «…» says it). */
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *::before,
+  .root *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
 }

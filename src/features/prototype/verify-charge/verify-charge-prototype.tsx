@@ -16,6 +16,7 @@ import {
   type Screen,
   type VerifySession,
 } from "./session";
+import "./theme.css";
 import styles from "./prototype.module.css";
 
 const MENU = [
@@ -163,7 +164,7 @@ export function VerifyChargePrototype() {
   const [scenario, setScenario] = useState<Scenario>("normal");
   const [failAccept, setFailAccept] = useState(false);
   return (
-    <div className={styles.root} lang="es-CO">
+    <div className={styles.root} data-ds="otear" lang="es-CO">
       <Sidebar />
       <main className={styles.main}>
         <Flow key={scenario} scenario={scenario} failAccept={failAccept} />

@@ -7,7 +7,7 @@ import {
   ErrorText,
   LOADING_MS,
   Placeholder,
-  StateBox,
+  Alert,
   useLater,
 } from "./parts";
 import type { Labor } from "./data";
@@ -127,8 +127,8 @@ export function ShareScreen({
       </p>
 
       {send.kind === "sent" ? (
-        <StateBox
-          tone="ok"
+        <Alert
+          kind="success"
           title={`Evidencia enviada a ${labor.doneBy}.`}
           autoFocus
           actions={
@@ -142,16 +142,16 @@ export function ShareScreen({
             {LINK_DAYS} días) y no permite descargar las demás fotos de la
             finca.
           </p>
-        </StateBox>
+        </Alert>
       ) : null}
 
       {send.kind === "loading" ? (
-        <StateBox tone="loading" title="Enviando la evidencia…" />
+        <Alert kind="loading" title="Enviando la evidencia…" />
       ) : null}
 
       {send.kind === "error" ? (
-        <StateBox
-          tone="error"
+        <Alert
+          kind="error"
           title="El mensaje no llegó."
           autoFocus
           actions={
@@ -179,7 +179,7 @@ export function ShareScreen({
             why={`WhatsApp no pudo entregarlo al ${destination}; puede estar mal escrito o no tener WhatsApp.`}
             todo="Revise el número y reintente, o copie el mensaje y mándelo usted desde su teléfono."
           />
-        </StateBox>
+        </Alert>
       ) : null}
 
       <div className={styles.columns}>
@@ -191,6 +191,7 @@ export function ShareScreen({
             <input
               id="destination"
               ref={destinationField}
+              data-ds="Field/Text"
               className={`${styles.input} ${send.kind === "error" ? styles.inputError : ""}`}
               value={destination}
               inputMode="tel"
@@ -215,6 +216,7 @@ export function ShareScreen({
             </label>
             <textarea
               id="message"
+              data-ds="Field/Text"
               className={styles.textarea}
               value={message}
               disabled={busy}

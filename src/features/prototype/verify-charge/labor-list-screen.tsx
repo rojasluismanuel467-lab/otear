@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, StateBox } from "./parts";
+import { Alert, Badge, Button } from "./parts";
 import type { Labor, LaborStatus } from "./data";
 import { hectares, pesos, shortDate } from "./verification";
 import styles from "./prototype.module.css";
@@ -12,6 +12,17 @@ const statusText: Record<LaborStatus, string> = {
   done: "Hecha",
   assigned: "Tarea asignada",
 };
+
+const badgeKind = {
+  "to-verify": "warning",
+  claimed: "error",
+  accepted: "success",
+  done: "success",
+  assigned: "default",
+} as const satisfies Record<
+  LaborStatus,
+  "default" | "success" | "warning" | "error"
+>;
 
 function chargeText(labor: Labor) {
   if (labor.kind === "contracted" && labor.billedHa !== undefined) {
@@ -62,8 +73,8 @@ export function LaborListScreen({
       </header>
 
       {notice ? (
-        <StateBox
-          tone="ok"
+        <Alert
+          kind="success"
           title={notice}
           autoFocus
           actions={<Button onClick={onDismissNotice}>Entendido</Button>}
@@ -71,8 +82,8 @@ export function LaborListScreen({
       ) : null}
 
       {labors.length === 0 ? (
-        <StateBox
-          tone="info"
+        <Alert
+          kind="info"
           title="Todavía no hay labores registradas en esta finca."
         >
           <p>
@@ -83,7 +94,7 @@ export function LaborListScreen({
           <p className={styles.reason}>
             Registrar una labor no hace parte de este prototipo.
           </p>
-        </StateBox>
+        </Alert>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
@@ -117,17 +128,9 @@ export function LaborListScreen({
                     <td>{shortDate(labor.date)}</td>
                     <td>{chargeText(labor)}</td>
                     <td>
-                      <span
-                        className={`${styles.tag} ${
-                          status === "to-verify"
-                            ? styles.tagFlag
-                            : status === "done" || status === "assigned"
-                              ? styles.tagDone
-                              : ""
-                        }`}
-                      >
+                      <Badge kind={badgeKind[status]}>
                         {statusText[status]}
-                      </span>
+                      </Badge>
                     </td>
                     <td className={styles.right}>
                       {labor.kind !== "contracted" ? (

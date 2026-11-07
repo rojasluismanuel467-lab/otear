@@ -2,13 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import {
+  Alert,
   Button,
   ButtonWithReason,
   ErrorText,
+  kindLabel,
   LOADING_MS,
   Placeholder,
-  StateBox,
   useLater,
+  type AlertKind,
 } from "./parts";
 import {
   EXAMPLE_MAP_NAME,
@@ -170,12 +172,12 @@ export function VerifyScreen({
               }}
             />
             {map.kind === "loading" ? (
-              <StateBox tone="loading" title={`Leyendo ${map.fileName}…`}>
+              <Alert kind="loading" title={`Leyendo ${map.fileName}…`}>
                 <p>Estoy contando las hectáreas que dibujó el operador.</p>
-              </StateBox>
+              </Alert>
             ) : map.kind === "ready" ? (
-              <StateBox
-                tone="ok"
+              <Alert
+                kind="success"
                 title={`${hectares(map.reading.appliedHa)} leídas del mapa`}
               >
                 <p className={styles.reason}>
@@ -184,10 +186,10 @@ export function VerifyScreen({
                     .map((zone) => `${zone.name} ${hectares(zone.ha)}`)
                     .join(" · ")}
                 </p>
-              </StateBox>
+              </Alert>
             ) : map.kind === "error" ? (
-              <StateBox
-                tone="error"
+              <Alert
+                kind="error"
                 title={MAP_PROBLEM_TEXT[map.problem].what}
                 autoFocus
               >
@@ -196,7 +198,7 @@ export function VerifyScreen({
                   why={MAP_PROBLEM_TEXT[map.problem].why}
                   todo={MAP_PROBLEM_TEXT[map.problem].todo}
                 />
-              </StateBox>
+              </Alert>
             ) : (
               <p>
                 Cargue el mapa en KML o GeoJSON que le entregó el operador, o
@@ -204,15 +206,12 @@ export function VerifyScreen({
               </p>
             )}
             {map.kind === "idle" && map.requested ? (
-              <StateBox
-                tone="info"
-                title="Mapa pedido al operador (simulación)."
-              >
+              <Alert kind="info" title="Mapa pedido al operador (simulación).">
                 <p>
                   Se prepararía un mensaje para {labor.doneBy}. No se envió
                   nada. Cuando lo reciba, cárguelo aquí.
                 </p>
-              </StateBox>
+              </Alert>
             ) : null}
             <div className={styles.actions}>
               {map.kind === "ready" ? (
@@ -308,8 +307,8 @@ export function VerifyScreen({
           {/* Compare */}
           <div className={styles.stack}>
             {compare.kind === "error" ? (
-              <StateBox
-                tone="error"
+              <Alert
+                kind="error"
                 title={flightProblemText(compare.problem, labor).what}
                 autoFocus
                 actions={
@@ -324,7 +323,7 @@ export function VerifyScreen({
                   why={flightProblemText(compare.problem, labor).why}
                   todo={flightProblemText(compare.problem, labor).todo}
                 />
-              </StateBox>
+              </Alert>
             ) : null}
             {compare.kind === "done" ? (
               <Button
@@ -401,25 +400,25 @@ export function VerifyScreen({
           </div>
 
           {compare.kind === "loading" ? (
-            <StateBox
-              tone="loading"
+            <Alert
+              kind="loading"
               title="Comparando lo cobrado con lo aplicado…"
             />
           ) : verification ? (
             <VerdictBox verification={verification} />
           ) : (
-            <StateBox tone="info" title="Todavía no hay una comparación.">
+            <Alert kind="info" title="Todavía no hay una comparación.">
               <p>
                 {map.kind === "ready"
                   ? "Elija uno de sus vuelos y pulse «Comparar». Aquí aparecerá si lo cobrado coincide con lo aplicado."
                   : "Lea el mapa del operador, elija uno de sus vuelos y pulse «Comparar». Aquí aparecerá si lo cobrado coincide con lo aplicado."}
               </p>
-            </StateBox>
+            </Alert>
           )}
 
           {accept.kind === "error" ? (
-            <StateBox
-              tone="error"
+            <Alert
+              kind="error"
               title="No se pudo registrar que aceptó el cobro."
               autoFocus
               actions={
@@ -439,7 +438,7 @@ export function VerifyScreen({
                 why="La simulación falló al guardar, y su cobro sigue sin aceptar."
                 todo="Reintente, o cierre este aviso y decida más tarde: no se cambió nada."
               />
-            </StateBox>
+            </Alert>
           ) : null}
 
           <div className={styles.actions}>
@@ -540,8 +539,25 @@ function VerdictBox({ verification }: { verification: Verification }) {
       : gap !== undefined && value
         ? `Diferencia: ${hectares(Math.abs(Math.round(gap * 10) / 10))} (${pesos(Math.abs(value.differenceCop))})`
         : "No se puede calcular la diferencia en pesos";
+  const verdictKind: AlertKind = verification.noCharge
+    ? "info"
+    : check.state === "match"
+      ? "success"
+      : "warning";
+  const verdictClass =
+    verdictKind === "info"
+      ? styles.alertInfo
+      : verdictKind === "success"
+        ? styles.alertSuccess
+        : styles.alertWarning;
+  const verdictName = `Alert/${verdictKind[0].toUpperCase()}${verdictKind.slice(1)}`;
   return (
-    <section className={styles.verdict} aria-labelledby="verdict-title">
+    <section
+      className={`${styles.verdict} ${verdictClass}`}
+      data-ds={verdictName}
+      aria-labelledby="verdict-title"
+    >
+      <span className={styles.alertLabel}>{kindLabel[verdictKind]}</span>
       <h2 id="verdict-title" className={styles.verdictTitle}>
         {title}
       </h2>

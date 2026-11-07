@@ -24,30 +24,46 @@ export function useLater() {
 /** How long the example «loading» states stay on screen, so they can be seen and checked. */
 export const LOADING_MS = 900;
 
-type Tone = "error" | "loading" | "ok" | "info";
+/** Alert kinds: the same five as the `Alert/*` components of the UI Kit page in Figma. */
+export type AlertKind = "info" | "loading" | "success" | "warning" | "error";
 
-const toneClass: Record<Tone, string> = {
-  error: styles.boxError,
-  loading: styles.boxLoading,
-  ok: styles.boxOk,
-  info: styles.boxInfo,
+const kindClass: Record<AlertKind, string> = {
+  info: styles.alertInfo,
+  loading: styles.alertLoading,
+  success: styles.alertSuccess,
+  warning: styles.alertWarning,
+  error: styles.alertError,
 };
-const toneLabel: Record<Tone, string> = {
-  error: "Error",
-  loading: "Cargando",
-  ok: "Listo",
+/** The word that tells the state apart, so colour is never the only cue (WCAG 1.4.1). */
+export const kindLabel: Record<AlertKind, string> = {
   info: "Aviso",
+  loading: "Cargando",
+  success: "Listo",
+  warning: "Atención",
+  error: "Error",
+};
+const kindName: Record<AlertKind, string> = {
+  info: "Alert/Info",
+  loading: "Alert/Loading",
+  success: "Alert/Success",
+  warning: "Alert/Warning",
+  error: "Alert/Error",
 };
 
-/** A state resolved inside the screen: told apart by its border and its label, never by colour. */
-export function StateBox({
-  tone,
+/** The indicator of a state in progress. It turns; with reduced motion it stays still and the word says it. */
+export function Spinner() {
+  return <span className={styles.spinner} aria-hidden="true" />;
+}
+
+/** A state resolved inside the screen: told apart by its word and its border, never by colour alone. */
+export function Alert({
+  kind,
   title,
   children,
   actions,
   autoFocus,
 }: {
-  tone: Tone;
+  kind: AlertKind;
   title: string;
   children?: ReactNode;
   actions?: ReactNode;
@@ -61,15 +77,41 @@ export function StateBox({
     <div
       ref={ref}
       tabIndex={autoFocus ? -1 : undefined}
-      role={tone === "error" ? "alert" : "status"}
-      aria-busy={tone === "loading" || undefined}
-      className={`${styles.box} ${toneClass[tone]}`}
+      role={kind === "error" ? "alert" : "status"}
+      aria-busy={kind === "loading" || undefined}
+      data-ds={kindName[kind]}
+      className={`${styles.alert} ${kindClass[kind]}`}
     >
-      <span className={styles.boxLabel}>{toneLabel[tone]}</span>
-      <p className={styles.boxTitle}>{title}</p>
+      <span className={styles.alertLabel}>
+        {kind === "loading" ? <Spinner /> : null}
+        {kindLabel[kind]}
+      </span>
+      <p className={styles.alertTitle}>{title}</p>
       {children}
       {actions ? <div className={styles.actions}>{actions}</div> : null}
     </div>
+  );
+}
+
+/** The state of a labor in the list: the `Badge/Status/*` components of the UI Kit. */
+export function Badge({
+  kind,
+  children,
+}: {
+  kind: "default" | "success" | "warning" | "error";
+  children: ReactNode;
+}) {
+  const names = {
+    default: ["Badge/Status/Default", styles.badgeDefault],
+    success: ["Badge/Status/Success", styles.badgeSuccess],
+    warning: ["Badge/Status/Warning", styles.badgeWarning],
+    error: ["Badge/Status/Error", styles.badgeError],
+  } as const;
+  const [name, className] = names[kind];
+  return (
+    <span data-ds={name} className={`${styles.badge} ${className}`}>
+      {children}
+    </span>
   );
 }
 
@@ -108,8 +150,12 @@ export function Button({
       {...rest}
       aria-busy={loading || undefined}
       disabled={rest.disabled || loading}
+      data-ds={`Button/${variant === "primary" ? "Primary" : variant === "link" ? "Link" : "Secondary"}`}
       className={`${styles.btn} ${variantClass} ${className ?? ""}`}
-    />
+    >
+      {loading ? <Spinner /> : null}
+      {rest.children}
+    </button>
   );
 }
 
