@@ -1,0 +1,74 @@
+{
+  "loadingResponseMs": [
+    {
+      "action": "Comparar",
+      "ms": 14
+    },
+    {
+      "action": "Aceptar el cobro",
+      "ms": 14
+    }
+  ],
+  "stress": {
+    "normal": {
+      "list": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      },
+      "result": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      }
+    },
+    "long-operator": {
+      "list": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      },
+      "result": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      }
+    },
+    "long-note": {
+      "list": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      },
+      "result": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      }
+    },
+    "zero-charge": {
+      "list": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      },
+      "result": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      }
+    },
+    "huge-charge": {
+      "list": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      },
+      "result": {
+        "scrollsSideways": false,
+        "textBelow14px": 0,
+        "elementsPastRightEdge": 0
+      }
+    }
+  }
+}
