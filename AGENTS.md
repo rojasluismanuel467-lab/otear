@@ -36,6 +36,39 @@ Trabajar en cambios pequeños que completen una tarea. Si intervienen varios age
 
 Verificar el recorrido cambiado, estados relevantes, teclado, móvil y movimiento reducido cuando corresponda. Ejecutar tipos, lint y compilación una vez configurados. Añadir pruebas para comportamiento significativo y ampliar comprobaciones ante fallos o regresiones; no repetir auditorías completas ni escribir pruebas que solo copien markup por ajustes cosméticos. Informar cambios, verificación y límites concretos.
 
+## Sistema de diseño del prototipo «Verificar el cobro» (Semana 3)
+
+Aplica a `src/features/prototype/verify-charge/` y `src/app/prototipo/`. La landing y la demo tienen su propio lenguaje (`DESIGN.md`); no mezclar. Estas reglas se leen antes de generar cualquier código del prototipo, y vienen del UI Kit de Figma (archivo «Otear · Prototipo de baja fidelidad», página `_UI Kit`).
+
+**Fuente única de valores: `theme.json`.** `npm run theme` genera `verify-charge/theme.css` (variables `--ds-*`, alcance `[data-ds="otear"]`). `npm test` falla si el CSS tiene un color, `font-size` o duración escritos a mano, o si `theme.css` no coincide con `theme.json`. Para cambiar un valor: editar `theme.json`, `npm run theme`, y actualizar el estilo en Figma.
+
+| Qué | Reglas |
+| --- | --- |
+| Color | Solo `var(--ds-color-*)`: primary (default, hover, soft), secondary, surface (default, background, disabled), text (ink, muted), border (control, subtle), error, success, warning (cada uno default, wash, ink). Texto ≥ 4,5:1; bordes de controles ≥ 3:1 (probado en `theme.test.ts`). |
+| Tipografía | Instrument Sans. Tres roles, cinco estilos: Heading/Page 28/36 700, Heading/Section 20/28 700, Body/Default 16/24 400, Body/Strong 16/24 600, Caption/Default 14/20 400. Nada por debajo de 14 px. En el CSS se usan los atajos `--t-*` del `.root`, que solo se arman con variables del tema. |
+| Espaciado | Escala de 8 pt: `--ds-space-4, 8, 12, 16, 24, 32`. Ningún otro valor. |
+| Radio | `--ds-radius-small` 4 (etiquetas), `medium` 8 (botones, campos, avisos), `large` 16 (tarjetas, diálogo). |
+| Objetivo táctil | `--ds-size-target` 44 px de alto mínimo para todo lo que se pulsa. |
+| Foco | `box-shadow: var(--ds-focus-ring)` más `outline: 2px solid transparent` (visible en colores forzados). Nunca quitar el foco. |
+| Movimiento | Pasar el cursor: `--ds-motion-fast` (150 ms). Cambio de estado: `--ds-motion-base` (250 ms) con `--ds-motion-easing-out`. Con `prefers-reduced-motion` todo es instantáneo. No agregar librerías de animación. |
+| Estado | Nunca solo color: cada estado lleva una palabra (Aviso, Cargando, Listo, Atención, Error) y una forma de borde (continuo, discontinuo para cargando y deshabilitado). |
+
+**Componentes: mismo nombre en Figma y en el código.** Cada componente del repositorio lleva su nombre del UI Kit en `data-ds`, y sus estados son los del UI Kit.
+
+| Figma (página `_UI Kit`) | Código | Estados |
+| --- | --- | --- |
+| `Button/Primary/*`, `Button/Secondary/*` | `Button` en `parts.tsx` (`variant`) | Default, Hover, Focus, Disabled (`disabled`), Loading (`loading`) |
+| `ButtonWithReason/*` | `ButtonWithReason` | Enabled, Disabled con la razón escrita debajo |
+| `Field/Text/*` | `.input` / `.textarea` en `share-screen.tsx` (`data-ds="Field/Text"`) | Default, Focus, Disabled, Error (`aria-invalid`), Success |
+| `Alert/*` | `Alert` (`kind`) | Info, Loading, Success, Warning, Error |
+| `Badge/Status/*` | `Badge` (`kind`) | Default, Success, Warning, Error |
+
+**Micro-interacciones críticas (no cambiar su comportamiento):** (1) «Comparar» → «Comparando…» → resultado o error; (2) «Aceptar el cobro» → «Registrando…» → aceptado o error con «Reintentar». El estado de carga aparece en el mismo clic (medido: ≤ 20 ms; el criterio es ≤ 100 ms) dentro del mismo botón y el resultado entra en 250 ms. Todo error dice qué pasó, por qué y qué hacer (`ErrorText`).
+
+**Al aplicar el sistema:** una pantalla por vez (lista de labores, verificar, compartir evidencia); no se agregan pantallas ni se cambia el flujo de S2; la lógica pura (`verification.ts`) no se toca; correr `npm run check` y `npm test`; recapturar con `npm run capture:prototype -- --label despues` (guarda en `docs/planning/prototipo-s3/capturas/`). La skill `otear-prototipo-s2` fija el flujo y el contenido; sus reglas de «solo grises», Arial y «sin animación» quedaron reemplazadas por esta sección (ver `otear-prototipo-s3`).
+
+**Mensajes de commit:** `tipo(ámbito): resumen en español`, tipos `feat`, `fix`, `refactor`, `docs`, `test`, `chore`; ámbitos del prototipo `prototipo`, `ds` (tokens, theme.json), `entrega`. Ejemplos: `feat(ds): theme.json y variables CSS del UI Kit`, `refactor(prototipo): StateBox pasa a Alert con los cinco estados`, `docs(entrega): auditoría de la Semana 3`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
