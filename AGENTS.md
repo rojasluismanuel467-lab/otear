@@ -62,7 +62,7 @@ Aplica a `src/features/prototype/verify-charge/` y `src/app/prototipo/`. La land
 | `Field/Text/*` | `.input` / `.textarea` en `share-screen.tsx` (`data-ds="Field/Text"`) | Default, Focus, Disabled, Error (`aria-invalid`). Success existe solo en Figma: el flujo no lo usa |
 | `Alert/*` | `Alert` (`kind`) | Info, Loading, Success, Warning, Error |
 | `Badge/Status/*` | `Badge` (`kind`) | Default, Success, Warning, Error |
-| (sin maestro en Figma todavía) | `Button` con `variant="link"` (el enlace «← Volver») | Default, Hover, Focus; pendiente de dibujar como `Button/Link/*` en la página `_UI Kit` |
+| `Button/Link/*` | `Button` con `variant="link"` (el enlace «← Volver») | Default, Hover, Focus, Disabled |
 
 **Micro-interacciones críticas (no cambiar su comportamiento):** (1) «Comparar» → «Comparando…» → resultado o error; (2) «Aceptar el cobro» → «Registrando…» → aceptado o error con «Reintentar». El estado de carga aparece en el mismo clic (medido: ≤ 20 ms; el criterio es ≤ 100 ms) dentro del mismo botón y el resultado entra en 250 ms. Todo error dice qué pasó, por qué y qué hacer (`ErrorText`).
 
