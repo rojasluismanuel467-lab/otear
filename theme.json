@@ -1,0 +1,165 @@
+{
+  "name": "Otear DS · Prototipo «Verificar el cobro» (Semana 3)",
+  "version": "1.0.0",
+  "figma": "https://www.figma.com/design/Q6mPLc5fmbp56a2Zm4zPii/ (página «_UI Kit»)",
+  "notes": "Fuente única de los valores del UI Kit. Se generan las variables CSS con `npm run theme` (src/features/prototype/verify-charge/theme.css). Ningún CSS del prototipo escribe un color, tamaño de letra, espacio, radio o duración sueltos: usa estas variables. Cambiar un valor aquí y regenerar lo cambia en toda la interfaz.",
+  "color": {
+    "primary": {
+      "default": {
+        "value": "#1c6f8d",
+        "use": "Acción principal, selección y foco. 5,66:1 sobre blanco."
+      },
+      "hover": {
+        "value": "#165a74",
+        "use": "Primario al pasar el cursor. 7,64:1."
+      },
+      "soft": { "value": "#e2f0f6", "use": "Fondo de información." }
+    },
+    "secondary": {
+      "default": {
+        "value": "#3d4f5c",
+        "use": "Acción secundaria. 8,5:1 sobre blanco."
+      }
+    },
+    "surface": {
+      "default": { "value": "#ffffff", "use": "Tarjetas, campos, diálogo." },
+      "background": { "value": "#f3f5f6", "use": "Fondo de la página." },
+      "disabled": {
+        "value": "#eceff1",
+        "use": "Fondo de controles deshabilitados."
+      }
+    },
+    "text": {
+      "ink": {
+        "value": "#222b32",
+        "use": "Texto principal. 13:1 sobre el fondo."
+      },
+      "muted": {
+        "value": "#595f63",
+        "use": "Texto secundario. 6,5:1 sobre blanco."
+      }
+    },
+    "border": {
+      "control": {
+        "value": "#6b747a",
+        "use": "Borde de campos y botones. 4,8:1 (mínimo 3:1 para controles)."
+      },
+      "subtle": { "value": "#e1e5e8", "use": "Separadores decorativos." }
+    },
+    "error": {
+      "default": { "value": "#b42318", "use": "Error. 6,6:1 sobre blanco." },
+      "wash": { "value": "#fdeae4", "use": "Fondo de aviso de error." },
+      "ink": { "value": "#6e2619", "use": "Texto sobre error. 9,2:1." }
+    },
+    "success": {
+      "default": { "value": "#1e6b34", "use": "Éxito. 6,5:1 sobre blanco." },
+      "wash": { "value": "#e6f4ea", "use": "Fondo de aviso de éxito." },
+      "ink": { "value": "#14532d", "use": "Texto sobre éxito. 8,0:1." }
+    },
+    "warning": {
+      "default": {
+        "value": "#b7791f",
+        "use": "Advertencia: solo borde o ícono (3,6:1)."
+      },
+      "wash": { "value": "#fdf1d0", "use": "Fondo de aviso de advertencia." },
+      "ink": { "value": "#5c3d06", "use": "Texto sobre advertencia. 8,8:1." }
+    },
+    "overlay": {
+      "default": {
+        "value": "rgb(34 43 50 / 0.6)",
+        "use": "Fondo detrás del diálogo."
+      }
+    }
+  },
+  "typography": {
+    "family": {
+      "sans": {
+        "value": "var(--font-sans), system-ui, sans-serif",
+        "use": "Instrument Sans (cargada por la aplicación)."
+      }
+    },
+    "heading": {
+      "page": {
+        "size": "28px",
+        "weight": "700",
+        "lineHeight": "36px",
+        "use": "Título de pantalla (h1)."
+      },
+      "section": {
+        "size": "20px",
+        "weight": "700",
+        "lineHeight": "28px",
+        "use": "Título de sección y de diálogo (h2)."
+      }
+    },
+    "body": {
+      "default": {
+        "size": "16px",
+        "weight": "400",
+        "lineHeight": "24px",
+        "use": "Texto de lectura."
+      },
+      "strong": {
+        "size": "16px",
+        "weight": "600",
+        "lineHeight": "24px",
+        "use": "Etiquetas, botones y datos clave."
+      }
+    },
+    "caption": {
+      "default": {
+        "size": "14px",
+        "weight": "400",
+        "lineHeight": "20px",
+        "use": "Ayudas, razones y notas. Nunca menos de 14 px."
+      }
+    }
+  },
+  "spacing": {
+    "4": { "value": "4px", "use": "Entre ícono y texto." },
+    "8": { "value": "8px", "use": "Entre etiqueta y campo." },
+    "12": { "value": "12px", "use": "Relleno de avisos." },
+    "16": { "value": "16px", "use": "Entre elementos." },
+    "24": { "value": "24px", "use": "Relleno de tarjetas y de la pantalla." },
+    "32": { "value": "32px", "use": "Entre secciones." }
+  },
+  "radius": {
+    "small": { "value": "4px", "use": "Etiquetas de estado y casillas." },
+    "medium": { "value": "8px", "use": "Botones, campos y avisos." },
+    "large": { "value": "16px", "use": "Tarjetas y diálogos." }
+  },
+  "size": {
+    "target": { "value": "44px", "use": "Alto mínimo de todo lo que se pulsa." }
+  },
+  "border": {
+    "width": {
+      "default": { "value": "1px", "use": "Tarjetas y separadores." },
+      "strong": { "value": "2px", "use": "Botones, campos y avisos." }
+    }
+  },
+  "focus": {
+    "ring": {
+      "value": "0 0 0 2px #ffffff, 0 0 0 4px #1c6f8d",
+      "use": "Anillo de foco (efecto Focus/Ring en Figma)."
+    }
+  },
+  "motion": {
+    "duration": {
+      "fast": {
+        "value": "150ms",
+        "use": "Cambio de fondo al pasar el cursor."
+      },
+      "base": {
+        "value": "250ms",
+        "use": "Cambio de estado: carga → resultado."
+      }
+    },
+    "easing": {
+      "out": {
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "use": "Entradas: rápido al inicio, suave al final."
+      }
+    },
+    "spinner": { "value": "900ms", "use": "Una vuelta del indicador de carga." }
+  }
+}
