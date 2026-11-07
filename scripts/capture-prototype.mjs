@@ -148,6 +148,20 @@ for (const [scenario, withFlow] of [
   });
 }
 
+// 2b. Contenido extremo combinado con el error de «Aceptar el cobro».
+await step("esfuerzo-nota-larga-con-error", async () => {
+  await fresh("long-note", true);
+  await open();
+  await readMap();
+  await pickFlight();
+  await compare();
+  await page.waitForTimeout(1200);
+  await page.getByRole("button", { name: "Aceptar el cobro" }).click();
+  await page.getByRole("button", { name: "Sí, aceptar el cobro" }).click();
+  await page.waitForTimeout(1300);
+  await shot("22-long-note-aceptar-error");
+});
+
 // 3. Métricas medibles: tiempo hasta el estado de carga, desborde horizontal y texto menor de 14 px.
 const metrics = { loadingResponseMs: [], stress: {} };
 const measure = () =>
